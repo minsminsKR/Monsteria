@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#18233a">
+  <title>Monsteria</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="scanlines" aria-hidden="true"></div>
+
+  <header id="game-header" class="game-header is-hidden">
+    <button class="brand-button" data-screen="mining" aria-label="채굴 화면으로 이동">
+      <span class="brand-gem"></span>
+      <span>
+        <strong>MONSTERIA</strong>
+        <small>PIXEL TRAINER LAB</small>
+      </span>
+    </button>
+
+    <div class="resource-bar" aria-label="보유 자원">
+      <div class="resource-chip gold-chip">
+        <span class="resource-icon">G</span>
+        <span>Gold</span>
+        <strong id="gold-display">0</strong>
+      </div>
+      <div class="resource-chip crystal-chip">
+        <span class="resource-icon">C</span>
+        <span>Crystal</span>
+        <strong id="crystal-display">0</strong>
+      </div>
+      <div class="resource-chip evo-chip">
+        <span class="resource-icon">E</span>
+        <span>Evo Stone</span>
+        <strong id="evo-stone-display">0</strong>
+      </div>
+    </div>
+  </header>
+
+  <nav id="game-nav" class="game-nav is-hidden" aria-label="게임 메뉴">
+    <button data-screen="mining">Mining</button>
+    <button data-screen="monsters">Monsters</button>
+    <button data-screen="shop">Shop</button>
+    <button data-screen="evolution">Evolution</button>
+    <button data-screen="pvp">PVP Test</button>
+    <button id="reset-save-button" class="danger-button">Reset Save</button>
+  </nav>
+
+  <main class="game-shell">
+    <section id="starter-screen" class="screen starter-screen active">
+      <div class="title-panel pixel-panel">
+        <div class="title-orb"><span></span></div>
+        <p class="eyebrow">A TINY MONSTER RAISING PROTOTYPE</p>
+        <h1>MONSTERIA</h1>
+        <p class="title-copy">첫 파트너를 선택하고, 돌을 부수고, 진화에 도전하세요.</p>
+        <div class="pixel-divider"></div>
+        <h2>CHOOSE YOUR FIRST MONSTER</h2>
+      </div>
+      <div id="starter-options" class="starter-grid"></div>
+    </section>
+
+    <section id="mining-screen" class="screen">
+      <div class="screen-heading">
+        <div>
+          <p class="eyebrow">RESOURCE FIELD</p>
+          <h1>Mining Grounds</h1>
+        </div>
+        <div id="mining-monster-summary" class="heading-status"></div>
+      </div>
+
+      <div class="mining-layout">
+        <aside class="pixel-panel control-panel">
+          <h2>Rock Tier</h2>
+          <p class="muted">단계를 선택한 뒤 돌을 클릭하면 자동 공격합니다.</p>
+          <div id="rock-tier-buttons" class="stacked-buttons"></div>
+          <button id="mine-toggle-button" class="primary-button wide-button">Start Mining</button>
+          <div class="mini-tip">
+            <strong>TIP</strong>
+            <span>Crystal Rock은 단단하지만 진화용 Crystal을 많이 줍니다.</span>
+          </div>
+        </aside>
+
+        <div class="pixel-panel mine-stage-panel">
+          <div id="mine-stage" class="mine-stage">
+            <div class="mine-stage-floor"></div>
+
+            <div class="mine-combatants">
+              <div id="mining-monsters-container" class="mining-monsters-container"></div>
+              <div id="projectile-layer" class="projectile-layer" aria-hidden="true"></div>
+              <button id="rock-target" class="mine-unit rock-unit centered-rock" aria-label="돌을 공격하려면 클릭">
+                <div id="rock-sprite"></div>
+                <div id="rock-name" class="unit-nameplate">Stone Rock</div>
+                <span class="click-hint">CLICK TO ATTACK</span>
+              </button>
+              <div id="damage-layer" class="damage-layer" aria-hidden="true"></div>
+            </div>
+          </div>
+
+          <div class="mine-hud">
+            <div class="bar-label">
+              <span id="rock-hp-label">Rock HP</span>
+              <strong id="rock-hp-text">0 / 0</strong>
+            </div>
+            <div class="pixel-bar hp-bar"><span id="rock-hp-fill"></span></div>
+            <div class="bar-label cooldown-label">
+              <span>Next Attack</span>
+              <strong id="attack-state-text">Ready</strong>
+            </div>
+            <div class="pixel-bar cooldown-bar"><span id="attack-cooldown-fill"></span></div>
+            <div id="mine-message" class="mine-message">돌을 클릭해 채굴을 시작하세요.</div>
+          </div>
+        </div>
+
+        <aside class="pixel-panel rock-info-panel">
+          <h2>Rock Data</h2>
+          <div id="rock-info"></div>
+          <div class="reward-preview">
+            <span>Possible Loot</span>
+            <strong id="rock-reward-preview"></strong>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <section id="monsters-screen" class="screen">
+      <div class="screen-heading">
+        <div>
+          <p class="eyebrow">PARTNER ARCHIVE</p>
+          <h1>Monsters</h1>
+        </div>
+        <div class="heading-status">Mining과 PVP에 사용할 파트너를 지정하세요.</div>
+      </div>
+      <div id="monster-list" class="monster-list"></div>
+      <div class="pixel-panel future-panel">
+        <span class="future-icon">+</span>
+        <div>
+          <strong>Future Monster Slot</strong>
+          <p>데이터 구조는 이후 몬스터 획득 및 구매 기능을 추가할 수 있도록 구성되어 있습니다.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="shop-screen" class="screen">
+      <div class="screen-heading">
+        <div>
+          <p class="eyebrow">FIELD SUPPLY</p>
+          <h1>Evo Stone Shop</h1>
+        </div>
+        <div class="heading-status">Gold를 진화 가능성으로 교환하세요.</div>
+      </div>
+      <div class="shop-layout-wrapper">
+        <div class="pixel-panel shopkeeper-panel">
+          <div class="shopkeeper-sprite">
+            <span class="shopkeeper-face"></span>
+          </div>
+          <div>
+            <p class="speech-bubble">이곳에선 진화의 돌과 새로운 파트너 몬스터들을 영입할 수 있다네!</p>
+            <div class="shop-ledger">
+              <span>현재 Gold <strong id="shop-gold">0</strong></span>
+              <span>현재 Crystal <strong id="shop-crystal">0</strong></span>
+              <span>보유 Evo Stone <strong id="shop-stones">0</strong></span>
+            </div>
+          </div>
+        </div>
+
+        <div id="shop-products-grid" class="shop-products-grid">
+          <!-- Dynamically populated in main.js -->
+        </div>
+      </div>
+    </section>
+
+    <section id="evolution-screen" class="screen">
+      <div class="screen-heading">
+        <div>
+          <p class="eyebrow">EVOLUTION CHAMBER</p>
+          <h1>Evolution</h1>
+        </div>
+        <div class="heading-status">실패해도 레벨은 유지되지만 재료는 소모됩니다.</div>
+      </div>
+      <div class="evolution-layout">
+        <aside class="pixel-panel evolution-roster">
+          <h2>Select Monster</h2>
+          <div id="evolution-monster-list" class="evolution-monster-list"></div>
+        </aside>
+
+        <div id="evolution-chamber" class="pixel-panel evolution-chamber">
+          <div class="chamber-lights"><span></span><span></span><span></span></div>
+          <div id="evolution-aura" class="evolution-aura"></div>
+          <div id="evolution-sprite"></div>
+          <div id="evolution-details" class="evolution-details"></div>
+          <button id="evolve-button" class="primary-button evolve-button">Attempt Evolution</button>
+          <div id="evolution-result" class="evolution-result">진화할 몬스터를 선택하세요.</div>
+        </div>
+      </div>
+    </section>
+
+    <section id="pvp-screen" class="screen">
+      <div id="pvp-setup">
+        <div class="screen-heading">
+          <div>
+            <p class="eyebrow">COMBAT SIMULATOR</p>
+            <h1>PVP Test</h1>
+          </div>
+          <div class="heading-status">온라인 대전이 아닌 AI 더미 전투 테스트입니다.</div>
+        </div>
+        <div class="pvp-setup-layout">
+          <div class="pixel-panel pvp-terminal">
+            <h2>Battle Partner</h2>
+            <div id="pvp-monster-card"></div>
+            <button id="start-pvp-button" class="primary-button wide-button">Enter Arena</button>
+          </div>
+          <div class="pixel-panel controls-card">
+            <h2>Controls</h2>
+            <div class="control-row"><kbd>W A S D</kbd><span>Move</span></div>
+            <div class="control-row"><kbd>L-CLICK</kbd><span>Basic projectile</span></div>
+            <div class="control-row"><kbd>R-CLICK</kbd><span>Skill projectile</span></div>
+            <div class="control-row"><kbd>ESC</kbd><span>Exit battle</span></div>
+            <p class="muted">투사체 데미지는 상대 방어력만큼 감소하며, 최소 1의 피해를 줍니다.</p>
+          </div>
+        </div>
+      </div>
+
+      <div id="pvp-battle" class="pvp-battle is-hidden">
+        <div class="battle-topbar pixel-panel">
+          <div>
+            <strong id="battle-player-name">Player</strong>
+            <span id="battle-player-hp">HP</span>
+          </div>
+          <div class="battle-title">MONSTERIA TEST ARENA</div>
+          <div>
+            <strong id="battle-ai-name">Training Dummy</strong>
+            <span id="battle-ai-hp">HP</span>
+          </div>
+        </div>
+        <div class="canvas-frame">
+          <canvas id="pvp-canvas" width="800" height="480" aria-label="PVP 전투 아레나"></canvas>
+          <div id="battle-result-overlay" class="battle-result-overlay is-hidden">
+            <strong id="battle-result-title">VICTORY</strong>
+            <span id="battle-result-copy"></span>
+            <button id="battle-return-button" class="primary-button">Return to Mining</button>
+          </div>
+        </div>
+        <div class="battle-bottom-bar pixel-panel">
+          <span>WASD Move</span>
+          <span>Left Click Basic</span>
+          <span>Right Click <strong id="battle-skill-name">Skill</strong></span>
+          <span>Skill CD <strong id="battle-skill-cooldown">READY</strong></span>
+          <button id="exit-pvp-button" class="danger-button">Exit Battle</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div id="toast-container" class="toast-container" aria-live="polite"></div>
+
+  <script src="main.js"></script>
+</body>
+</html>
