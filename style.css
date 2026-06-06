@@ -532,6 +532,37 @@ button:disabled {
   --sprite-accent: #bf88d6;
 }
 
+.monster-sprite.cyclopsis {
+  --sprite-main: #c98218;
+  --sprite-dark: #633010;
+  --sprite-light: #ffef9f;
+  --sprite-accent: #d57eeb;
+}
+
+.monster-sprite.cutie {
+  --sprite-main: #c56038;
+  --sprite-dark: #5d2c27;
+  --sprite-light: #ffca8f;
+  --sprite-accent: #faebbe;
+}
+
+.monster-sprite.unnyangeoger {
+  --sprite-main: #58ab58;
+  --sprite-dark: #205433;
+  --sprite-light: #c2ed82;
+  --sprite-accent: #ab66c4;
+}
+
+.monster-sprite.cyclopsis.has-sprite-sheet {
+  background-image: url('assets/monsters/cyclopse/cyclopse-spritesheet-game.png');
+}
+.monster-sprite.cutie.has-sprite-sheet {
+  background-image: url('assets/monsters/bruterock/bruterock-spritesheet-game.png');
+}
+.monster-sprite.unnyangeoger.has-sprite-sheet {
+  background-image: url('assets/monsters/balancer/balancer-spritesheet-game.png');
+}
+
 .monster-sprite.has-sprite-sheet {
   width: 96px;
   height: 96px;
@@ -896,6 +927,43 @@ button:disabled {
 
 @keyframes damage-rise {
   to { transform: translateY(-55px); opacity: 0; }
+}
+
+.damage-number.critical {
+  font-size: 26px;
+  font-weight: 900;
+  color: #ffcc00;
+  text-shadow: 2px 2px 0 #d94b1c, -2px -2px 0 #d94b1c, 2px -2px 0 #d94b1c, -2px 2px 0 #d94b1c, 3px 3px 0 #000;
+  animation: critical-bounce 800ms ease-out forwards;
+}
+
+@keyframes critical-bounce {
+  0% {
+    transform: scale(0.5) translateY(0);
+    opacity: 1;
+  }
+  15% {
+    transform: scale(1.5) translateY(-25px);
+  }
+  30% {
+    transform: scale(1.0) translateY(-10px);
+  }
+  100% {
+    transform: translateY(-60px);
+    opacity: 0;
+  }
+}
+
+.shake-effect {
+  animation: screen-shake-anim 0.2s linear infinite;
+}
+
+@keyframes screen-shake-anim {
+  0%, 100% { transform: translate(0, 0); }
+  20% { transform: translate(-3px, 2px); }
+  40% { transform: translate(2px, -2px); }
+  60% { transform: translate(-2px, -1px); }
+  80% { transform: translate(3px, 1px); }
 }
 
 .mine-hud {
@@ -1765,4 +1833,285 @@ kbd {
   .evolution-costs {
     grid-template-columns: 1fr;
   }
+}
+
+/* Mute Toggle Button styling */
+.mute-toggle-button {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 3px solid var(--ink);
+  background: var(--panel);
+  box-shadow: 3px 3px 0 var(--paper-dark);
+  cursor: pointer;
+  outline: none;
+  transition: transform 80ms ease, box-shadow 80ms ease;
+  user-select: none;
+}
+
+.mute-toggle-button:hover {
+  background: var(--paper);
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 var(--paper-dark);
+}
+
+.mute-toggle-button:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 var(--paper-dark);
+}
+
+.mute-icon {
+  position: relative;
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  pointer-events: none;
+}
+
+/* Retro Speaker Body */
+.mute-icon::before {
+  content: "";
+  position: absolute;
+  left: 2px;
+  top: 5px;
+  width: 5px;
+  height: 8px;
+  background: var(--ink);
+}
+
+/* Retro Speaker Cone */
+.mute-icon::after {
+  content: "";
+  position: absolute;
+  left: 7px;
+  top: 2px;
+  width: 0;
+  height: 0;
+  border-top: 7px solid transparent;
+  border-bottom: 7px solid transparent;
+  border-right: 7px solid var(--ink);
+}
+
+/* Sound Waves */
+.sound-waves {
+  position: absolute;
+  left: 12px;
+  top: 4px;
+  width: 5px;
+  height: 10px;
+  border-right: 2px solid var(--ink);
+  border-radius: 0 50% 50% 0;
+  box-sizing: border-box;
+}
+
+.sound-waves::after {
+  content: "";
+  position: absolute;
+  left: -4px;
+  top: 2px;
+  width: 4px;
+  height: 6px;
+  border-right: 2px solid var(--ink);
+  border-radius: 0 50% 50% 0;
+}
+
+/* Muted state adjustments */
+.mute-toggle-button.muted .sound-waves {
+  display: none;
+}
+
+.mute-toggle-button.muted .mute-icon::before,
+.mute-toggle-button.muted .mute-icon::after {
+  background: var(--ink-soft);
+  border-right-color: var(--ink-soft);
+  opacity: 0.55;
+}
+
+/* Diagonal Red Slash for Muted */
+.mute-toggle-button.muted::before {
+  content: "";
+  position: absolute;
+  z-index: 10;
+  left: 50%;
+  top: 50%;
+  width: 26px;
+  height: 3px;
+  background: var(--red);
+  transform: translate(-50%, -50%) rotate(-45deg);
+  box-shadow: 1px 1px 0 rgba(23, 32, 51, 0.2);
+}
+
+/* PVP 3v3 Team Builder Styling */
+.pvp-team-builder {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 8px 4px;
+}
+
+.pvp-team-slots {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+
+.pvp-team-slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  min-height: 128px;
+  border: 3px dashed var(--ink-soft);
+  background: rgba(23, 35, 58, 0.05);
+  box-shadow: inset 0 0 8px rgba(0,0,0,0.08);
+  padding: 12px;
+}
+
+.pvp-team-slot.active {
+  border: 3px solid var(--ink);
+  background: var(--panel);
+  box-shadow: 4px 4px 0 var(--shadow);
+}
+
+.pvp-team-slot.active .monster-sprite {
+  transform: scale(0.8);
+  margin-bottom: -8px;
+}
+
+.pvp-team-slot.empty {
+  color: var(--ink-soft);
+}
+
+.pvp-team-slot.empty .slot-plus {
+  font-size: 32px;
+  line-height: 1;
+  font-weight: bold;
+}
+
+.pvp-team-slot.empty .slot-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  margin-top: 4px;
+}
+
+.pvp-team-slot .slot-name {
+  font-size: 10px;
+  font-weight: bold;
+  text-align: center;
+  margin-top: 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+}
+
+.remove-slot-btn {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--ink);
+  background: var(--red);
+  color: #fff;
+  font-size: 11px;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  box-shadow: 1px 1px 0 rgba(0,0,0,0.2);
+}
+
+.remove-slot-btn:hover {
+  background: var(--red-dark);
+}
+
+.pvp-roster-list {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  max-height: 320px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+/* Custom scrollbar for roster list */
+.pvp-roster-list::-webkit-scrollbar {
+  width: 8px;
+}
+.pvp-roster-list::-webkit-scrollbar-track {
+  background: rgba(23, 35, 58, 0.08);
+}
+.pvp-roster-list::-webkit-scrollbar-thumb {
+  background: var(--ink-soft);
+  border: 2px solid #fff;
+}
+
+.pvp-roster-card {
+  display: grid;
+  grid-template-columns: 56px 1fr 80px;
+  gap: 8px;
+  align-items: center;
+  padding: 10px;
+  background: var(--panel);
+}
+
+.pvp-roster-card.selected {
+  background: var(--panel-blue);
+  border-color: var(--blue);
+}
+
+.pvp-roster-card.disabled {
+  opacity: 0.58;
+}
+
+.pvp-roster-card .roster-visual {
+  width: 52px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  position: relative;
+}
+
+.pvp-roster-card .roster-visual .monster-sprite {
+  transform: scale(0.5);
+  transform-origin: center center;
+  flex-shrink: 0;
+}
+
+.pvp-roster-card .roster-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.pvp-roster-card .roster-info strong {
+  font-size: 11px;
+}
+
+.pvp-roster-card .roster-info span {
+  font-size: 8px;
+}
+
+.pvp-roster-card .roster-select-btn {
+  font-size: 9px;
+  padding: 4px;
+  min-height: 28px;
+  text-transform: uppercase;
+}
+
+#battle-player-name {
+  color: #52c41a;
+}
+#battle-ai-name {
+  color: #f5222d;
 }

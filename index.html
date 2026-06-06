@@ -36,6 +36,11 @@
         <span>Evo Stone</span>
         <strong id="evo-stone-display">0</strong>
       </div>
+      <button id="mute-toggle-button" class="mute-toggle-button" aria-label="음소거 토글">
+        <span class="mute-icon">
+          <span class="sound-waves"></span>
+        </span>
+      </button>
     </div>
   </header>
 
@@ -212,10 +217,10 @@
             <button id="start-pvp-button" class="primary-button wide-button">Enter Arena</button>
           </div>
           <div class="pixel-panel controls-card">
-            <h2>Controls</h2>
-            <div class="control-row"><kbd>W A S D</kbd><span>Move</span></div>
-            <div class="control-row"><kbd>L-CLICK</kbd><span>Basic projectile</span></div>
-            <div class="control-row"><kbd>R-CLICK</kbd><span>Skill projectile</span></div>
+            <h2>3v3 Arena Info</h2>
+            <div class="control-row"><span>Mode</span><strong>Fully Automated AI</strong></div>
+            <div class="control-row"><span>Team Limit</span><strong>Up to 3 Monsters</strong></div>
+            <div class="control-row"><span>Controls</span><strong>Auto Move & Attack</strong></div>
             <div class="control-row"><kbd>ESC</kbd><span>Exit battle</span></div>
             <p class="muted">투사체 데미지는 상대 방어력만큼 감소하며, 최소 1의 피해를 줍니다.</p>
           </div>
@@ -243,10 +248,9 @@
           </div>
         </div>
         <div class="battle-bottom-bar pixel-panel">
-          <span>WASD Move</span>
-          <span>Left Click Basic</span>
-          <span>Right Click <strong id="battle-skill-name">Skill</strong></span>
-          <span>Skill CD <strong id="battle-skill-cooldown">READY</strong></span>
+          <span>3v3 Automated AI Battle</span>
+          <span>Mode: <strong id="battle-skill-name">AUTO COMBAT</strong></span>
+          <span>Status: <strong id="battle-skill-cooldown">RUNNING</strong></span>
           <button id="exit-pvp-button" class="danger-button">Exit Battle</button>
         </div>
       </div>
@@ -255,6 +259,7 @@
 
   <div id="toast-container" class="toast-container" aria-live="polite"></div>
 
+  <script src="sound.js"></script>
   <script src="main.js"></script>
 </body>
 </html>

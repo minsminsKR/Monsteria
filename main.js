@@ -51,6 +51,48 @@ const monsterDefinitions = {
     colors: { main: "#72bd72", light: "#d8f2a8", dark: "#34704a", accent: "#bf88d6" },
     base: { attack: 13, attackSpeed: 1.05, maxHp: 95, defense: 5, skillDamage: 25 },
     growth: { attack: 7, attackSpeed: 0.09, maxHp: 32, defense: 3, skillDamage: 12 }
+  },
+  cyclopsis: {
+    id: "cyclopsis",
+    name: "사이클롭시스",
+    role: "Rapid eye blaster evolution",
+    description: "기존의 황금빛 외눈박이 몬스터 형태를 완벽히 유지하되, 팔과 다리가 기존보다 조금 더 길어지고 머리 위에 귀여운 뿔이 1개 솟아난 사이클롭시스.",
+    skillName: "Cyclops Beam V2",
+    skillCooldown: 1.6,
+    projectileSpeed: 680,
+    moveSpeed: 215,
+    spriteSheet: "assets/monsters/cyclopse/cyclopse-spritesheet-game.png",
+    colors: { main: "#c98218", light: "#ffef9f", dark: "#633010", accent: "#d57eeb" },
+    base: { attack: 22, attackSpeed: 1.85, maxHp: 150, defense: 8, skillDamage: 48 },
+    growth: { attack: 8, attackSpeed: 0.18, maxHp: 40, defense: 4, skillDamage: 18 }
+  },
+  cutie: {
+    id: "cutie",
+    name: "큐티",
+    role: "Cute doll evolution",
+    description: "기존 러블리돌의 귀여운 외형을 그대로 유지하면서, 키가 약간 커지고 비율이 조금 더 성숙해진 큐티.",
+    skillName: "Tear Wave V2",
+    skillCooldown: 4.2,
+    projectileSpeed: 380,
+    moveSpeed: 155,
+    spriteSheet: "assets/monsters/bruterock/bruterock-spritesheet-game.png",
+    colors: { main: "#c56038", light: "#ffca8f", dark: "#5d2c27", accent: "#faebbe" },
+    base: { attack: 48, attackSpeed: 0.88, maxHp: 270, defense: 22, skillDamage: 96 },
+    growth: { attack: 18, attackSpeed: 0.08, maxHp: 78, defense: 10, skillDamage: 35 }
+  },
+  unnyangeoger: {
+    id: "unnyangeoger",
+    name: "운냥이거",
+    role: "Quadrupedal cat beast",
+    description: "기존 운냥이와 외관은 거의 유사하지만, 사족보행으로 자세를 변경하여 한층 날렵하고 micropo한 운냥이거.",
+    skillName: "Cat Energy Blast V2",
+    skillCooldown: 2.8,
+    projectileSpeed: 520,
+    moveSpeed: 185,
+    spriteSheet: "assets/monsters/balancer/balancer-spritesheet-game.png",
+    colors: { main: "#58ab58", light: "#c2ed82", dark: "#205433", accent: "#ab66c4" },
+    base: { attack: 32, attackSpeed: 1.25, maxHp: 200, defense: 14, skillDamage: 68 },
+    growth: { attack: 12, attackSpeed: 0.12, maxHp: 58, defense: 6, skillDamage: 24 }
   }
 };
 
@@ -188,11 +230,19 @@ let miningMovementRaf = null;
 let lastMiningMoveTime = 0;
 
 function startMiningMovementLoop() {
+  if (uiState.currentScreen !== "mining") {
+    miningMovementRaf = null;
+    return;
+  }
   if (miningMovementRaf) return;
   
   lastMiningMoveTime = performance.now();
   
   const tick = (now) => {
+    if (uiState.currentScreen !== "mining") {
+      miningMovementRaf = null;
+      return;
+    }
     let anyMoving = false;
     const mineStage = $("#mine-stage");
     if (!mineStage) {
@@ -293,8 +343,8 @@ const pvpState = {
   elapsed: 0,
   keys: new Set(),
   mouse: { x: 400, y: 240 },
-  player: null,
-  ai: null,
+  playerTeam: [],
+  enemyTeam: [],
   projectiles: [],
   particles: [],
   floaters: [],
@@ -342,7 +392,7 @@ function normalizeMonster(savedMonster) {
   return {
     id: savedMonster.id || `monster_${Date.now()}_${Math.random().toString(16).slice(2, 8)}`,
     species,
-    name: monsterDefinitions[species].name,
+    name: savedMonster.name || monsterDefinitions[species].name,
     level,
     stats: { ...getMonsterStats(species, level), ...savedStats }
   };
@@ -418,6 +468,9 @@ function resetSave() {
 
   stopMining();
   stopPvp();
+  if (window.soundManager && typeof window.soundManager.resetBgm === "function") {
+    window.soundManager.resetBgm();
+  }
   localStorage.removeItem(SAVE_KEY);
   gameState = createDefaultGameState();
   uiState.currentScreen = "starter";
@@ -468,19 +521,22 @@ function statsMarkup(monster) {
 
 function renderStarterOptions() {
   const container = $("#starter-options");
-  container.innerHTML = Object.values(monsterDefinitions).map((definition) => {
-    const preview = { stats: getMonsterStats(definition.id, 1) };
-    return `
-      <article class="starter-card pixel-panel">
-        <div class="sprite-stage">${monsterSpriteMarkup(definition.id, 1)}</div>
-        <h3>${definition.name}</h3>
-        <p class="role">${definition.role} / ${definition.skillName}</p>
-        <p class="description">${definition.description}</p>
-        ${statsMarkup(preview)}
-        <button class="primary-button" data-starter="${definition.id}">Choose ${definition.name}</button>
-      </article>
-    `;
-  }).join("");
+  const starterIds = ["cyclopse", "bruterock", "balancer"];
+  container.innerHTML = Object.values(monsterDefinitions)
+    .filter((def) => starterIds.includes(def.id))
+    .map((definition) => {
+      const preview = { stats: getMonsterStats(definition.id, 1) };
+      return `
+        <article class="starter-card pixel-panel">
+          <div class="sprite-stage">${monsterSpriteMarkup(definition.id, 1)}</div>
+          <h3>${definition.name}</h3>
+          <p class="role">${definition.role} / ${definition.skillName}</p>
+          <p class="description">${definition.description}</p>
+          ${statsMarkup(preview)}
+          <button class="primary-button" data-starter="${definition.id}">Choose ${definition.name}</button>
+        </article>
+      `;
+    }).join("");
 }
 
 function showStarterScreen() {
@@ -489,6 +545,7 @@ function showStarterScreen() {
   document.querySelectorAll(".screen").forEach((screen) => screen.classList.remove("active"));
   $("#starter-screen").classList.add("active");
   uiState.currentScreen = "starter";
+  soundManager.play("bgm_main");
 }
 
 function showGameUi() {
@@ -508,10 +565,6 @@ function showScreen(screenName) {
     stopPvp();
   }
 
-  if (screenName === "pvp" && miningState.active) {
-    stopMining("PVP 테스트 입장으로 채굴이 일시 정지되었습니다.");
-  }
-
   const target = $(`#${screenName}-screen`);
   if (!target) {
     return;
@@ -528,6 +581,11 @@ function showScreen(screenName) {
 
   if (screenName === "mining") {
     startMining();
+  }
+
+  // Handle BGM changes during screen navigation
+  if (screenName !== "pvp") {
+    soundManager.play("bgm_main");
   }
 }
 
@@ -672,6 +730,9 @@ function renderMining() {
 }
 
 function updateMiningUi(message) {
+  if (uiState.currentScreen !== "mining") {
+    return;
+  }
   const rock = rockDefinitions[miningState.type];
   const hpPercent = Math.max(0, (miningState.hp / miningState.maxHp) * 100);
   $("#rock-hp-label").textContent = rock ? rock.name : "Rock HP";
@@ -756,7 +817,23 @@ function runMonsterAttackLoop(monster, index) {
   const spot = (miningState.monsterPositions && miningState.monsterPositions[index]) || miningSpots[index % miningSpots.length];
   const spotElement = $(`#mining-spot-${index}`);
 
-  if (spotElement) {
+  if (uiState.currentScreen === "mining" && spotElement) {
+    // Face the central rock (placed at 50% left)
+    const xPct = parseFloat(spot.left);
+    if (!isNaN(xPct)) {
+      if (xPct < 48) {
+        spot.facing = 1;
+      } else if (xPct > 52) {
+        spot.facing = -1;
+      }
+    }
+
+    // Apply facing direction to the DOM wrapper immediately
+    const wrapper = spotElement.querySelector(".monster-sprite-wrapper");
+    if (wrapper) {
+      wrapper.style.transform = spot.facing < 0 ? "scaleX(-1)" : "";
+    }
+
     const sprite = spotElement.querySelector(".monster-sprite");
     if (sprite) {
       sprite.classList.add("is-attacking");
@@ -779,6 +856,7 @@ function runMonsterAttackLoop(monster, index) {
 }
 
 function shootMiningProjectile(spotElement, spot) {
+  if (uiState.currentScreen !== "mining") return;
   const projectileLayer = $("#projectile-layer");
   if (!projectileLayer || !spotElement || !spot) return;
 
@@ -805,25 +883,47 @@ function shootMiningProjectile(spotElement, spot) {
 }
 
 function applyMiningDamage(damage) {
-  miningState.hp = Math.max(0, miningState.hp - damage);
-  spawnDamageNumber(damage);
+  const isCrit = Math.random() < 0.10;
+  const finalDamage = isCrit ? Math.round(damage * 1.5) : damage;
 
-  const rockUnit = $("#rock-target");
-  rockUnit.classList.remove("is-hit");
-  void rockUnit.offsetWidth;
-  rockUnit.classList.add("is-hit");
-  setTimeout(() => rockUnit.classList.remove("is-hit"), 220);
+  if (uiState.currentScreen === "mining") {
+    if (isCrit) {
+      soundManager.play("break"); // Heavier critical hit sound
+      spawnDamageNumber(finalDamage, true);
 
-  updateMiningUi(`${rockDefinitions[miningState.type].name}에 ${damage} 피해!`);
+      // Mine Stage screen shake
+      const mineStage = $("#mine-stage");
+      if (mineStage) {
+        mineStage.classList.remove("shake-effect");
+        void mineStage.offsetWidth; // trigger reflow
+        mineStage.classList.add("shake-effect");
+        setTimeout(() => mineStage.classList.remove("shake-effect"), 200);
+      }
+    } else {
+      soundManager.play("hit");
+      spawnDamageNumber(finalDamage, false);
+    }
+  }
+  miningState.hp = Math.max(0, miningState.hp - finalDamage);
+
+  if (uiState.currentScreen === "mining") {
+    const rockUnit = $("#rock-target");
+    rockUnit.classList.remove("is-hit");
+    void rockUnit.offsetWidth;
+    rockUnit.classList.add("is-hit");
+    setTimeout(() => rockUnit.classList.remove("is-hit"), 220);
+  }
+
+  updateMiningUi(`${rockDefinitions[miningState.type].name}에 ${finalDamage}${isCrit ? ' 크리티컬!' : ''} 피해!`);
   if (miningState.hp <= 0) {
     breakMiningRock();
   }
 }
 
-function spawnDamageNumber(damage) {
+function spawnDamageNumber(damage, isCrit) {
   const number = document.createElement("span");
-  number.className = "damage-number";
-  number.textContent = `-${damage}`;
+  number.className = isCrit ? "damage-number critical" : "damage-number";
+  number.textContent = isCrit ? `-${damage}!` : `-${damage}`;
   number.style.left = `${46 + Math.random() * 8}%`;
   number.style.top = `${36 + Math.random() * 8}%`;
   $("#damage-layer").appendChild(number);
@@ -831,6 +931,15 @@ function spawnDamageNumber(damage) {
 }
 
 function breakMiningRock() {
+  if (uiState.currentScreen === "mining") {
+    soundManager.play("break");
+    setTimeout(() => {
+      if (uiState.currentScreen === "mining") {
+        soundManager.play("loot");
+      }
+    }, 220);
+  }
+
   const rock = rockDefinitions[miningState.type];
   const goldReward = randomInt(rock.gold[0], rock.gold[1]);
   const crystalReward = randomInt(rock.crystal[0], rock.crystal[1]);
@@ -843,7 +952,9 @@ function breakMiningRock() {
   saveGame();
   updateResourceDisplays();
 
-  $("#rock-target").classList.add("is-breaking");
+  if (uiState.currentScreen === "mining") {
+    $("#rock-target").classList.add("is-breaking");
+  }
   updateMiningUi(`${rock.name} 파괴! +${goldReward} Gold, +${crystalReward} Crystal`);
 
   clearTimeout(miningState.respawnTimer);
@@ -854,7 +965,9 @@ function breakMiningRock() {
     miningState.hp = rock.maxHp;
     miningState.maxHp = rock.maxHp;
     miningState.respawning = false;
-    $("#rock-target").classList.remove("is-breaking");
+    if (uiState.currentScreen === "mining") {
+      $("#rock-target").classList.remove("is-breaking");
+    }
     updateMiningUi(`${rock.name}이 다시 생성되었습니다.`);
     if (miningState.active) {
       gameState.monsters.forEach((monster, index) => {
@@ -980,6 +1093,7 @@ function buyMonster(species) {
   }
 
   gameState.gold -= price;
+  soundManager.play("buy");
   const newMonster = createMonster(species);
   gameState.monsters.push(newMonster);
   saveGame();
@@ -998,6 +1112,7 @@ function buyEvolutionStones(quantity) {
   }
 
   gameState.gold -= price;
+  soundManager.play("buy");
   gameState.evoStones += amount;
   saveGame();
   updateResourceDisplays();
@@ -1013,12 +1128,25 @@ function renderEvolution() {
     uiState.selectedEvolutionMonsterId = gameState.monsters[0]?.id || null;
   }
 
-  $("#evolution-monster-list").innerHTML = gameState.monsters.map((monster) => `
-    <button class="evolution-list-button ${monster.id === uiState.selectedEvolutionMonsterId ? "active" : ""}" data-select-evolution="${monster.id}">
-      ${monsterSpriteMarkup(monster.species, monster.level)}
-      <span><strong>${monster.name}</strong>LV${monster.level} / ${monster.level >= 3 ? "MAX" : `${Math.round(evolutionRequirements[monster.level].chance * 100)}% chance`}</span>
-    </button>
-  `).join("");
+  $("#evolution-monster-list").innerHTML = gameState.monsters.map((monster) => {
+    const isTier1 = ["cyclopse", "bruterock", "balancer"].includes(monster.species);
+    let label = "";
+    if (monster.level >= 3) {
+      if (isTier1) {
+        label = "Tier Evo (35%)";
+      } else {
+        label = "MAX";
+      }
+    } else {
+      label = `${Math.round(evolutionRequirements[monster.level].chance * 100)}% chance`;
+    }
+    return `
+      <button class="evolution-list-button ${monster.id === uiState.selectedEvolutionMonsterId ? "active" : ""}" data-select-evolution="${monster.id}">
+        ${monsterSpriteMarkup(monster.species, monster.level)}
+        <span><strong>${monster.name}</strong>LV${monster.level} / ${label}</span>
+      </button>
+    `;
+  }).join("");
 
   const monster = getMonsterById(uiState.selectedEvolutionMonsterId);
   if (!monster) {
@@ -1031,14 +1159,37 @@ function renderEvolution() {
   $("#evolution-sprite").innerHTML = monsterSpriteMarkup(monster.species, monster.level);
   $("#evolution-result").textContent = uiState.evolutionResult || "재료를 확인한 뒤 진화를 시도하세요.";
 
+  const isTier1 = ["cyclopse", "bruterock", "balancer"].includes(monster.species);
   if (monster.level >= 3) {
-    $("#evolution-details").innerHTML = `
-      <h2>${monster.name} / LV3 MAX</h2>
-      <p>이 몬스터는 최종 레벨에 도달했습니다.</p>
-      ${statsMarkup(monster)}
-    `;
-    $("#evolve-button").disabled = true;
-    $("#evolve-button").textContent = "MAX LEVEL";
+    if (isTier1) {
+      let nextSpecies = "";
+      if (monster.species === "cyclopse") nextSpecies = "cyclopsis";
+      else if (monster.species === "bruterock") nextSpecies = "cutie";
+      else if (monster.species === "balancer") nextSpecies = "unnyangeoger";
+
+      const nextDef = monsterDefinitions[nextSpecies];
+      const nextStats = getMonsterStats(nextSpecies, 1);
+      $("#evolution-details").innerHTML = `
+        <h2>${monster.name} / Tier Evolution (T1 LV3 → T2 LV1)</h2>
+        <div class="evolution-costs">
+          <div>SUCCESS<strong>35%</strong></div>
+          <div>EVO STONE<strong>5 required</strong></div>
+          <div>CRYSTAL<strong>30 required</strong></div>
+        </div>
+        <p>진화형: <strong>${nextDef.name}</strong> (${nextDef.role})</p>
+        <p>성공 시 ATK ${monster.stats.attack} → ${nextStats.attack}, HP ${monster.stats.maxHp} → ${nextStats.maxHp}, SKILL ${nextDef.skillName} (${monster.stats.skillDamage} → ${nextStats.skillDamage})</p>
+      `;
+      $("#evolve-button").disabled = false;
+      $("#evolve-button").textContent = "Attempt Tier Evolution";
+    } else {
+      $("#evolution-details").innerHTML = `
+        <h2>${monster.name} / LV3 MAX</h2>
+        <p>이 몬스터는 최종 진화 단계 및 레벨에 도달했습니다.</p>
+        ${statsMarkup(monster)}
+      `;
+      $("#evolve-button").disabled = true;
+      $("#evolve-button").textContent = "MAX LEVEL & TIER";
+    }
     return;
   }
 
@@ -1068,11 +1219,22 @@ function selectEvolutionMonster(monsterId) {
 
 function attemptEvolution() {
   const monster = getMonsterById(uiState.selectedEvolutionMonsterId);
-  if (!monster || monster.level >= 3) {
+  if (!monster) return;
+
+  const isTier1 = ["cyclopse", "bruterock", "balancer"].includes(monster.species);
+  if (monster.level >= 3 && !isTier1) {
     return;
   }
 
-  const requirement = evolutionRequirements[monster.level];
+  let requirement;
+  let isTierEvo = false;
+  if (monster.level >= 3 && isTier1) {
+    requirement = { stones: 5, crystal: 30, chance: 0.35 };
+    isTierEvo = true;
+  } else {
+    requirement = evolutionRequirements[monster.level];
+  }
+
   if (gameState.evoStones < requirement.stones || gameState.crystal < requirement.crystal) {
     uiState.evolutionResult = `재료 부족: Evolution Stone ${requirement.stones}개와 Crystal ${requirement.crystal}개가 필요합니다.`;
     renderEvolution();
@@ -1086,11 +1248,25 @@ function attemptEvolution() {
   const succeeded = Math.random() < requirement.chance;
 
   if (succeeded) {
-    monster.level += 1;
-    monster.stats = getMonsterStats(monster.species, monster.level);
-    uiState.evolutionResult = `SUCCESS! ${monster.name}이 LV${monster.level}(으)로 진화했습니다.`;
+    if (isTierEvo) {
+      const oldName = monster.name;
+      let nextSpecies = "";
+      if (monster.species === "cyclopse") nextSpecies = "cyclopsis";
+      else if (monster.species === "bruterock") nextSpecies = "cutie";
+      else if (monster.species === "balancer") nextSpecies = "unnyangeoger";
+
+      const nextDef = monsterDefinitions[nextSpecies];
+      monster.species = nextSpecies;
+      monster.level = 1;
+      monster.stats = getMonsterStats(nextSpecies, 1);
+      uiState.evolutionResult = `SUCCESS! ${oldName}이(가) ${nextDef.name}(T2 LV1)으로 초월 진화했습니다!`;
+    } else {
+      monster.level += 1;
+      monster.stats = getMonsterStats(monster.species, monster.level);
+      uiState.evolutionResult = `SUCCESS! ${monster.name}이 LV${monster.level}(으)로 진화했습니다.`;
+    }
   } else {
-    uiState.evolutionResult = `FAILED. ${monster.name}의 레벨은 LV${monster.level}로 유지됩니다.`;
+    uiState.evolutionResult = `FAILED. ${monster.name}의 진화에 실패했습니다.`;
   }
 
   saveGame();
@@ -1101,10 +1277,21 @@ function attemptEvolution() {
 }
 
 function animateEvolutionResult(succeeded) {
+  soundManager.play("charge");
+  
   const chamber = $("#evolution-chamber");
   chamber.classList.remove("evolution-success", "evolution-fail");
   void chamber.offsetWidth;
   chamber.classList.add(succeeded ? "evolution-success" : "evolution-fail");
+  
+  setTimeout(() => {
+    if (succeeded) {
+      soundManager.play("success");
+    } else {
+      soundManager.play("fail");
+    }
+  }, 800);
+
   setTimeout(() => chamber.classList.remove("evolution-success", "evolution-fail"), 1000);
 }
 
@@ -1112,40 +1299,122 @@ function animateEvolutionResult(succeeded) {
 // Canvas PVP test mode
 // ---------------------------------------------------------------------------
 
+function togglePvpTeamMember(monsterId) {
+  if (!uiState.pvpTeamIds) {
+    uiState.pvpTeamIds = [];
+  }
+  const index = uiState.pvpTeamIds.indexOf(monsterId);
+  if (index >= 0) {
+    uiState.pvpTeamIds.splice(index, 1);
+  } else {
+    if (uiState.pvpTeamIds.length < 3) {
+      uiState.pvpTeamIds.push(monsterId);
+    }
+  }
+  renderPvpSetup();
+}
+
 function renderPvpSetup() {
-  const monster = getPvpMonster();
   $("#pvp-setup").classList.remove("is-hidden");
   $("#pvp-battle").classList.add("is-hidden");
 
-  if (!monster) {
-    $("#pvp-monster-card").innerHTML = "<p>선택된 몬스터가 없습니다.</p>";
+  if (!gameState.monsters || gameState.monsters.length === 0) {
+    $("#pvp-monster-card").innerHTML = "<p>보유한 몬스터가 없습니다. 상점에서 영입하세요.</p>";
     $("#start-pvp-button").disabled = true;
     return;
   }
 
-  $("#start-pvp-button").disabled = false;
-  $("#pvp-monster-card").innerHTML = `
-    <div class="pvp-partner-card">
-      <div>${monsterSpriteMarkup(monster.species, monster.level)}</div>
-      <div>
-        <h3>${monster.name} LV${monster.level}</h3>
-        <p class="muted">${monsterDefinitions[monster.species].role} / Skill: ${monster.stats.skillName}</p>
-        ${statsMarkup(monster)}
+  // Initialize selected PVP team array if not exists
+  if (!uiState.pvpTeamIds) {
+    uiState.pvpTeamIds = [];
+    const activePvpId = gameState.pvpMonsterId || gameState.monsters[0]?.id;
+    if (activePvpId) {
+      uiState.pvpTeamIds.push(activePvpId);
+    }
+  }
+
+  // Render the team selection grid
+  let html = `
+    <div class="pvp-team-builder">
+      <h3>Select Team Members (Max 3)</h3>
+      <div class="pvp-team-slots">
+  `;
+
+  // Render 3 slots
+  for (let i = 0; i < 3; i++) {
+    const selectedId = uiState.pvpTeamIds[i];
+    const monster = selectedId ? getMonsterById(selectedId) : null;
+    if (monster) {
+      html += `
+        <div class="pvp-team-slot active" data-slot="${i}">
+          ${monsterSpriteMarkup(monster.species, monster.level)}
+          <span class="slot-name">${monster.name} LV${monster.level}</span>
+          <button class="remove-slot-btn" data-remove-id="${monster.id}">×</button>
+        </div>
+      `;
+    } else {
+      html += `
+        <div class="pvp-team-slot empty" data-slot="${i}">
+          <span class="slot-plus">+</span>
+          <span class="slot-label">Empty Slot</span>
+        </div>
+      `;
+    }
+  }
+
+  html += `
+      </div>
+      <div class="pixel-divider"></div>
+      <h3>Your Monsters</h3>
+      <div class="pvp-roster-list">
+  `;
+
+  // Render roster list
+  gameState.monsters.forEach((monster) => {
+    const isSelected = uiState.pvpTeamIds.includes(monster.id);
+    const definition = monsterDefinitions[monster.species];
+    const isMaxReached = uiState.pvpTeamIds.length >= 3;
+    const isDisabled = !isSelected && isMaxReached;
+
+    html += `
+      <div class="pvp-roster-card pixel-panel ${isSelected ? "selected" : ""} ${isDisabled ? "disabled" : ""}">
+        <div class="roster-visual">${monsterSpriteMarkup(monster.species, monster.level)}</div>
+        <div class="roster-info">
+          <strong>${monster.name}</strong>
+          <span class="muted">LV${monster.level} / ${definition.role}</span>
+        </div>
+        <button class="roster-select-btn primary-button" 
+                data-toggle-id="${monster.id}" 
+                ${isDisabled ? "disabled" : ""}>
+          ${isSelected ? "Remove" : "Select"}
+        </button>
+      </div>
+    `;
+  });
+
+  html += `
       </div>
     </div>
   `;
+
+  $("#pvp-monster-card").innerHTML = html;
+
+  // Validate "Enter Arena" button
+  const hasMembers = uiState.pvpTeamIds.length >= 1;
+  $("#start-pvp-button").disabled = !hasMembers;
 }
 
 function startPvp() {
-  const monster = getPvpMonster();
-  if (!monster || pvpState.active) {
-    return;
+  if (pvpState.active) return;
+  if (!uiState.pvpTeamIds || uiState.pvpTeamIds.length === 0) {
+    const activePvpId = gameState.pvpMonsterId || gameState.monsters[0]?.id;
+    uiState.pvpTeamIds = activePvpId ? [activePvpId] : [];
   }
+  
+  if (uiState.pvpTeamIds.length === 0) return;
 
-  stopMining();
-  const dummyLevel = monster.level;
-  const dummyStats = getMonsterStats("balancer", dummyLevel);
-
+  soundManager.play("bgm_battle");
+  
   pvpState.active = true;
   pvpState.over = false;
   pvpState.lastTime = performance.now();
@@ -1157,61 +1426,108 @@ function startPvp() {
   pvpState.lastBasic = -Infinity;
   pvpState.lastSkill = -Infinity;
   pvpState.aiLastShot = -Infinity;
-  pvpState.player = {
-    side: "player",
-    species: monster.species,
-    name: monster.name,
-    level: monster.level,
-    x: 130,
-    y: 240,
-    radius: 15,
-    moveSpeed: monsterDefinitions[monster.species].moveSpeed,
-    hp: monster.stats.maxHp,
-    maxHp: monster.stats.maxHp,
-    defense: monster.stats.defense,
-    attack: monster.stats.attack,
-    attackSpeed: monster.stats.attackSpeed,
-    skillDamage: monster.stats.skillDamage,
-    skillCooldown: monster.stats.skillCooldown,
-    projectileSpeed: monster.stats.projectileSpeed,
-    facing: 1,
-    moving: false,
-    animationState: "idle",
-    animationStarted: 0,
-    animationDuration: 0,
-    animationUntil: 0
-  };
-  pvpState.ai = {
-    side: "ai",
-    species: "balancer",
-    name: `Dummy ${monsterDefinitions.balancer.name}`,
-    level: dummyLevel,
-    x: 670,
-    y: 240,
-    radius: 15,
-    moveSpeed: 112 + dummyLevel * 7,
-    hp: dummyStats.maxHp,
-    maxHp: dummyStats.maxHp,
-    defense: dummyStats.defense,
-    attack: dummyStats.attack,
-    attackSpeed: dummyStats.attackSpeed,
-    skillDamage: dummyStats.skillDamage,
-    skillCooldown: dummyStats.skillCooldown,
-    projectileSpeed: 310 + dummyLevel * 20,
-    facing: -1,
-    moving: false,
-    animationState: "idle",
-    animationStarted: 0,
-    animationDuration: 0,
-    animationUntil: 0
-  };
+
+  // Initialize playerTeam in triangle layout
+  let playerYPositions = [240];
+  if (uiState.pvpTeamIds.length === 2) {
+    playerYPositions = [190, 290];
+  } else if (uiState.pvpTeamIds.length === 3) {
+    playerYPositions = [140, 240, 340];
+  }
+  pvpState.playerTeam = uiState.pvpTeamIds.map((id, index) => {
+    const m = getMonsterById(id);
+    const def = monsterDefinitions[m.species];
+    return {
+      id: m.id,
+      side: "player",
+      species: m.species,
+      name: m.name,
+      level: m.level,
+      x: 130 - (index % 2) * 35,
+      y: playerYPositions[index],
+      radius: 22,
+      moveSpeed: def.moveSpeed * 0.9,
+      hp: m.stats.maxHp,
+      maxHp: m.stats.maxHp,
+      defense: m.stats.defense,
+      attack: m.stats.attack,
+      attackSpeed: m.stats.attackSpeed,
+      skillDamage: m.stats.skillDamage,
+      skillCooldown: m.stats.skillCooldown,
+      projectileSpeed: m.stats.projectileSpeed,
+      facing: 1,
+      moving: false,
+      fainted: false,
+      lastBasicAttackTime: Math.random() * -500,
+      lastSkillAttackTime: Math.random() * -1000,
+      animationState: "idle",
+      animationStarted: 0,
+      animationDuration: 0,
+      animationUntil: 0,
+      targetStrategy: ["closest", "weakest", "random"][index % 3],
+      angleOffset: ((index % 3) - 1) * 0.45,
+      dashTimeRemaining: 0,
+      lastDashTime: -Infinity,
+      dashVx: 0,
+      dashVy: 0,
+      afterimages: []
+    };
+  });
+
+  // Calculate average level of player team to scale enemies
+  let totalLevel = 0;
+  pvpState.playerTeam.forEach(actor => totalLevel += actor.level);
+  const avgLevel = Math.max(1, Math.round(totalLevel / pvpState.playerTeam.length));
+  
+  // Initialize enemyTeam (balancer, cyclopse, bruterock)
+  const enemyYPositions = [140, 240, 340];
+  const enemySpecies = ["balancer", "cyclopse", "bruterock"];
+  pvpState.enemyTeam = enemySpecies.map((species, index) => {
+    const stats = getMonsterStats(species, avgLevel);
+    const def = monsterDefinitions[species];
+    return {
+      id: "enemy-" + index,
+      side: "enemy",
+      species: species,
+      name: "Dummy " + def.name,
+      level: avgLevel,
+      x: 670 + (index % 2) * 35,
+      y: enemyYPositions[index],
+      radius: 22,
+      moveSpeed: (def.moveSpeed || 110) * 0.9,
+      hp: stats.maxHp,
+      maxHp: stats.maxHp,
+      defense: stats.defense,
+      attack: stats.attack,
+      attackSpeed: stats.attackSpeed,
+      skillDamage: stats.skillDamage,
+      skillCooldown: stats.skillCooldown,
+      projectileSpeed: stats.projectileSpeed || 320,
+      facing: -1,
+      moving: false,
+      fainted: false,
+      lastBasicAttackTime: Math.random() * -500,
+      lastSkillAttackTime: Math.random() * -1000,
+      animationState: "idle",
+      animationStarted: 0,
+      animationDuration: 0,
+      animationUntil: 0,
+      targetStrategy: ["closest", "weakest", "random"][index % 3],
+      angleOffset: ((index % 3) - 1) * 0.45,
+      dashTimeRemaining: 0,
+      lastDashTime: -Infinity,
+      dashVx: 0,
+      dashVy: 0,
+      afterimages: []
+    };
+  });
 
   $("#pvp-setup").classList.add("is-hidden");
   $("#pvp-battle").classList.remove("is-hidden");
   $("#battle-result-overlay").classList.add("is-hidden");
-  $("#battle-player-name").textContent = `${monster.name} LV${monster.level}`;
-  $("#battle-ai-name").textContent = `Dummy ${monsterDefinitions.balancer.name} LV${dummyLevel}`;
-  $("#battle-skill-name").textContent = monster.stats.skillName;
+  $("#battle-player-name").textContent = "Player Team";
+  $("#battle-ai-name").textContent = "AI Team";
+  $("#battle-skill-name").textContent = "AUTO COMBAT";
   updateBattleHud();
   pvpState.rafId = requestAnimationFrame(pvpFrame);
 }
@@ -1247,61 +1563,288 @@ function pvpFrame(timestamp) {
 }
 
 function updatePvp(dt) {
+  if (pvpState.shakeTime > 0) {
+    pvpState.shakeTime -= dt;
+  }
   if (!pvpState.over) {
-    updatePlayerMovement(dt);
-    updateAi(dt);
+    updateAutomatedBattle(dt);
     updateProjectiles(dt);
   }
   updatePvpEffects(dt);
 }
 
-function updatePlayerMovement(dt) {
-  let dx = 0;
-  let dy = 0;
-  if (pvpState.keys.has("w")) dy -= 1;
-  if (pvpState.keys.has("s")) dy += 1;
-  if (pvpState.keys.has("a")) dx -= 1;
-  if (pvpState.keys.has("d")) dx += 1;
-
-  pvpState.player.moving = dx !== 0 || dy !== 0;
-  if (pvpState.player.moving) {
-    const length = Math.hypot(dx, dy);
-    pvpState.player.x += (dx / length) * pvpState.player.moveSpeed * dt;
-    pvpState.player.y += (dy / length) * pvpState.player.moveSpeed * dt;
-    if (dx !== 0) {
-      pvpState.player.facing = Math.sign(dx);
+function updateAutomatedBattle(dt) {
+  const allActors = [...pvpState.playerTeam, ...pvpState.enemyTeam];
+  
+  allActors.forEach((actor) => {
+    if (actor.fainted) return;
+    
+    // Find target based on individual targetStrategy
+    const enemies = actor.side === "player" ? pvpState.enemyTeam : pvpState.playerTeam;
+    const livingEnemies = enemies.filter(enemy => !enemy.fainted);
+    let targetEnemy = null;
+    let minDist = Infinity;
+    
+    if (livingEnemies.length > 0) {
+      if (actor.targetStrategy === "weakest") {
+        // Target weakest (lowest HP)
+        let minHp = Infinity;
+        livingEnemies.forEach((enemy) => {
+          if (enemy.hp < minHp) {
+            minHp = enemy.hp;
+            targetEnemy = enemy;
+          }
+        });
+      } else if (actor.targetStrategy === "random") {
+        // Deterministic target offset using seed to distribute focus
+        const idx = (actor.id.charCodeAt(actor.id.length - 1) || 0) % livingEnemies.length;
+        targetEnemy = livingEnemies[idx];
+      } else {
+        // Default: closest
+        livingEnemies.forEach((enemy) => {
+          const d = Math.hypot(enemy.x - actor.x, enemy.y - actor.y);
+          if (d < minDist) {
+            minDist = d;
+            targetEnemy = enemy;
+          }
+        });
+      }
     }
-    clampActor(pvpState.player);
-  }
-}
-
-function updateAi(dt) {
-  const ai = pvpState.ai;
-  const player = pvpState.player;
-  const dx = player.x - ai.x;
-  const dy = player.y - ai.y;
-  const distance = Math.max(1, Math.hypot(dx, dy));
-  let movement = 0;
-
-  if (distance > 185) movement = 1;
-  if (distance < 105) movement = -0.75;
-
-  ai.moving = movement !== 0;
-  ai.facing = dx >= 0 ? 1 : -1;
-  ai.x += (dx / distance) * ai.moveSpeed * movement * dt;
-  ai.y += (dy / distance) * ai.moveSpeed * movement * dt;
-
-  // A slight orbit keeps the test dummy from moving in one perfectly straight line.
-  if (distance < 300) {
-    ai.x += (-dy / distance) * 24 * Math.sin(pvpState.elapsed / 500) * dt;
-    ai.y += (dx / distance) * 24 * Math.sin(pvpState.elapsed / 500) * dt;
-  }
-  clampActor(ai);
-
-  const shotInterval = Math.max(820, 1450 - ai.level * 100);
-  if (distance < 440 && pvpState.elapsed - pvpState.aiLastShot >= shotInterval) {
-    pvpState.aiLastShot = pvpState.elapsed;
-    fireProjectile(ai, player.x, player.y, false, "ai");
+    
+    if (!targetEnemy) {
+      if (livingEnemies.length > 0) {
+        targetEnemy = livingEnemies[0];
+      } else {
+        actor.moving = false;
+        return;
+      }
+    }
+    
+    // Recalculate distance to current target
+    minDist = Math.hypot(targetEnemy.x - actor.x, targetEnemy.y - actor.y);
+    
+    // Check if dash cooldown is active and if a projectile is close (within 60px) and approaching
+    if (actor.dashTimeRemaining <= 0 && pvpState.elapsed - actor.lastDashTime >= 4000) {
+      let closeProj = null;
+      let minDistToProj = Infinity;
+      
+      pvpState.projectiles.forEach((proj) => {
+        if (proj.owner === actor.side) return;
+        const dist = Math.hypot(actor.x - proj.x, actor.y - proj.y);
+        if (dist < 60 && dist < minDistToProj) {
+          const px = actor.x - proj.x;
+          const py = actor.y - proj.y;
+          const dot = proj.vx * px + proj.vy * py;
+          if (dot > 0) { // approaching
+            minDistToProj = dist;
+            closeProj = proj;
+          }
+        }
+      });
+      
+      if (closeProj) {
+        // Trigger Dash!
+        const pSpeed = Math.hypot(closeProj.vx, closeProj.vy) || 1;
+        const dxPerp = -closeProj.vy / pSpeed;
+        const dyPerp = closeProj.vx / pSpeed;
+        
+        // Choose perpendicular direction pointing towards center of arena
+        const centerDx = 400 - actor.x;
+        const centerDy = 240 - actor.y;
+        const sign = (dxPerp * centerDx + dyPerp * centerDy) >= 0 ? 1 : -1;
+        
+        actor.dashTimeRemaining = 0.15; // 150ms dash duration
+        actor.lastDashTime = pvpState.elapsed;
+        actor.dashVx = dxPerp * sign * actor.moveSpeed * 2.5;
+        actor.dashVy = dyPerp * sign * actor.moveSpeed * 2.5;
+        actor.afterimages = [];
+        
+        // Play swoosh sound (shoot SFX)
+        soundManager.play("shoot");
+      }
+    }
+    
+    // Handle movement depending on whether actor is currently dashing
+    if (actor.dashTimeRemaining > 0) {
+      // Dash movement
+      actor.afterimages.push({ x: actor.x, y: actor.y, facing: actor.facing });
+      if (actor.afterimages.length > 2) {
+        actor.afterimages.shift();
+      }
+      
+      actor.moving = true;
+      actor.x += actor.dashVx * dt;
+      actor.y += actor.dashVy * dt;
+      actor.dashTimeRemaining -= dt;
+      
+      // Face towards target even when dashing
+      actor.facing = (targetEnemy.x - actor.x) >= 0 ? 1 : -1;
+      clampActor(actor);
+    } else {
+      // Normal movement AI
+      actor.afterimages = [];
+      
+      const dx = targetEnemy.x - actor.x;
+      const dy = targetEnemy.y - actor.y;
+      
+      // Offset base direction by individual angle offset to spread out approach angles
+      const baseAngle = Math.atan2(dy, dx);
+      const angle = baseAngle + (actor.angleOffset || 0);
+      
+      const orbitAngle = angle + Math.PI / 2;
+      const orbitX = Math.cos(orbitAngle);
+      const orbitY = Math.sin(orbitAngle);
+      const dirX = Math.cos(angle);
+      const dirY = Math.sin(angle);
+      
+      // 1. Role-based movement vector (baseX, baseY)
+      let baseX = 0;
+      let baseY = 0;
+      
+      if (minDist < 180) {
+        // All monsters backpedal when target is within 180px (Comfort Zone)
+        baseX = -dirX;
+        baseY = -dirY;
+      } else {
+        if (actor.species === "cyclopse") {
+          // Cyclopse (Ranged): Comfort Zone 250px - 320px
+          if (minDist > 320) {
+            baseX = dirX;
+            baseY = dirY;
+          } else if (minDist < 250) {
+            baseX = -dirX;
+            baseY = -dirY;
+          } else {
+            baseX = orbitX * 0.7;
+            baseY = orbitY * 0.7;
+          }
+        } else if (actor.species === "bruterock") {
+          // Bruterock (Tanker): Comfort Zone 180px - 220px
+          if (minDist > 220) {
+            baseX = dirX;
+            baseY = dirY;
+          } else {
+            baseX = orbitX * 0.5;
+            baseY = orbitY * 0.5;
+          }
+        } else {
+          // Balancer (unnyang) / Others: Comfort Zone 210px - 270px
+          if (minDist > 270) {
+            baseX = dirX;
+            baseY = dirY;
+          } else if (minDist < 210) {
+            baseX = -dirX;
+            baseY = -dirY;
+          } else {
+            baseX = orbitX * 0.8;
+            baseY = orbitY * 0.8;
+          }
+        }
+      }
+      
+      // 2. Evasion AI: evade incoming hostile projectiles (sensing range: 100px)
+      let evadeX = 0;
+      let evadeY = 0;
+      
+      pvpState.projectiles.forEach((proj) => {
+        if (proj.owner === actor.side) return; // skip friendly
+        
+        const px = actor.x - proj.x;
+        const py = actor.y - proj.y;
+        const pDist = Math.hypot(px, py);
+        
+        if (pDist < 100) {
+          const dot = proj.vx * px + proj.vy * py;
+          if (dot > 0) { // approaching
+            const pSpeed = Math.hypot(proj.vx, proj.vy) || 1;
+            const perpX = -proj.vy / pSpeed;
+            const perpY = proj.vx / pSpeed;
+            
+            // Dodge towards center of the arena to avoid boundaries
+            const centerDx = 400 - actor.x;
+            const centerDy = 240 - actor.y;
+            const sign = (perpX * centerDx + perpY * centerDy) >= 0 ? 1 : -1;
+            
+            const weight = (100 - pDist) / 100;
+            evadeX += perpX * sign * weight * 1.5;
+            evadeY += perpY * sign * weight * 1.5;
+          }
+        }
+      });
+      
+      // 3. Random Weaving: micro noise to break locking orbits
+      const noiseFreqX = 3.5;
+      const noiseFreqY = 2.8;
+      const actorSeed = (actor.id.charCodeAt(actor.id.length - 2) || 0) + 1;
+      const noiseX = Math.sin((pvpState.elapsed / 1000) * noiseFreqX + actorSeed) * 0.25;
+      const noiseY = Math.cos((pvpState.elapsed / 1000) * noiseFreqY + actorSeed) * 0.25;
+      
+      const totalX = baseX + evadeX + noiseX;
+      const totalY = baseY + evadeY + noiseY;
+      
+      const moveLen = Math.hypot(totalX, totalY);
+      if (moveLen > 0.05) {
+        actor.moving = true;
+        actor.x += (totalX / moveLen) * actor.moveSpeed * dt;
+        actor.y += (totalY / moveLen) * actor.moveSpeed * dt;
+      } else {
+        actor.moving = false;
+      }
+      
+      actor.facing = (targetEnemy.x - actor.x) >= 0 ? 1 : -1;
+      clampActor(actor);
+    }
+    
+    // Auto Attack AI
+    // Basic attack
+    const basicCd = 1000 / actor.attackSpeed;
+    if (pvpState.elapsed - actor.lastBasicAttackTime >= basicCd && minDist <= 320) {
+      actor.lastBasicAttackTime = pvpState.elapsed;
+      fireProjectile(actor, targetEnemy.x, targetEnemy.y, false, actor.side);
+      if (actor.side === "player") {
+        soundManager.play("shoot");
+      }
+    }
+    
+    // Skill attack
+    const skillCd = actor.skillCooldown * 1000;
+    if (pvpState.elapsed - actor.lastSkillAttackTime >= skillCd && minDist <= 360) {
+      actor.lastSkillAttackTime = pvpState.elapsed;
+      fireProjectile(actor, targetEnemy.x, targetEnemy.y, true, actor.side);
+      if (actor.side === "player") {
+        soundManager.play("skill");
+      }
+    }
+  });
+  
+  // Resolve circle collisions between all pairs of living actors
+  for (let i = 0; i < allActors.length; i++) {
+    const a1 = allActors[i];
+    if (a1.fainted) continue;
+    
+    for (let j = i + 1; j < allActors.length; j++) {
+      const a2 = allActors[j];
+      if (a2.fainted) continue;
+      
+      const dx = a2.x - a1.x;
+      const dy = a2.y - a1.y;
+      const dist = Math.hypot(dx, dy);
+      const minDistBetween = a1.radius + a2.radius;
+      
+      if (dist < minDistBetween) {
+        const overlap = minDistBetween - dist;
+        const pushX = (dist > 0 ? dx / dist : 1) * (overlap / 2);
+        const pushY = (dist > 0 ? dy / dist : 0) * (overlap / 2);
+        
+        a1.x -= pushX;
+        a1.y -= pushY;
+        a2.x += pushX;
+        a2.y += pushY;
+        
+        clampActor(a1);
+        clampActor(a2);
+      }
+    }
   }
 }
 
@@ -1312,13 +1855,22 @@ function updateProjectiles(dt) {
     projectile.y += projectile.vy * dt;
     projectile.life -= dt;
 
-    const target = projectile.owner === "player" ? pvpState.ai : pvpState.player;
-    if (Math.hypot(projectile.x - target.x, projectile.y - target.y) <= projectile.radius + target.radius) {
-      damageActor(target, projectile.damage, projectile.owner);
-      spawnHitEffect(projectile.x, projectile.y, projectile.color);
-      pvpState.projectiles.splice(index, 1);
-      continue;
+    const targets = projectile.owner === "player" ? pvpState.enemyTeam : pvpState.playerTeam;
+    let hit = false;
+    for (let tIdx = 0; tIdx < targets.length; tIdx++) {
+      const target = targets[tIdx];
+      if (target.fainted) continue;
+      
+      if (Math.hypot(projectile.x - target.x, projectile.y - target.y) <= projectile.radius + target.radius) {
+        const isCrit = damageActor(target, projectile.damage, projectile.owner);
+        spawnHitEffect(projectile.x, projectile.y, projectile.color, isCrit);
+        pvpState.projectiles.splice(index, 1);
+        hit = true;
+        break;
+      }
     }
+    
+    if (hit) continue;
 
     if (projectile.life <= 0 || projectile.x < 20 || projectile.x > 780 || projectile.y < 20 || projectile.y > 460) {
       pvpState.projectiles.splice(index, 1);
@@ -1338,29 +1890,6 @@ function updatePvpEffects(dt) {
   });
   pvpState.particles = pvpState.particles.filter((particle) => particle.life > 0);
   pvpState.floaters = pvpState.floaters.filter((floater) => floater.life > 0);
-}
-
-function firePlayerProjectile(isSkill) {
-  if (!pvpState.active || pvpState.over) {
-    return;
-  }
-
-  const player = pvpState.player;
-  if (isSkill) {
-    const cooldownMs = player.skillCooldown * 1000;
-    if (pvpState.elapsed - pvpState.lastSkill < cooldownMs) {
-      return;
-    }
-    pvpState.lastSkill = pvpState.elapsed;
-  } else {
-    const cooldownMs = 1000 / player.attackSpeed;
-    if (pvpState.elapsed - pvpState.lastBasic < cooldownMs) {
-      return;
-    }
-    pvpState.lastBasic = pvpState.elapsed;
-  }
-
-  fireProjectile(player, pvpState.mouse.x, pvpState.mouse.y, isSkill, "player");
 }
 
 function fireProjectile(actor, targetX, targetY, isSkill, owner) {
@@ -1387,21 +1916,53 @@ function fireProjectile(actor, targetX, targetY, isSkill, owner) {
 }
 
 function damageActor(actor, rawDamage, source) {
-  const finalDamage = Math.max(1, Math.round(rawDamage - actor.defense));
+  const isCrit = Math.random() < 0.10;
+  const multiplier = isCrit ? 1.5 : 1.0;
+  const finalDamage = Math.max(1, Math.round((rawDamage * multiplier) - actor.defense));
   actor.hp = Math.max(0, actor.hp - finalDamage);
-  pvpState.floaters.push({
-    x: actor.x,
-    y: actor.y - 30,
-    text: `-${finalDamage}`,
-    color: source === "player" ? "#fff4a3" : "#ffd1c2",
-    life: 0.75
-  });
+
+  if (isCrit) {
+    soundManager.play("break"); // Heavier strike sound for critical hits
+    pvpState.shakeTime = 0.20;  // 200ms screen shake duration in PVP
+    pvpState.floaters.push({
+      x: actor.x,
+      y: actor.y - 35,
+      text: `-${finalDamage}!`,
+      color: "#ffaa00",
+      isCrit: true,
+      life: 0.85
+    });
+  } else {
+    soundManager.play("hurt");
+    pvpState.floaters.push({
+      x: actor.x,
+      y: actor.y - 30,
+      text: `-${finalDamage}`,
+      color: source === "player" ? "#fff4a3" : "#ffd1c2",
+      isCrit: false,
+      life: 0.75
+    });
+  }
 
   if (actor.hp <= 0) {
+    actor.fainted = true;
     triggerActorAnimation(actor, "faint", 950);
-    endBattle(actor.side === "ai");
+    checkBattleEnd();
   } else {
     triggerActorAnimation(actor, "hit", 420);
+  }
+  
+  return isCrit;
+}
+
+function checkBattleEnd() {
+  const playerAlive = pvpState.playerTeam.some(actor => !actor.fainted);
+  const enemyAlive = pvpState.enemyTeam.some(actor => !actor.fainted);
+
+  if (!playerAlive && pvpState.active && !pvpState.over) {
+    endBattle(false);
+  } else if (!enemyAlive && pvpState.active && !pvpState.over) {
+    endBattle(true);
   }
 }
 
@@ -1412,16 +1973,18 @@ function triggerActorAnimation(actor, state, duration) {
   actor.animationUntil = pvpState.elapsed + duration;
 }
 
-function spawnHitEffect(x, y, color) {
-  for (let index = 0; index < 8; index += 1) {
-    const angle = (Math.PI * 2 * index) / 8;
+function spawnHitEffect(x, y, color, isCrit) {
+  const count = isCrit ? 16 : 8;
+  for (let index = 0; index < count; index += 1) {
+    const angle = (Math.PI * 2 * index) / count;
+    const speed = isCrit ? 95 : 65;
     pvpState.particles.push({
       x,
       y,
-      vx: Math.cos(angle) * 65,
-      vy: Math.sin(angle) * 65,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
       color,
-      life: 0.35
+      life: isCrit ? 0.45 : 0.35
     });
   }
 }
@@ -1431,10 +1994,17 @@ function endBattle(victory) {
     return;
   }
   pvpState.over = true;
+  soundManager.stopBgm();
+  if (victory) {
+    soundManager.play("victory");
+  } else {
+    soundManager.play("defeat");
+  }
+
   $("#battle-result-title").textContent = victory ? "VICTORY" : "DEFEAT";
   $("#battle-result-copy").textContent = victory
-    ? "AI 더미 몬스터를 쓰러뜨렸습니다."
-    : "트레이닝 더미에게 패배했습니다. 다시 도전해 보세요.";
+    ? "적군 AI 팀을 모두 쓰러뜨렸습니다!"
+    : "아군 팀이 모두 쓰러졌습니다. 다시 도전해 보세요.";
   $("#battle-result-overlay").classList.remove("is-hidden");
 }
 
@@ -1444,13 +2014,21 @@ function clampActor(actor) {
 }
 
 function updateBattleHud() {
-  if (!pvpState.player || !pvpState.ai) {
+  if (!pvpState.playerTeam || !pvpState.enemyTeam) {
     return;
   }
-  $("#battle-player-hp").textContent = `HP ${Math.ceil(pvpState.player.hp)} / ${pvpState.player.maxHp}`;
-  $("#battle-ai-hp").textContent = `HP ${Math.ceil(pvpState.ai.hp)} / ${pvpState.ai.maxHp}`;
-  const remaining = Math.max(0, pvpState.player.skillCooldown * 1000 - (pvpState.elapsed - pvpState.lastSkill));
-  $("#battle-skill-cooldown").textContent = remaining <= 0 ? "READY" : `${(remaining / 1000).toFixed(1)}s`;
+  const playerAliveCount = pvpState.playerTeam.filter(a => !a.fainted).length;
+  const playerTotal = pvpState.playerTeam.length;
+  const playerHpSum = pvpState.playerTeam.reduce((sum, a) => sum + (a.fainted ? 0 : a.hp), 0);
+  const playerMaxHpSum = pvpState.playerTeam.reduce((sum, a) => sum + a.maxHp, 0);
+
+  const enemyAliveCount = pvpState.enemyTeam.filter(a => !a.fainted).length;
+  const enemyTotal = pvpState.enemyTeam.length;
+  const enemyHpSum = pvpState.enemyTeam.reduce((sum, a) => sum + (a.fainted ? 0 : a.hp), 0);
+  const enemyMaxHpSum = pvpState.enemyTeam.reduce((sum, a) => sum + a.maxHp, 0);
+
+  $("#battle-player-hp").textContent = `Alive: ${playerAliveCount}/${playerTotal} | HP ${Math.ceil(playerHpSum)} / ${playerMaxHpSum}`;
+  $("#battle-ai-hp").textContent = `Alive: ${enemyAliveCount}/${enemyTotal} | HP ${Math.ceil(enemyHpSum)} / ${enemyMaxHpSum}`;
 }
 
 function drawPvp() {
@@ -1475,9 +2053,30 @@ function drawPvp() {
   context.mozImageSmoothingEnabled = true;
   context.msImageSmoothingEnabled = true;
 
+  context.save();
+  // Apply viewport screen shake if active
+  if (pvpState.shakeTime > 0) {
+    const dx = (Math.random() - 0.5) * 8;
+    const dy = (Math.random() - 0.5) * 8;
+    context.translate(dx, dy);
+  }
+
   drawArena(context);
-  drawActor(context, pvpState.player);
-  drawActor(context, pvpState.ai);
+
+  // Depth sort all living/faded actors. Fainted actors are drawn first (on the bottom),
+  // then living actors, and each group is sorted by their Y position.
+  const allActors = [...pvpState.playerTeam, ...pvpState.enemyTeam];
+  allActors.sort((a, b) => {
+    if (a.fainted !== b.fainted) {
+      return a.fainted ? -1 : 1;
+    }
+    return a.y - b.y;
+  });
+
+  allActors.forEach((actor) => {
+    drawActor(context, actor);
+  });
+
   pvpState.projectiles.forEach((projectile) => drawPvpProjectile(context, projectile));
   pvpState.particles.forEach((particle) => {
     context.fillStyle = particle.color;
@@ -1485,10 +2084,19 @@ function drawPvp() {
   });
   pvpState.floaters.forEach((floater) => {
     context.fillStyle = floater.color;
-    context.font = "bold 16px monospace";
+    if (floater.isCrit) {
+      context.font = "900 24px monospace";
+      context.strokeStyle = "#000000";
+      context.lineWidth = 4;
+      context.strokeText(floater.text, Math.round(floater.x), Math.round(floater.y));
+    } else {
+      context.font = "bold 16px monospace";
+    }
     context.textAlign = "center";
     context.fillText(floater.text, Math.round(floater.x), Math.round(floater.y));
   });
+
+  context.restore();
 }
 
 function drawArena(context) {
@@ -1545,6 +2153,64 @@ function drawActor(context, actor) {
   const spriteImage = monsterSpriteImages[actor.species];
   const spriteRenderSize = getMonsterSpriteRenderSize(actor.level);
 
+  let opacity = 1.0;
+
+  // Draw afterimage trails first if currently dashing
+  if (actor.afterimages && actor.afterimages.length > 0) {
+    actor.afterimages.forEach((img, idx) => {
+      const trailAlpha = idx === 0 ? 0.2 : 0.4;
+      context.save();
+      context.globalAlpha = opacity * trailAlpha;
+      
+      const imgX = Math.round(img.x);
+      const imgY = Math.round(img.y);
+      
+      const shadowWidth = Math.round(spriteRenderSize * 0.56);
+      const shadowHeight = Math.round(spriteRenderSize * 0.1);
+      context.fillStyle = "rgba(28,43,47,0.15)";
+      context.fillRect(
+        imgX - Math.round(shadowWidth / 2),
+        imgY + Math.round(spriteRenderSize * 0.2),
+        shadowWidth,
+        shadowHeight
+      );
+
+      if (spriteImage?.complete && spriteImage.naturalWidth > 0) {
+        context.save();
+        context.translate(imgX, imgY);
+        context.scale(img.facing < 0 ? -1 : 1, 1);
+        
+        let state = actor.moving ? "walk" : "idle";
+        let frame = Math.floor(pvpState.elapsed / (state === "walk" ? 115 : 190)) % 6;
+        if (actor.animationUntil > pvpState.elapsed || actor.hp <= 0) {
+          state = actor.animationState;
+          const progress = Math.max(0, Math.min(0.999, (pvpState.elapsed - actor.animationStarted) / Math.max(1, actor.animationDuration)));
+          frame = actor.hp <= 0 && pvpState.elapsed >= actor.animationUntil ? 5 : Math.floor(progress * 6);
+        }
+        
+        context.drawImage(
+          spriteImage,
+          frame * 96,
+          spriteRows[state] * 96,
+          96,
+          96,
+          -spriteRenderSize / 2,
+          -spriteRenderSize * 0.7,
+          spriteRenderSize,
+          spriteRenderSize
+        );
+        context.restore();
+      } else {
+        drawFallbackActor(context, { ...actor, x: imgX, y: imgY, facing: img.facing }, definition, spriteRenderSize);
+      }
+      context.restore();
+    });
+  }
+
+  context.save();
+  context.globalAlpha = opacity;
+
+  // Draw shadow
   const shadowWidth = Math.round(spriteRenderSize * 0.56);
   const shadowHeight = Math.round(spriteRenderSize * 0.1);
   context.fillStyle = "rgba(28,43,47,0.28)";
@@ -1555,22 +2221,31 @@ function drawActor(context, actor) {
     shadowHeight
   );
 
+  // Draw sprite
   if (spriteImage?.complete && spriteImage.naturalWidth > 0) {
     drawSpriteSheetActor(context, actor, spriteImage, spriteRenderSize);
   } else {
     drawFallbackActor(context, actor, definition, spriteRenderSize);
   }
 
-  const hpTop = definition.spriteSheet ? y - Math.round(spriteRenderSize * 0.61) : y - 47;
-  const hpPercent = Math.max(0, actor.hp / actor.maxHp);
-  context.fillStyle = "#172033";
-  context.fillRect(x - 28, hpTop, 56, 8);
-  context.fillStyle = hpPercent > 0.35 ? "#64cc69" : "#d95754";
-  context.fillRect(x - 26, hpTop + 2, Math.round(52 * hpPercent), 4);
-  context.fillStyle = "#fff8dc";
-  context.font = "bold 9px monospace";
-  context.textAlign = "center";
-  context.fillText(actor.side === "player" ? "YOU" : "DUMMY", x, hpTop - 6);
+  // Draw HP bar if not fainted
+  if (!actor.fainted) {
+    const hpTop = definition.spriteSheet ? y - Math.round(spriteRenderSize * 0.61) : y - 47;
+    const hpPercent = Math.max(0, actor.hp / actor.maxHp);
+    const isPlayer = actor.side === "player";
+    
+    context.fillStyle = "#172033";
+    context.fillRect(x - 28, hpTop, 56, 8);
+    context.fillStyle = isPlayer ? "#52c41a" : "#f5222d";
+    context.fillRect(x - 26, hpTop + 2, Math.round(52 * hpPercent), 4);
+    
+    context.fillStyle = isPlayer ? "#85e085" : "#ff8080";
+    context.font = "bold 9px monospace";
+    context.textAlign = "center";
+    context.fillText(actor.name, x, hpTop - 6);
+  }
+
+  context.restore();
 }
 
 function getMonsterSpriteRenderSize(level) {
@@ -1698,10 +2373,29 @@ function updatePvpMouse(event) {
 // ---------------------------------------------------------------------------
 
 function bindEvents() {
+  // Global button hovers (debounced by last element to avoid repeating sounds)
+  let lastHoveredButton = null;
+  document.addEventListener("mouseover", (event) => {
+    const button = event.target.closest("button");
+    if (button && !button.disabled) {
+      if (button !== lastHoveredButton) {
+        soundManager.play("hover");
+        lastHoveredButton = button;
+      }
+    } else {
+      lastHoveredButton = null;
+    }
+  });
+
   document.addEventListener("click", (event) => {
     const button = event.target.closest("button");
     if (!button || button.disabled) {
       return;
+    }
+
+    // Play click sound for all button clicks except the mute button itself
+    if (button.id !== "mute-toggle-button") {
+      soundManager.play("click");
     }
 
     if (button.dataset.screen) showScreen(button.dataset.screen);
@@ -1712,7 +2406,23 @@ function bindEvents() {
     if (button.dataset.selectPvp) selectPvpMonster(button.dataset.selectPvp);
     if (button.dataset.selectEvolution) selectEvolutionMonster(button.dataset.selectEvolution);
     if (button.dataset.buyMonster) buyMonster(button.dataset.buyMonster);
+    if (button.dataset.toggleId) togglePvpTeamMember(button.dataset.toggleId);
+    if (button.dataset.removeId) togglePvpTeamMember(button.dataset.removeId);
   });
+
+  // Mute button setup
+  const muteBtn = $("#mute-toggle-button");
+  if (muteBtn) {
+    muteBtn.classList.toggle("muted", soundManager.muted);
+    muteBtn.addEventListener("click", () => {
+      const isMuted = soundManager.toggleMute();
+      muteBtn.classList.toggle("muted", isMuted);
+      // Play a click sound only if we just unmuted
+      if (!isMuted) {
+        soundManager.play("click");
+      }
+    });
+  }
 
   $("#reset-save-button").addEventListener("click", resetSave);
   $("#rock-target").addEventListener("click", startMining);
@@ -1767,11 +2477,6 @@ function bindEvents() {
 
   const canvas = $("#pvp-canvas");
   canvas.addEventListener("mousemove", updatePvpMouse);
-  canvas.addEventListener("mousedown", (event) => {
-    updatePvpMouse(event);
-    if (event.button === 0) firePlayerProjectile(false);
-    if (event.button === 2) firePlayerProjectile(true);
-  });
   canvas.addEventListener("contextmenu", (event) => event.preventDefault());
 
   window.addEventListener("keydown", (event) => {
@@ -1779,21 +2484,14 @@ function bindEvents() {
       return;
     }
     const key = event.key.toLowerCase();
-    if (["w", "a", "s", "d", "escape"].includes(key)) {
-      event.preventDefault();
-    }
     if (key === "escape") {
+      event.preventDefault();
       exitPvp();
       return;
     }
-    pvpState.keys.add(key);
   });
 
-  window.addEventListener("keyup", (event) => {
-    pvpState.keys.delete(event.key.toLowerCase());
-  });
-
-  window.addEventListener("blur", () => pvpState.keys.clear());
+  window.addEventListener("blur", () => {});
   window.addEventListener("beforeunload", saveGame);
 }
 
