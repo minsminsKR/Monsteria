@@ -546,21 +546,51 @@ button:disabled {
   --sprite-accent: #faebbe;
 }
 
-.monster-sprite.unnyangeoger {
+.monster-sprite.unnyangsam {
   --sprite-main: #58ab58;
   --sprite-dark: #205433;
   --sprite-light: #c2ed82;
   --sprite-accent: #ab66c4;
 }
 
+.monster-sprite.hatefulclops {
+  --sprite-main: #b33a27;
+  --sprite-dark: #4d120a;
+  --sprite-light: #ff9c8a;
+  --sprite-accent: #7deef0;
+}
+
+.monster-sprite.candy {
+  --sprite-main: #e06b9b;
+  --sprite-dark: #802848;
+  --sprite-light: #ffd9e8;
+  --sprite-accent: #fff2be;
+}
+
+.monster-sprite.unrang {
+  --sprite-main: #3f8fb5;
+  --sprite-dark: #12435c;
+  --sprite-light: #b3e5fc;
+  --sprite-accent: #ffeb3b;
+}
+
 .monster-sprite.cyclopsis.has-sprite-sheet {
-  background-image: url('assets/monsters/cyclopse/cyclopse-spritesheet-game.png');
+  background-image: url('assets/monsters/cyclopsis/cyclopsis-spritesheet-game.png');
 }
 .monster-sprite.cutie.has-sprite-sheet {
-  background-image: url('assets/monsters/bruterock/bruterock-spritesheet-game.png');
+  background-image: url('assets/monsters/cutie/cutie-spritesheet-game.png');
 }
-.monster-sprite.unnyangeoger.has-sprite-sheet {
-  background-image: url('assets/monsters/balancer/balancer-spritesheet-game.png');
+.monster-sprite.unnyangsam.has-sprite-sheet {
+  background-image: url('assets/monsters/unnyangsam/unnyangsam-spritesheet-game.png');
+}
+.monster-sprite.hatefulclops.has-sprite-sheet {
+  background-image: url('assets/monsters/hatefulclops/hatefulclops-spritesheet-game.png');
+}
+.monster-sprite.candy.has-sprite-sheet {
+  background-image: url('assets/monsters/candy/candy-spritesheet-game.png');
+}
+.monster-sprite.unrang.has-sprite-sheet {
+  background-image: url('assets/monsters/unrang/unrang-spritesheet-game.png');
 }
 
 .monster-sprite.has-sprite-sheet {
@@ -592,6 +622,41 @@ button:disabled {
 .monster-sprite.lv3 {
   transform: scale(1.17);
   filter: drop-shadow(6px 7px 0 rgba(23, 32, 51, 0.2)) drop-shadow(0 0 9px rgba(102, 216, 229, 0.8));
+}
+
+.monster-sprite.lv4 {
+  transform: scale(1.25);
+  filter: drop-shadow(6px 7px 0 rgba(23, 32, 51, 0.2)) drop-shadow(0 0 10px rgba(138, 103, 189, 0.85));
+}
+
+.monster-sprite.lv5 {
+  transform: scale(1.33);
+  filter: drop-shadow(6px 7px 0 rgba(23, 32, 51, 0.2)) drop-shadow(0 0 12px rgba(217, 87, 84, 0.9));
+}
+
+.monster-sprite.lv6 {
+  transform: scale(1.41);
+  filter: drop-shadow(6px 7px 0 rgba(23, 32, 51, 0.2)) drop-shadow(0 0 13px rgba(99, 184, 92, 0.9));
+}
+
+.monster-sprite.lv7 {
+  transform: scale(1.48);
+  filter: drop-shadow(6px 7px 0 rgba(23, 32, 51, 0.2)) drop-shadow(0 0 14px rgba(242, 200, 75, 0.95));
+}
+
+.monster-sprite.lv8 {
+  transform: scale(1.55);
+  filter: drop-shadow(6px 7px 0 rgba(23, 32, 51, 0.2)) drop-shadow(0 0 15px rgba(224, 107, 155, 0.95));
+}
+
+.monster-sprite.lv9 {
+  transform: scale(1.62);
+  filter: drop-shadow(6px 7px 0 rgba(23, 32, 51, 0.2)) drop-shadow(0 0 16px rgba(138, 103, 189, 0.98));
+}
+
+.monster-sprite.lv10 {
+  transform: scale(1.70);
+  filter: drop-shadow(6px 7px 0 rgba(23, 32, 51, 0.2)) drop-shadow(0 0 20px rgba(102, 216, 229, 1)) drop-shadow(0 0 8px rgba(242, 200, 75, 0.8));
 }
 
 .monster-sprite.lv3::before {

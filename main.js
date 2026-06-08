@@ -26,7 +26,7 @@ const monsterDefinitions = {
   },
   bruterock: {
     id: "bruterock",
-    name: "Lovely Doll",
+    name: "러블리돌",
     role: "Heavy tear striker",
     description: "거대한 눈물 파도와 묵직한 한 방으로 전장을 휩쓰는 울보 인형.",
     skillName: "Tear Wave",
@@ -56,12 +56,12 @@ const monsterDefinitions = {
     id: "cyclopsis",
     name: "사이클롭시스",
     role: "Rapid eye blaster evolution",
-    description: "기존의 황금빛 외눈박이 몬스터 형태를 완벽히 유지하되, 팔과 다리가 기존보다 조금 더 길어지고 머리 위에 귀여운 뿔이 1개 솟아난 사이클롭시스.",
+    description: "사이클롭스가 한 단계 성장하여 더 길어진 팔다리와 머리 위에 한 개의 귀여운 뿔이 자라난 사이클롭시스.",
     skillName: "Cyclops Beam V2",
     skillCooldown: 1.6,
     projectileSpeed: 680,
     moveSpeed: 215,
-    spriteSheet: "assets/monsters/cyclopse/cyclopse-spritesheet-game.png",
+    spriteSheet: "assets/monsters/cyclopsis/cyclopsis-spritesheet-game.png",
     colors: { main: "#c98218", light: "#ffef9f", dark: "#633010", accent: "#d57eeb" },
     base: { attack: 22, attackSpeed: 1.85, maxHp: 150, defense: 8, skillDamage: 48 },
     growth: { attack: 8, attackSpeed: 0.18, maxHp: 40, defense: 4, skillDamage: 18 }
@@ -70,29 +70,71 @@ const monsterDefinitions = {
     id: "cutie",
     name: "큐티",
     role: "Cute doll evolution",
-    description: "기존 러블리돌의 귀여운 외형을 그대로 유지하면서, 키가 약간 커지고 비율이 조금 더 성숙해진 큐티.",
+    description: "러블리돌의 성숙해진 형태로 귀여움을 잃지 않은 채 비율이 성장한 인형 큐티.",
     skillName: "Tear Wave V2",
     skillCooldown: 4.2,
     projectileSpeed: 380,
     moveSpeed: 155,
-    spriteSheet: "assets/monsters/bruterock/bruterock-spritesheet-game.png",
+    spriteSheet: "assets/monsters/cutie/cutie-spritesheet-game.png",
     colors: { main: "#c56038", light: "#ffca8f", dark: "#5d2c27", accent: "#faebbe" },
     base: { attack: 48, attackSpeed: 0.88, maxHp: 270, defense: 22, skillDamage: 96 },
     growth: { attack: 18, attackSpeed: 0.08, maxHp: 78, defense: 10, skillDamage: 35 }
   },
-  unnyangeoger: {
-    id: "unnyangeoger",
-    name: "운냥이거",
-    role: "Quadrupedal cat beast",
-    description: "기존 운냥이와 외관은 거의 유사하지만, 사족보행으로 자세를 변경하여 한층 날렵하고 micropo한 운냥이거.",
+  unnyangsam: {
+    id: "unnyangsam",
+    name: "운냥삼",
+    role: "Speed cat fighter",
+    description: "운냥이가 한층 더 민첩하고 강인하게 진화하여 삼색 냥발톱과 빠른 권법을 사용하는 운냥삼.",
     skillName: "Cat Energy Blast V2",
     skillCooldown: 2.8,
     projectileSpeed: 520,
     moveSpeed: 185,
-    spriteSheet: "assets/monsters/balancer/balancer-spritesheet-game.png",
+    spriteSheet: "assets/monsters/unnyangsam/unnyangsam-spritesheet-game.png",
     colors: { main: "#58ab58", light: "#c2ed82", dark: "#205433", accent: "#ab66c4" },
     base: { attack: 32, attackSpeed: 1.25, maxHp: 200, defense: 14, skillDamage: 68 },
     growth: { attack: 12, attackSpeed: 0.12, maxHp: 58, defense: 6, skillDamage: 24 }
+  },
+  hatefulclops: {
+    id: "hatefulclops",
+    name: "혐우클롭스",
+    role: "Demonic eye tyrant",
+    description: "사이클롭시스가 최종 한계 돌파하여 탄생한 혐우클롭스. 붉은 마기를 휘감고 엄청난 빔 세례를 퍼붓습니다.",
+    skillName: "Ultimate Eye Beam",
+    skillCooldown: 1.4,
+    projectileSpeed: 750,
+    moveSpeed: 225,
+    spriteSheet: "assets/monsters/hatefulclops/hatefulclops-spritesheet-game.png",
+    colors: { main: "#b33a27", light: "#ff9c8a", dark: "#4d120a", accent: "#7deef0" },
+    base: { attack: 50, attackSpeed: 2.25, maxHp: 320, defense: 20, skillDamage: 110 },
+    growth: { attack: 18, attackSpeed: 0.22, maxHp: 75, defense: 8, skillDamage: 38 }
+  },
+  candy: {
+    id: "candy",
+    name: "캔디",
+    role: "Sweet hammer candy",
+    description: "큐티가 달콤하고 파괴적인 요정으로 승화된 캔디. 거대한 사탕 파도와 헤비 해머로 전장을 파괴합니다.",
+    skillName: "Candy Wave",
+    skillCooldown: 3.8,
+    projectileSpeed: 420,
+    moveSpeed: 165,
+    spriteSheet: "assets/monsters/candy/candy-spritesheet-game.png",
+    colors: { main: "#e06b9b", light: "#ffd9e8", dark: "#802848", accent: "#fff2be" },
+    base: { attack: 95, attackSpeed: 1.05, maxHp: 520, defense: 45, skillDamage: 210 },
+    growth: { attack: 35, attackSpeed: 0.10, maxHp: 130, defense: 18, skillDamage: 75 }
+  },
+  unrang: {
+    id: "unrang",
+    name: "운랑이",
+    role: "Lightning storm beast",
+    description: "운냥삼이 마침내 신수의 반열에 들어선 운랑이. 푸른 뇌전을 방출하고 폭풍처럼 적을 몰아칩니다.",
+    skillName: "Storm Energy Ball",
+    skillCooldown: 2.4,
+    projectileSpeed: 580,
+    moveSpeed: 195,
+    spriteSheet: "assets/monsters/unrang/unrang-spritesheet-game.png",
+    colors: { main: "#3f8fb5", light: "#b3e5fc", dark: "#12435c", accent: "#ffeb3b" },
+    base: { attack: 72, attackSpeed: 1.55, maxHp: 410, defense: 30, skillDamage: 155 },
+    growth: { attack: 24, attackSpeed: 0.15, maxHp: 105, defense: 12, skillDamage: 55 }
   }
 };
 
@@ -126,10 +168,61 @@ const rockDefinitions = {
   }
 };
 
-const evolutionRequirements = {
-  1: { stones: 1, crystal: 4, chance: 0.7 },
-  2: { stones: 2, crystal: 14, chance: 0.4 }
+const levelRequirements = {
+  1: { stones: 1, crystal: 4, chance: 0.70 },
+  2: { stones: 2, crystal: 14, chance: 0.40 },
+  3: { stones: 3, crystal: 25, chance: 0.60 },
+  4: { stones: 4, crystal: 45, chance: 0.50 },
+  5: { stones: 5, crystal: 70, chance: 0.55 },
+  6: { stones: 6, crystal: 100, chance: 0.50 },
+  7: { stones: 7, crystal: 140, chance: 0.45 },
+  8: { stones: 8, crystal: 190, chance: 0.40 },
+  9: { stones: 10, crystal: 250, chance: 0.35 }
 };
+
+function getMaxLevel(species) {
+  if (["cyclopse", "bruterock", "balancer"].includes(species)) return 3;
+  if (["cyclopsis", "cutie", "unnyangsam"].includes(species)) return 5;
+  return 10;
+}
+
+function getNextEvolution(species) {
+  if (species === "cyclopse") return "cyclopsis";
+  if (species === "cyclopsis") return "hatefulclops";
+  if (species === "bruterock") return "cutie";
+  if (species === "cutie") return "candy";
+  if (species === "balancer") return "unnyangsam";
+  if (species === "unnyangsam") return "unrang";
+  return null;
+}
+
+function getMonsterStage(species) {
+  if (["cyclopse", "bruterock", "balancer"].includes(species)) return 1;
+  if (["cyclopsis", "cutie", "unnyangsam"].includes(species)) return 2;
+  return 3;
+}
+
+function getUpgradeAction(monster) {
+  const nextSpec = getNextEvolution(monster.species);
+  const maxLvl = getMaxLevel(monster.species);
+  
+  if (monster.species === "cyclopse" || monster.species === "bruterock" || monster.species === "balancer") {
+    if (monster.level >= 3) {
+      return { type: "evolve", nextSpecies: nextSpec, stones: 5, crystal: 30, chance: 0.35 };
+    }
+  } else if (monster.species === "cyclopsis" || monster.species === "cutie" || monster.species === "unnyangsam") {
+    if (monster.level >= 5) {
+      return { type: "evolve", nextSpecies: nextSpec, stones: 10, crystal: 80, chance: 0.25 };
+    }
+  }
+  
+  if (monster.level < maxLvl) {
+    const req = levelRequirements[monster.level];
+    return { type: "levelUp", stones: req.stones, crystal: req.crystal, chance: req.chance };
+  }
+  
+  return { type: "max" };
+}
 
 const spriteRows = {
   idle: 0,
@@ -385,9 +478,13 @@ function createMonster(species) {
 }
 
 function normalizeMonster(savedMonster) {
-  const migratedSpecies = savedMonster.species === "swiftling" ? "cyclopse" : savedMonster.species;
+  let migratedSpecies = savedMonster.species === "swiftling" ? "cyclopse" : savedMonster.species;
+  if (migratedSpecies === "unnyangeoger") {
+    migratedSpecies = "unnyangsam";
+  }
   const species = monsterDefinitions[migratedSpecies] ? migratedSpecies : "balancer";
-  const level = Math.min(3, Math.max(1, Number(savedMonster.level) || 1));
+  const maxLvl = getMaxLevel(species);
+  const level = Math.min(maxLvl, Math.max(1, Number(savedMonster.level) || 1));
   const savedStats = savedMonster.species === "swiftling" ? {} : (savedMonster.stats || {});
   return {
     id: savedMonster.id || `monster_${Date.now()}_${Math.random().toString(16).slice(2, 8)}`,
@@ -1129,16 +1226,14 @@ function renderEvolution() {
   }
 
   $("#evolution-monster-list").innerHTML = gameState.monsters.map((monster) => {
-    const isTier1 = ["cyclopse", "bruterock", "balancer"].includes(monster.species);
+    const action = getUpgradeAction(monster);
     let label = "";
-    if (monster.level >= 3) {
-      if (isTier1) {
-        label = "Tier Evo (35%)";
-      } else {
-        label = "MAX";
-      }
+    if (action.type === "evolve") {
+      label = `Evo (${Math.round(action.chance * 100)}%)`;
+    } else if (action.type === "levelUp") {
+      label = `LV Up (${Math.round(action.chance * 100)}%)`;
     } else {
-      label = `${Math.round(evolutionRequirements[monster.level].chance * 100)}% chance`;
+      label = "MAX";
     }
     return `
       <button class="evolution-list-button ${monster.id === uiState.selectedEvolutionMonsterId ? "active" : ""}" data-select-evolution="${monster.id}">
@@ -1159,53 +1254,46 @@ function renderEvolution() {
   $("#evolution-sprite").innerHTML = monsterSpriteMarkup(monster.species, monster.level);
   $("#evolution-result").textContent = uiState.evolutionResult || "재료를 확인한 뒤 진화를 시도하세요.";
 
-  const isTier1 = ["cyclopse", "bruterock", "balancer"].includes(monster.species);
-  if (monster.level >= 3) {
-    if (isTier1) {
-      let nextSpecies = "";
-      if (monster.species === "cyclopse") nextSpecies = "cyclopsis";
-      else if (monster.species === "bruterock") nextSpecies = "cutie";
-      else if (monster.species === "balancer") nextSpecies = "unnyangeoger";
-
-      const nextDef = monsterDefinitions[nextSpecies];
-      const nextStats = getMonsterStats(nextSpecies, 1);
-      $("#evolution-details").innerHTML = `
-        <h2>${monster.name} / Tier Evolution (T1 LV3 → T2 LV1)</h2>
-        <div class="evolution-costs">
-          <div>SUCCESS<strong>35%</strong></div>
-          <div>EVO STONE<strong>5 required</strong></div>
-          <div>CRYSTAL<strong>30 required</strong></div>
-        </div>
-        <p>진화형: <strong>${nextDef.name}</strong> (${nextDef.role})</p>
-        <p>성공 시 ATK ${monster.stats.attack} → ${nextStats.attack}, HP ${monster.stats.maxHp} → ${nextStats.maxHp}, SKILL ${nextDef.skillName} (${monster.stats.skillDamage} → ${nextStats.skillDamage})</p>
-      `;
-      $("#evolve-button").disabled = false;
-      $("#evolve-button").textContent = "Attempt Tier Evolution";
-    } else {
-      $("#evolution-details").innerHTML = `
-        <h2>${monster.name} / LV3 MAX</h2>
-        <p>이 몬스터는 최종 진화 단계 및 레벨에 도달했습니다.</p>
-        ${statsMarkup(monster)}
-      `;
-      $("#evolve-button").disabled = true;
-      $("#evolve-button").textContent = "MAX LEVEL & TIER";
-    }
-    return;
+  const action = getUpgradeAction(monster);
+  if (action.type === "evolve") {
+    const nextDef = monsterDefinitions[action.nextSpecies];
+    const nextStats = getMonsterStats(action.nextSpecies, 1);
+    const stageFrom = getMonsterStage(monster.species);
+    
+    $("#evolution-details").innerHTML = `
+      <h2>${monster.name} / Tier Evolution (T${stageFrom} LV${monster.level} → T${stageFrom + 1} LV1)</h2>
+      <div class="evolution-costs">
+        <div>SUCCESS<strong>${Math.round(action.chance * 100)}%</strong></div>
+        <div>EVO STONE<strong>${action.stones} required</strong></div>
+        <div>CRYSTAL<strong>${action.crystal} required</strong></div>
+      </div>
+      <p>진화형: <strong>${nextDef.name}</strong> (${nextDef.role})</p>
+      <p>성공 시 ATK ${monster.stats.attack} → ${nextStats.attack}, HP ${monster.stats.maxHp} → ${nextStats.maxHp}, SKILL ${nextDef.skillName} (${monster.stats.skillDamage} → ${nextStats.skillDamage})</p>
+    `;
+    $("#evolve-button").disabled = false;
+    $("#evolve-button").textContent = "Attempt Evolution";
+  } else if (action.type === "levelUp") {
+    const nextStats = getMonsterStats(monster.species, monster.level + 1);
+    $("#evolution-details").innerHTML = `
+      <h2>${monster.name} / LV${monster.level} → LV${monster.level + 1}</h2>
+      <div class="evolution-costs">
+        <div>SUCCESS<strong>${Math.round(action.chance * 100)}%</strong></div>
+        <div>EVO STONE<strong>${action.stones} required</strong></div>
+        <div>CRYSTAL<strong>${action.crystal} required</strong></div>
+      </div>
+      <p>성공 시 ATK ${monster.stats.attack} → ${nextStats.attack}, HP ${monster.stats.maxHp} → ${nextStats.maxHp}, SKILL ${monster.stats.skillDamage} → ${nextStats.skillDamage}</p>
+    `;
+    $("#evolve-button").disabled = false;
+    $("#evolve-button").textContent = "Attempt Level Up";
+  } else {
+    $("#evolution-details").innerHTML = `
+      <h2>${monster.name} / MAX</h2>
+      <p>이 몬스터는 최종 진화 단계 및 레벨에 도달했습니다.</p>
+      ${statsMarkup(monster)}
+    `;
+    $("#evolve-button").disabled = true;
+    $("#evolve-button").textContent = "MAX LEVEL & TIER";
   }
-
-  const requirement = evolutionRequirements[monster.level];
-  const nextStats = getMonsterStats(monster.species, monster.level + 1);
-  $("#evolution-details").innerHTML = `
-    <h2>${monster.name} / LV${monster.level} → LV${monster.level + 1}</h2>
-    <div class="evolution-costs">
-      <div>SUCCESS<strong>${Math.round(requirement.chance * 100)}%</strong></div>
-      <div>EVO STONE<strong>${requirement.stones} required</strong></div>
-      <div>CRYSTAL<strong>${requirement.crystal} required</strong></div>
-    </div>
-    <p>성공 시 ATK ${monster.stats.attack} → ${nextStats.attack}, HP ${monster.stats.maxHp} → ${nextStats.maxHp}, SKILL ${monster.stats.skillDamage} → ${nextStats.skillDamage}</p>
-  `;
-  $("#evolve-button").disabled = false;
-  $("#evolve-button").textContent = "Attempt Evolution";
 }
 
 function selectEvolutionMonster(monsterId) {
@@ -1221,52 +1309,39 @@ function attemptEvolution() {
   const monster = getMonsterById(uiState.selectedEvolutionMonsterId);
   if (!monster) return;
 
-  const isTier1 = ["cyclopse", "bruterock", "balancer"].includes(monster.species);
-  if (monster.level >= 3 && !isTier1) {
+  const action = getUpgradeAction(monster);
+  if (action.type === "max") {
     return;
   }
 
-  let requirement;
-  let isTierEvo = false;
-  if (monster.level >= 3 && isTier1) {
-    requirement = { stones: 5, crystal: 30, chance: 0.35 };
-    isTierEvo = true;
-  } else {
-    requirement = evolutionRequirements[monster.level];
-  }
-
-  if (gameState.evoStones < requirement.stones || gameState.crystal < requirement.crystal) {
-    uiState.evolutionResult = `재료 부족: Evolution Stone ${requirement.stones}개와 Crystal ${requirement.crystal}개가 필요합니다.`;
+  if (gameState.evoStones < action.stones || gameState.crystal < action.crystal) {
+    uiState.evolutionResult = `재료 부족: Evolution Stone ${action.stones}개와 Crystal ${action.crystal}개가 필요합니다.`;
     renderEvolution();
     animateEvolutionResult(false);
     showToast("진화 재료가 부족합니다.", "error");
     return;
   }
 
-  gameState.evoStones -= requirement.stones;
-  gameState.crystal -= requirement.crystal;
-  const succeeded = Math.random() < requirement.chance;
+  gameState.evoStones -= action.stones;
+  gameState.crystal -= action.crystal;
+  const succeeded = Math.random() < action.chance;
 
   if (succeeded) {
-    if (isTierEvo) {
+    if (action.type === "evolve") {
       const oldName = monster.name;
-      let nextSpecies = "";
-      if (monster.species === "cyclopse") nextSpecies = "cyclopsis";
-      else if (monster.species === "bruterock") nextSpecies = "cutie";
-      else if (monster.species === "balancer") nextSpecies = "unnyangeoger";
-
-      const nextDef = monsterDefinitions[nextSpecies];
-      monster.species = nextSpecies;
+      const nextDef = monsterDefinitions[action.nextSpecies];
+      monster.species = action.nextSpecies;
       monster.level = 1;
-      monster.stats = getMonsterStats(nextSpecies, 1);
-      uiState.evolutionResult = `SUCCESS! ${oldName}이(가) ${nextDef.name}(T2 LV1)으로 초월 진화했습니다!`;
+      monster.stats = getMonsterStats(action.nextSpecies, 1);
+      monster.name = nextDef.name;
+      uiState.evolutionResult = `SUCCESS! ${oldName}이(가) ${nextDef.name}(T${getMonsterStage(monster.species)} LV1)으로 초월 진화했습니다!`;
     } else {
       monster.level += 1;
       monster.stats = getMonsterStats(monster.species, monster.level);
-      uiState.evolutionResult = `SUCCESS! ${monster.name}이 LV${monster.level}(으)로 진화했습니다.`;
+      uiState.evolutionResult = `SUCCESS! ${monster.name}이 LV${monster.level}(으)로 레벨업했습니다.`;
     }
   } else {
-    uiState.evolutionResult = `FAILED. ${monster.name}의 진화에 실패했습니다.`;
+    uiState.evolutionResult = `FAILED. ${monster.name}의 ${action.type === "evolve" ? "진화" : "레벨업"}에 실패했습니다.`;
   }
 
   saveGame();
@@ -2249,8 +2324,17 @@ function drawActor(context, actor) {
 }
 
 function getMonsterSpriteRenderSize(level) {
-  const levelScale = level === 3 ? 1.17 : level === 2 ? 1.08 : 1;
-  return 64 * levelScale;
+  let scale = 1.0;
+  if (level === 2) scale = 1.08;
+  else if (level === 3) scale = 1.17;
+  else if (level === 4) scale = 1.25;
+  else if (level === 5) scale = 1.33;
+  else if (level === 6) scale = 1.41;
+  else if (level === 7) scale = 1.48;
+  else if (level === 8) scale = 1.55;
+  else if (level === 9) scale = 1.62;
+  else if (level >= 10) scale = 1.70;
+  return 64 * scale;
 }
 
 function drawSpriteSheetActor(context, actor, image, renderSize) {
