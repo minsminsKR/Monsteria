@@ -24,8 +24,8 @@ const monsterDefinitions = {
     base: { attack: 8, attackSpeed: 1.55, maxHp: 72, defense: 2, skillDamage: 16 },
     growth: { attack: 4, attackSpeed: 0.13, maxHp: 22, defense: 2, skillDamage: 8 }
   },
-  bruterock: {
-    id: "bruterock",
+  lovelydoll: {
+    id: "lovelydoll",
     name: "러블리돌",
     role: "Heavy tear striker",
     description: "거대한 눈물 파도와 묵직한 한 방으로 전장을 휩쓰는 울보 인형.",
@@ -33,13 +33,13 @@ const monsterDefinitions = {
     skillCooldown: 4.6,
     projectileSpeed: 340,
     moveSpeed: 145,
-    spriteSheet: "assets/monsters/bruterock/bruterock-spritesheet-game.png",
+    spriteSheet: "assets/monsters/lovelydoll/lovelydoll-spritesheet-game.png",
     colors: { main: "#d77c56", light: "#ffd39b", dark: "#7a3e38", accent: "#efe0aa" },
     base: { attack: 20, attackSpeed: 0.72, maxHp: 125, defense: 8, skillDamage: 38 },
     growth: { attack: 10, attackSpeed: 0.06, maxHp: 43, defense: 5, skillDamage: 18 }
   },
-  balancer: {
-    id: "balancer",
+  unnyangi: {
+    id: "unnyangi",
     name: "운냥이",
     role: "All-round cat",
     description: "재빠른 냥펀치와 보랏빛 에너지볼을 사용하는 유쾌한 고양이 파트너.",
@@ -47,7 +47,7 @@ const monsterDefinitions = {
     skillCooldown: 3.1,
     projectileSpeed: 470,
     moveSpeed: 175,
-    spriteSheet: "assets/monsters/balancer/balancer-spritesheet-game.png",
+    spriteSheet: "assets/monsters/unnyangi/unnyangi-spritesheet-game.png",
     colors: { main: "#72bd72", light: "#d8f2a8", dark: "#34704a", accent: "#bf88d6" },
     base: { attack: 13, attackSpeed: 1.05, maxHp: 95, defense: 5, skillDamage: 25 },
     growth: { attack: 7, attackSpeed: 0.09, maxHp: 32, defense: 3, skillDamage: 12 }
@@ -181,7 +181,7 @@ const levelRequirements = {
 };
 
 function getMaxLevel(species) {
-  if (["cyclopse", "bruterock", "balancer"].includes(species)) return 3;
+  if (["cyclopse", "lovelydoll", "unnyangi"].includes(species)) return 3;
   if (["cyclopsis", "cutie", "unnyangsam"].includes(species)) return 5;
   return 10;
 }
@@ -189,15 +189,15 @@ function getMaxLevel(species) {
 function getNextEvolution(species) {
   if (species === "cyclopse") return "cyclopsis";
   if (species === "cyclopsis") return "hatefulclops";
-  if (species === "bruterock") return "cutie";
+  if (species === "lovelydoll") return "cutie";
   if (species === "cutie") return "candy";
-  if (species === "balancer") return "unnyangsam";
+  if (species === "unnyangi") return "unnyangsam";
   if (species === "unnyangsam") return "unrang";
   return null;
 }
 
 function getMonsterStage(species) {
-  if (["cyclopse", "bruterock", "balancer"].includes(species)) return 1;
+  if (["cyclopse", "lovelydoll", "unnyangi"].includes(species)) return 1;
   if (["cyclopsis", "cutie", "unnyangsam"].includes(species)) return 2;
   return 3;
 }
@@ -206,7 +206,7 @@ function getUpgradeAction(monster) {
   const nextSpec = getNextEvolution(monster.species);
   const maxLvl = getMaxLevel(monster.species);
   
-  if (monster.species === "cyclopse" || monster.species === "bruterock" || monster.species === "balancer") {
+  if (monster.species === "cyclopse" || monster.species === "lovelydoll" || monster.species === "unnyangi") {
     if (monster.level >= 3) {
       return { type: "evolve", nextSpecies: nextSpec, stones: 5, crystal: 30, chance: 0.35 };
     }
@@ -482,7 +482,13 @@ function normalizeMonster(savedMonster) {
   if (migratedSpecies === "unnyangeoger") {
     migratedSpecies = "unnyangsam";
   }
-  const species = monsterDefinitions[migratedSpecies] ? migratedSpecies : "balancer";
+  if (migratedSpecies === "balancer") {
+    migratedSpecies = "unnyangi";
+  }
+  if (migratedSpecies === "bruterock") {
+    migratedSpecies = "lovelydoll";
+  }
+  const species = monsterDefinitions[migratedSpecies] ? migratedSpecies : "unnyangi";
   const maxLvl = getMaxLevel(species);
   const level = Math.min(maxLvl, Math.max(1, Number(savedMonster.level) || 1));
   const savedStats = savedMonster.species === "swiftling" ? {} : (savedMonster.stats || {});
@@ -618,7 +624,7 @@ function statsMarkup(monster) {
 
 function renderStarterOptions() {
   const container = $("#starter-options");
-  const starterIds = ["cyclopse", "bruterock", "balancer"];
+  const starterIds = ["cyclopse", "lovelydoll", "unnyangi"];
   container.innerHTML = Object.values(monsterDefinitions)
     .filter((def) => starterIds.includes(def.id))
     .map((definition) => {
@@ -1151,8 +1157,8 @@ function renderShop() {
   // 2. 3 Monster Cards to buy
   const monstersToBuy = [
     { species: "cyclopse", price: 400 },
-    { species: "balancer", price: 500 },
-    { species: "bruterock", price: 600 }
+    { species: "unnyangi", price: 500 },
+    { species: "lovelydoll", price: 600 }
   ];
 
   monstersToBuy.forEach((item) => {
@@ -1182,7 +1188,7 @@ function buyMonster(species) {
   const definition = monsterDefinitions[species];
   if (!definition) return;
 
-  const price = species === "cyclopse" ? 400 : species === "bruterock" ? 600 : 500;
+  const price = species === "cyclopse" ? 400 : species === "lovelydoll" ? 600 : 500;
 
   if (gameState.gold < price) {
     showToast(`Gold가 부족합니다. ${price.toLocaleString()} Gold가 필요합니다.`, "error");
@@ -1554,9 +1560,9 @@ function startPvp() {
   pvpState.playerTeam.forEach(actor => totalLevel += actor.level);
   const avgLevel = Math.max(1, Math.round(totalLevel / pvpState.playerTeam.length));
   
-  // Initialize enemyTeam (balancer, cyclopse, bruterock)
+  // Initialize enemyTeam (unnyangi, cyclopse, lovelydoll)
   const enemyYPositions = [140, 240, 340];
-  const enemySpecies = ["balancer", "cyclopse", "bruterock"];
+  const enemySpecies = ["unnyangi", "cyclopse", "lovelydoll"];
   pvpState.enemyTeam = enemySpecies.map((species, index) => {
     const stats = getMonsterStats(species, avgLevel);
     const def = monsterDefinitions[species];
@@ -1793,8 +1799,8 @@ function updateAutomatedBattle(dt) {
             baseX = orbitX * 0.7;
             baseY = orbitY * 0.7;
           }
-        } else if (actor.species === "bruterock") {
-          // Bruterock (Tanker): Comfort Zone 180px - 220px
+        } else if (actor.species === "lovelydoll") {
+          // Lovelydoll (Tanker): Comfort Zone 180px - 220px
           if (minDist > 220) {
             baseX = dirX;
             baseY = dirY;
@@ -1803,7 +1809,7 @@ function updateAutomatedBattle(dt) {
             baseY = orbitY * 0.5;
           }
         } else {
-          // Balancer (unnyang) / Others: Comfort Zone 210px - 270px
+          // Unnyangi / Others: Comfort Zone 210px - 270px
           if (minDist > 270) {
             baseX = dirX;
             baseY = dirY;
@@ -2369,7 +2375,7 @@ function drawFallbackActor(context, actor, definition, renderSize) {
   const x = Math.round(actor.x);
   const y = Math.round(actor.y);
   const scale = renderSize / 96;
-  const sizeBonus = (actor.species === "bruterock" ? 4 : 0) * scale;
+  const sizeBonus = (actor.species === "lovelydoll" ? 4 : 0) * scale;
 
   context.fillStyle = definition.colors.dark;
   context.fillRect(

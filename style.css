@@ -502,19 +502,19 @@ button:disabled {
     13px 15px 0 -2px var(--sprite-accent);
 }
 
-.monster-sprite.bruterock {
+.monster-sprite.lovelydoll {
   --sprite-main: #d77c56;
   --sprite-dark: #7a3e38;
   --sprite-light: #ffd39b;
   --sprite-accent: #efe0aa;
 }
 
-.monster-sprite.bruterock:not(.has-sprite-sheet) {
+.monster-sprite.lovelydoll:not(.has-sprite-sheet) {
   width: 104px;
   transform: scaleX(1.12);
 }
 
-.monster-sprite.bruterock:not(.has-sprite-sheet)::before {
+.monster-sprite.lovelydoll:not(.has-sprite-sheet)::before {
   border-radius: 28% 28% 22% 22%;
   box-shadow:
     inset 8px 7px 0 var(--sprite-light),
@@ -525,7 +525,7 @@ button:disabled {
     21px -5px 0 -9px var(--sprite-accent);
 }
 
-.monster-sprite.balancer {
+.monster-sprite.unnyangi {
   --sprite-main: #72bd72;
   --sprite-dark: #34704a;
   --sprite-light: #d8f2a8;
