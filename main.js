@@ -826,7 +826,7 @@ function renderMining() {
           <div class="monster-sprite-wrapper" style="${facingStyle}">
             ${monsterSpriteMarkup(monster.species, monster.level, isWalkingClass)}
           </div>
-          <div class="unit-nameplate" style="margin-top: 4px; padding: 2px 4px; font-size: 8px;">
+          <div class="unit-nameplate" style="margin-top: 4px; padding: 2px 4px; font-size: 11px;">
             ${monster.name} LV${monster.level}
           </div>
         </div>
@@ -2640,12 +2640,38 @@ function bindEvents() {
       const clickY = event.clientY - rect.top;
 
       const clickedIncinerator = event.target.closest("#mine-incinerator");
-      let leftPercent, topPercent;
-      let targetIsIncinerator = false;
+      const incEl = $("#mine-incinerator");
+      let targetIsIncinerator = clickedIncinerator ? true : false;
 
-      if (clickedIncinerator) {
-        targetIsIncinerator = true;
-        const incRect = clickedIncinerator.getBoundingClientRect();
+      if (!targetIsIncinerator && incEl) {
+        const mx0 = clickX - 48;
+        const mx1 = clickX + 48;
+        const my0 = clickY - 72;
+        const my1 = clickY + 24;
+
+        const incRect = incEl.getBoundingClientRect();
+        const ix0 = incRect.left - rect.left;
+        const ix1 = incRect.right - rect.left;
+        const iy0 = incRect.top - rect.top;
+        const iy1 = incRect.bottom - rect.top;
+
+        const interX0 = Math.max(mx0, ix0);
+        const interX1 = Math.min(mx1, ix1);
+        const interY0 = Math.max(my0, iy0);
+        const interY1 = Math.min(my1, iy1);
+
+        if (interX1 > interX0 && interY1 > interY0) {
+          const interArea = (interX1 - interX0) * (interY1 - interY0);
+          const monsterArea = 96 * 96;
+          if (interArea >= monsterArea * 0.8) {
+            targetIsIncinerator = true;
+          }
+        }
+      }
+
+      let leftPercent, topPercent;
+      if (targetIsIncinerator && incEl) {
+        const incRect = incEl.getBoundingClientRect();
         const incCenterX = (incRect.left + incRect.width / 2) - rect.left;
         const incCenterY = (incRect.top + incRect.height / 2) - rect.top;
         leftPercent = ((incCenterX / rect.width) * 100).toFixed(2) + "%";

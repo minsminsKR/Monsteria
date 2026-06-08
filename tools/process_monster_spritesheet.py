@@ -221,6 +221,11 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="overwrite output or preview files if they already exist",
     )
+    parser.add_argument(
+        "--no-trim",
+        action="store_true",
+        help="do not crop and align cells individually; scale and center the entire cell uniformly",
+    )
     return parser
 
 
@@ -392,7 +397,23 @@ def normalize_cell(
     base_scale: float,
     padding: int,
     trim_alpha: int,
+    no_trim: bool = False,
 ) -> Image.Image:
+    if no_trim:
+        inner_size = CELL_SIZE - 2 * padding
+        scale = min(inner_size / keyed_cell.width, inner_size / keyed_cell.height)
+        resized_size = (
+            max(1, round(keyed_cell.width * scale)),
+            max(1, round(keyed_cell.height * scale)),
+        )
+        sprite = resize_premultiplied(keyed_cell, resized_size)
+        
+        output = Image.new("RGBA", (CELL_SIZE, CELL_SIZE), (0, 0, 0, 0))
+        x = (CELL_SIZE - sprite.width) // 2
+        y = (CELL_SIZE - sprite.height) // 2
+        output.alpha_composite(sprite, (x, y))
+        return output
+
     output = Image.new("RGBA", (CELL_SIZE, CELL_SIZE), (0, 0, 0, 0))
     bounds = alpha_bbox(keyed_cell, trim_alpha)
     if bounds is None:
@@ -531,6 +552,7 @@ def process_sheet(
     trim_alpha: int,
     capture_margin: float,
     min_component_area: int,
+    no_trim: bool = False,
 ) -> Image.Image:
     output = Image.new("RGBA", SHEET_SIZE, (0, 0, 0, 0))
     source_cell_width = image.width / source_cols
@@ -550,18 +572,30 @@ def process_sheet(
     for row in range(OUTPUT_ROWS):
         for col in range(OUTPUT_COLS):
             bounds = cell_bounds(image.size, source_cols, source_rows, col, row)
-            keyed_cell = extract_cell_subject(
-                keyed_sheet,
-                bounds,
-                capture_margin,
-                trim_alpha,
-                min_component_area,
-            )
+            if no_trim:
+                keyed_cell = keyed_sheet.crop(bounds)
+                margin_top = round(keyed_cell.height * 0.12)
+                margin_bottom = round(keyed_cell.height * 0.05)
+                if margin_top > 0:
+                    transparent_box = Image.new("RGBA", (keyed_cell.width, margin_top), (0, 0, 0, 0))
+                    keyed_cell.paste(transparent_box, (0, 0))
+                if margin_bottom > 0:
+                    transparent_box = Image.new("RGBA", (keyed_cell.width, margin_bottom), (0, 0, 0, 0))
+                    keyed_cell.paste(transparent_box, (0, keyed_cell.height - margin_bottom))
+            else:
+                keyed_cell = extract_cell_subject(
+                    keyed_sheet,
+                    bounds,
+                    capture_margin,
+                    trim_alpha,
+                    min_component_area,
+                )
             output_cell = normalize_cell(
                 keyed_cell,
                 base_scale,
                 padding,
                 trim_alpha,
+                no_trim,
             )
             output.alpha_composite(output_cell, (col * CELL_SIZE, row * CELL_SIZE))
 
@@ -648,6 +682,7 @@ def run(args: argparse.Namespace) -> None:
         args.trim_alpha,
         args.capture_margin,
         args.min_component_area,
+        args.no_trim,
     )
 
     paths = [args.output]
