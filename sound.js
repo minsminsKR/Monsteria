@@ -240,6 +240,7 @@ class SoundManager {
    * Play SFX/BGM by name (includes cooldown rate throttling to avoid clipping)
    */
   play(name) {
+    if (document.hidden) return;
     if (this.muted) return;
 
     if (name.startsWith("bgm_")) {

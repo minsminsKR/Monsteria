@@ -978,6 +978,7 @@ function runMonsterAttackLoop(monsterId) {
 }
 
 function shootMiningProjectile(spotElement, spot) {
+  if (document.hidden) return;
   if (uiState.currentScreen !== "mining") return;
   const projectileLayer = $("#projectile-layer");
   if (!projectileLayer || !spotElement || !spot) return;
@@ -1043,6 +1044,7 @@ function applyMiningDamage(damage) {
 }
 
 function spawnDamageNumber(damage, isCrit) {
+  if (document.hidden) return;
   const number = document.createElement("span");
   number.className = isCrit ? "damage-number critical" : "damage-number";
   number.textContent = isCrit ? `-${damage}!` : `-${damage}`;
@@ -2644,28 +2646,14 @@ function bindEvents() {
       let targetIsIncinerator = clickedIncinerator ? true : false;
 
       if (!targetIsIncinerator && incEl) {
-        const mx0 = clickX - 48;
-        const mx1 = clickX + 48;
-        const my0 = clickY - 72;
-        const my1 = clickY + 24;
-
         const incRect = incEl.getBoundingClientRect();
         const ix0 = incRect.left - rect.left;
         const ix1 = incRect.right - rect.left;
         const iy0 = incRect.top - rect.top;
         const iy1 = incRect.bottom - rect.top;
 
-        const interX0 = Math.max(mx0, ix0);
-        const interX1 = Math.min(mx1, ix1);
-        const interY0 = Math.max(my0, iy0);
-        const interY1 = Math.min(my1, iy1);
-
-        if (interX1 > interX0 && interY1 > interY0) {
-          const interArea = (interX1 - interX0) * (interY1 - interY0);
-          const monsterArea = 96 * 96;
-          if (interArea >= monsterArea * 0.8) {
-            targetIsIncinerator = true;
-          }
+        if (clickX >= ix0 && clickX <= ix1 && clickY >= iy0 && clickY <= iy1) {
+          targetIsIncinerator = true;
         }
       }
 
