@@ -392,6 +392,13 @@ function startMiningMovementLoop() {
           }
         }
         saveMiningPositions();
+        
+        if (spot.isTargetingIncinerator) {
+          spot.isTargetingIncinerator = false;
+          setTimeout(() => {
+            incinerateMonster(idx);
+          }, 50);
+        }
       } else {
         const nxPx = curXpx + (dx / dist) * moveDist;
         const nyPx = curYpx + (dy / dist) * moveDist;
@@ -883,16 +890,11 @@ function startMining() {
     return;
   }
 
-  if (miningState.active) {
-    return;
-  }
-
   miningState.active = true;
   updateMiningUi("자동 채굴이 시작되었습니다.");
   
-  clearMiningTimers();
-  gameState.monsters.forEach((monster, index) => {
-    scheduleMonsterAttack(monster, index);
+  gameState.monsters.forEach((monster) => {
+    scheduleMonsterAttack(monster);
   });
 }
 
@@ -902,21 +904,34 @@ function stopMining(message) {
   updateMiningUi(message);
 }
 
-function scheduleMonsterAttack(monster, index) {
+function scheduleMonsterAttack(monster) {
   if (!miningState.active || miningState.respawning) return;
-  const attackInterval = Math.round(1000 / monster.stats.attackSpeed);
-  const initialDelay = index * 200; // stagger starting attacks slightly
+  if (miningState.timers[monster.id]) return;
 
-  miningState.timers[index] = setTimeout(() => {
-    runMonsterAttackLoop(monster, index);
+  const initialDelay = Math.random() * 200;
+
+  miningState.timers[monster.id] = setTimeout(() => {
+    runMonsterAttackLoop(monster.id);
   }, initialDelay);
 }
 
-function runMonsterAttackLoop(monster, index) {
-  if (!miningState.active || miningState.respawning) return;
+function runMonsterAttackLoop(monsterId) {
+  if (!miningState.active || miningState.respawning) {
+    delete miningState.timers[monsterId];
+    return;
+  }
 
-  const currentMonster = gameState.monsters[index];
-  if (!currentMonster) return;
+  const currentMonster = getMonsterById(monsterId);
+  if (!currentMonster) {
+    delete miningState.timers[monsterId];
+    return;
+  }
+
+  const index = gameState.monsters.findIndex(m => m.id === monsterId);
+  if (index === -1) {
+    delete miningState.timers[monsterId];
+    return;
+  }
 
   const spot = (miningState.monsterPositions && miningState.monsterPositions[index]) || miningSpots[index % miningSpots.length];
   const spotElement = $(`#mining-spot-${index}`);
@@ -949,13 +964,16 @@ function runMonsterAttackLoop(monster, index) {
   const currentGeneration = miningState.generation;
   setTimeout(() => {
     if (miningState.active && !miningState.respawning && currentGeneration === miningState.generation) {
-      applyMiningDamage(currentMonster.stats.attack);
+      const verifiedMonster = getMonsterById(monsterId);
+      if (verifiedMonster) {
+        applyMiningDamage(verifiedMonster.stats.attack);
+      }
     }
   }, 220);
 
   const attackInterval = Math.round(1000 / currentMonster.stats.attackSpeed);
-  miningState.timers[index] = setTimeout(() => {
-    runMonsterAttackLoop(monster, index);
+  miningState.timers[monsterId] = setTimeout(() => {
+    runMonsterAttackLoop(monsterId);
   }, attackInterval);
 }
 
@@ -1074,11 +1092,85 @@ function breakMiningRock() {
     }
     updateMiningUi(`${rock.name}이 다시 생성되었습니다.`);
     if (miningState.active) {
-      gameState.monsters.forEach((monster, index) => {
-        scheduleMonsterAttack(monster, index);
+      gameState.monsters.forEach((monster) => {
+        scheduleMonsterAttack(monster);
       });
     }
   }, 850);
+}
+
+function getMonsterRefundValue(species) {
+  if (species.startsWith("0_")) return Math.round(400 * 0.7); // Cyclops family
+  if (species.startsWith("2_")) return Math.round(500 * 0.7); // Unnyangi family
+  if (species.startsWith("1_")) return Math.round(600 * 0.7); // Lovely Doll family
+  return 0;
+}
+
+function incinerateMonster(index) {
+  const monster = gameState.monsters[index];
+  if (!monster) return;
+
+  if (gameState.monsters.length <= 1) {
+    showToast("최소 한 마리의 몬스터는 보유해야 합니다.", "error");
+    const spot = miningState.monsterPositions[index];
+    if (spot) {
+      spot.left = "78%";
+      spot.top = "78%";
+      spot.isMoving = false;
+      spot.isTargetingIncinerator = false;
+      renderMining();
+    }
+    return;
+  }
+
+  const refund = getMonsterRefundValue(monster.species);
+  const accepted = window.confirm(`${monster.name} (LV${monster.level})을 소각로에 보내 골드 70%인 ${refund} Gold를 환급받으시겠습니까?`);
+  
+  if (accepted) {
+    if (miningState.timers[monster.id]) {
+      clearTimeout(miningState.timers[monster.id]);
+      delete miningState.timers[monster.id];
+    }
+
+    soundManager.play("break");
+    gameState.gold += refund;
+    
+    if (gameState.miningMonsterId === monster.id) {
+      gameState.miningMonsterId = gameState.monsters.find(m => m.id !== monster.id)?.id || null;
+    }
+    if (gameState.pvpMonsterId === monster.id) {
+      gameState.pvpMonsterId = gameState.monsters.find(m => m.id !== monster.id)?.id || null;
+    }
+    if (uiState.pvpTeamIds) {
+      uiState.pvpTeamIds = uiState.pvpTeamIds.filter(id => id !== monster.id);
+    }
+    if (uiState.selectedEvolutionMonsterId === monster.id) {
+      uiState.selectedEvolutionMonsterId = gameState.monsters.find(m => m.id !== monster.id)?.id || null;
+    }
+
+    gameState.monsters.splice(index, 1);
+    if (miningState.monsterPositions) {
+      miningState.monsterPositions.splice(index, 1);
+    }
+
+    miningState.selectedMonsterIndex = null;
+
+    saveGame();
+    saveMiningPositions();
+    updateResourceDisplays();
+    renderMining();
+    
+    showToast(`${monster.name}이 소각되었습니다. +${refund} Gold`, "success");
+  } else {
+    const spot = miningState.monsterPositions[index];
+    if (spot) {
+      spot.left = "78%";
+      spot.top = "78%";
+      spot.isMoving = false;
+      spot.isTargetingIncinerator = false;
+      renderMining();
+    }
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -1200,6 +1292,9 @@ function buyMonster(species) {
   soundManager.play("buy");
   const newMonster = createMonster(species);
   gameState.monsters.push(newMonster);
+  if (miningState.active) {
+    scheduleMonsterAttack(newMonster);
+  }
   saveGame();
   updateResourceDisplays();
   renderShop();
@@ -2533,8 +2628,21 @@ function bindEvents() {
       const clickX = event.clientX - rect.left;
       const clickY = event.clientY - rect.top;
 
-      const leftPercent = ((clickX / rect.width) * 100).toFixed(2) + "%";
-      const topPercent = ((clickY / rect.height) * 100).toFixed(2) + "%";
+      const clickedIncinerator = event.target.closest("#mine-incinerator");
+      let leftPercent, topPercent;
+      let targetIsIncinerator = false;
+
+      if (clickedIncinerator) {
+        targetIsIncinerator = true;
+        const incRect = clickedIncinerator.getBoundingClientRect();
+        const incCenterX = (incRect.left + incRect.width / 2) - rect.left;
+        const incCenterY = (incRect.top + incRect.height / 2) - rect.top;
+        leftPercent = ((incCenterX / rect.width) * 100).toFixed(2) + "%";
+        topPercent = ((incCenterY / rect.height) * 100).toFixed(2) + "%";
+      } else {
+        leftPercent = ((clickX / rect.width) * 100).toFixed(2) + "%";
+        topPercent = ((clickY / rect.height) * 100).toFixed(2) + "%";
+      }
 
       const idx = miningState.selectedMonsterIndex;
       if (miningState.monsterPositions && miningState.monsterPositions[idx]) {
@@ -2542,6 +2650,7 @@ function bindEvents() {
         spot.targetLeft = leftPercent;
         spot.targetTop = topPercent;
         spot.isMoving = true;
+        spot.isTargetingIncinerator = targetIsIncinerator;
 
         startMiningMovementLoop();
       }
