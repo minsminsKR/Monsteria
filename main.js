@@ -1123,18 +1123,41 @@ function incinerateMonster(index) {
     return;
   }
 
-  const refund = getMonsterRefundValue(monster.species);
-  const accepted = window.confirm(`${monster.name} (LV${monster.level})을 소각로에 보내 골드 70%인 ${refund} Gold를 환급받으시겠습니까?`);
-  
-  if (accepted) {
-    if (miningState.timers[monster.id]) {
-      clearTimeout(miningState.timers[monster.id]);
-      delete miningState.timers[monster.id];
-    }
+  if (monster.isIncinerating) return;
+  monster.isIncinerating = true;
 
-    soundManager.play("break");
-    gameState.gold += refund;
-    
+  const refund = getMonsterRefundValue(monster.species);
+
+  // Clear attack timers immediately
+  if (miningState.timers[monster.id]) {
+    clearTimeout(miningState.timers[monster.id]);
+    delete miningState.timers[monster.id];
+  }
+
+  // Play incinerate sound
+  soundManager.play("break");
+
+  // Refund gold immediately
+  gameState.gold += refund;
+  updateResourceDisplays();
+
+  // Apply the CSS animation classes to the DOM element
+  const spotElement = $(`#mining-spot-${index}`);
+  if (spotElement) {
+    spotElement.classList.add("is-fainted");
+    const sprite = spotElement.querySelector(".monster-sprite");
+    if (sprite) {
+      sprite.style.animation = "monster-sprite-faint 1s steps(6) forwards, monster-fade-out 1s linear forwards";
+    }
+  }
+
+  showToast(`${monster.name}이 소각되었습니다. +${refund} Gold`, "success");
+
+  // Defer removal of data until animation finishes (1s)
+  setTimeout(() => {
+    const currIdx = gameState.monsters.findIndex(m => m.id === monster.id);
+    if (currIdx === -1) return;
+
     if (gameState.miningMonsterId === monster.id) {
       gameState.miningMonsterId = gameState.monsters.find(m => m.id !== monster.id)?.id || null;
     }
@@ -1148,29 +1171,17 @@ function incinerateMonster(index) {
       uiState.selectedEvolutionMonsterId = gameState.monsters.find(m => m.id !== monster.id)?.id || null;
     }
 
-    gameState.monsters.splice(index, 1);
+    gameState.monsters.splice(currIdx, 1);
     if (miningState.monsterPositions) {
-      miningState.monsterPositions.splice(index, 1);
+      miningState.monsterPositions.splice(currIdx, 1);
     }
 
     miningState.selectedMonsterIndex = null;
 
     saveGame();
     saveMiningPositions();
-    updateResourceDisplays();
     renderMining();
-    
-    showToast(`${monster.name}이 소각되었습니다. +${refund} Gold`, "success");
-  } else {
-    const spot = miningState.monsterPositions[index];
-    if (spot) {
-      spot.left = "78%";
-      spot.top = "78%";
-      spot.isMoving = false;
-      spot.isTargetingIncinerator = false;
-      renderMining();
-    }
-  }
+  }, 1000);
 }
 
 // ---------------------------------------------------------------------------

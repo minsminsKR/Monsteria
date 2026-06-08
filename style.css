@@ -910,6 +910,23 @@ button:disabled {
   to { background-position: -576px -96px; }
 }
 
+.mining-monster-spot.is-fainted {
+  pointer-events: none;
+}
+.mining-monster-spot.is-fainted .monster-sprite {
+  animation: monster-sprite-faint 1s steps(6) forwards, monster-fade-out 1s linear forwards;
+}
+
+@keyframes monster-sprite-faint {
+  from { background-position: 0 -480px; }
+  to { background-position: -576px -480px; }
+}
+
+@keyframes monster-fade-out {
+  0% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(0.6) translateY(24px); filter: grayscale(1) brightness(0.4); }
+}
+
 
 .mining-monster-spot.selected .monster-sprite-wrapper {
   filter: drop-shadow(0 0 4px #66d8e5) drop-shadow(0 0 12px rgba(102, 216, 229, 0.6));
