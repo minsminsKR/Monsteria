@@ -502,19 +502,19 @@ button:disabled {
     13px 15px 0 -2px var(--sprite-accent);
 }
 
-.monster-sprite.lovelydoll {
+.monster-sprite.\31 _1_lovelydoll {
   --sprite-main: #d77c56;
   --sprite-dark: #7a3e38;
   --sprite-light: #ffd39b;
   --sprite-accent: #efe0aa;
 }
 
-.monster-sprite.lovelydoll:not(.has-sprite-sheet) {
+.monster-sprite.\31 _1_lovelydoll:not(.has-sprite-sheet) {
   width: 104px;
   transform: scaleX(1.12);
 }
 
-.monster-sprite.lovelydoll:not(.has-sprite-sheet)::before {
+.monster-sprite.\31 _1_lovelydoll:not(.has-sprite-sheet)::before {
   border-radius: 28% 28% 22% 22%;
   box-shadow:
     inset 8px 7px 0 var(--sprite-light),
@@ -525,72 +525,72 @@ button:disabled {
     21px -5px 0 -9px var(--sprite-accent);
 }
 
-.monster-sprite.unnyangi {
+.monster-sprite.\32 _1_unnyangi {
   --sprite-main: #72bd72;
   --sprite-dark: #34704a;
   --sprite-light: #d8f2a8;
   --sprite-accent: #bf88d6;
 }
 
-.monster-sprite.cyclopsis {
+.monster-sprite.\30 _2_cyclopsis {
   --sprite-main: #c98218;
   --sprite-dark: #633010;
   --sprite-light: #ffef9f;
   --sprite-accent: #d57eeb;
 }
 
-.monster-sprite.cutie {
+.monster-sprite.\31 _2_cutie {
   --sprite-main: #c56038;
   --sprite-dark: #5d2c27;
   --sprite-light: #ffca8f;
   --sprite-accent: #faebbe;
 }
 
-.monster-sprite.unnyangsam {
+.monster-sprite.\32 _2_unnyangsam {
   --sprite-main: #58ab58;
   --sprite-dark: #205433;
   --sprite-light: #c2ed82;
   --sprite-accent: #ab66c4;
 }
 
-.monster-sprite.hatefulclops {
+.monster-sprite.\30 _3_hatefulclops {
   --sprite-main: #b33a27;
   --sprite-dark: #4d120a;
   --sprite-light: #ff9c8a;
   --sprite-accent: #7deef0;
 }
 
-.monster-sprite.candy {
+.monster-sprite.\31 _3_candy {
   --sprite-main: #e06b9b;
   --sprite-dark: #802848;
   --sprite-light: #ffd9e8;
   --sprite-accent: #fff2be;
 }
 
-.monster-sprite.unrang {
+.monster-sprite.\32 _3_unrang {
   --sprite-main: #3f8fb5;
   --sprite-dark: #12435c;
   --sprite-light: #b3e5fc;
   --sprite-accent: #ffeb3b;
 }
 
-.monster-sprite.cyclopsis.has-sprite-sheet {
-  background-image: url('assets/monsters/cyclopsis/cyclopsis-spritesheet-game.png');
+.monster-sprite.\30 _2_cyclopsis.has-sprite-sheet {
+  background-image: url('assets/monsters/0_2_cyclopsis/0_2_cyclopsis-spritesheet-game.png');
 }
-.monster-sprite.cutie.has-sprite-sheet {
-  background-image: url('assets/monsters/cutie/cutie-spritesheet-game.png');
+.monster-sprite.\31 _2_cutie.has-sprite-sheet {
+  background-image: url('assets/monsters/1_2_cutie/1_2_cutie-spritesheet-game.png');
 }
-.monster-sprite.unnyangsam.has-sprite-sheet {
-  background-image: url('assets/monsters/unnyangsam/unnyangsam-spritesheet-game.png');
+.monster-sprite.\32 _2_unnyangsam.has-sprite-sheet {
+  background-image: url('assets/monsters/2_2_unnyangsam/2_2_unnyangsam-spritesheet-game.png');
 }
-.monster-sprite.hatefulclops.has-sprite-sheet {
-  background-image: url('assets/monsters/hatefulclops/hatefulclops-spritesheet-game.png');
+.monster-sprite.\30 _3_hatefulclops.has-sprite-sheet {
+  background-image: url('assets/monsters/0_3_hatefulclops/0_3_hatefulclops-spritesheet-game.png');
 }
-.monster-sprite.candy.has-sprite-sheet {
-  background-image: url('assets/monsters/candy/candy-spritesheet-game.png');
+.monster-sprite.\31 _3_candy.has-sprite-sheet {
+  background-image: url('assets/monsters/1_3_candy/1_3_candy-spritesheet-game.png');
 }
-.monster-sprite.unrang.has-sprite-sheet {
-  background-image: url('assets/monsters/unrang/unrang-spritesheet-game.png');
+.monster-sprite.\32 _3_unrang.has-sprite-sheet {
+  background-image: url('assets/monsters/2_3_unrang/2_3_unrang-spritesheet-game.png');
 }
 
 .monster-sprite.has-sprite-sheet {

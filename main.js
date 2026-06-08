@@ -10,8 +10,8 @@ const SAVE_KEY = "monsteria-save-v1";
 const EVO_STONE_PRICE = 120;
 
 const monsterDefinitions = {
-  cyclopse: {
-    id: "cyclopse",
+  "0_1_cyclopse": {
+    id: "0_1_cyclopse",
     name: "사이클롭스",
     role: "Rapid eye blaster",
     description: "빠른 황금빛 탄환과 강력한 외눈 광선을 사용하는 복슬복슬한 파트너.",
@@ -19,13 +19,13 @@ const monsterDefinitions = {
     skillCooldown: 1.8,
     projectileSpeed: 620,
     moveSpeed: 205,
-    spriteSheet: "assets/monsters/cyclopse/cyclopse-spritesheet-game.png",
+    spriteSheet: "assets/monsters/0_1_cyclopse/0_1_cyclopse-spritesheet-game.png",
     colors: { main: "#e5a52f", light: "#fff0a3", dark: "#7b431b", accent: "#c667e3" },
     base: { attack: 8, attackSpeed: 1.55, maxHp: 72, defense: 2, skillDamage: 16 },
     growth: { attack: 4, attackSpeed: 0.13, maxHp: 22, defense: 2, skillDamage: 8 }
   },
-  lovelydoll: {
-    id: "lovelydoll",
+  "1_1_lovelydoll": {
+    id: "1_1_lovelydoll",
     name: "러블리돌",
     role: "Heavy tear striker",
     description: "거대한 눈물 파도와 묵직한 한 방으로 전장을 휩쓰는 울보 인형.",
@@ -33,13 +33,13 @@ const monsterDefinitions = {
     skillCooldown: 4.6,
     projectileSpeed: 340,
     moveSpeed: 145,
-    spriteSheet: "assets/monsters/lovelydoll/lovelydoll-spritesheet-game.png",
+    spriteSheet: "assets/monsters/1_1_lovelydoll/1_1_lovelydoll-spritesheet-game.png",
     colors: { main: "#d77c56", light: "#ffd39b", dark: "#7a3e38", accent: "#efe0aa" },
     base: { attack: 20, attackSpeed: 0.72, maxHp: 125, defense: 8, skillDamage: 38 },
     growth: { attack: 10, attackSpeed: 0.06, maxHp: 43, defense: 5, skillDamage: 18 }
   },
-  unnyangi: {
-    id: "unnyangi",
+  "2_1_unnyangi": {
+    id: "2_1_unnyangi",
     name: "운냥이",
     role: "All-round cat",
     description: "재빠른 냥펀치와 보랏빛 에너지볼을 사용하는 유쾌한 고양이 파트너.",
@@ -47,13 +47,13 @@ const monsterDefinitions = {
     skillCooldown: 3.1,
     projectileSpeed: 470,
     moveSpeed: 175,
-    spriteSheet: "assets/monsters/unnyangi/unnyangi-spritesheet-game.png",
+    spriteSheet: "assets/monsters/2_1_unnyangi/2_1_unnyangi-spritesheet-game.png",
     colors: { main: "#72bd72", light: "#d8f2a8", dark: "#34704a", accent: "#bf88d6" },
     base: { attack: 13, attackSpeed: 1.05, maxHp: 95, defense: 5, skillDamage: 25 },
     growth: { attack: 7, attackSpeed: 0.09, maxHp: 32, defense: 3, skillDamage: 12 }
   },
-  cyclopsis: {
-    id: "cyclopsis",
+  "0_2_cyclopsis": {
+    id: "0_2_cyclopsis",
     name: "사이클롭시스",
     role: "Rapid eye blaster evolution",
     description: "사이클롭스가 한 단계 성장하여 더 길어진 팔다리와 머리 위에 한 개의 귀여운 뿔이 자라난 사이클롭시스.",
@@ -61,13 +61,13 @@ const monsterDefinitions = {
     skillCooldown: 1.6,
     projectileSpeed: 680,
     moveSpeed: 215,
-    spriteSheet: "assets/monsters/cyclopsis/cyclopsis-spritesheet-game.png",
+    spriteSheet: "assets/monsters/0_2_cyclopsis/0_2_cyclopsis-spritesheet-game.png",
     colors: { main: "#c98218", light: "#ffef9f", dark: "#633010", accent: "#d57eeb" },
     base: { attack: 22, attackSpeed: 1.85, maxHp: 150, defense: 8, skillDamage: 48 },
     growth: { attack: 8, attackSpeed: 0.18, maxHp: 40, defense: 4, skillDamage: 18 }
   },
-  cutie: {
-    id: "cutie",
+  "1_2_cutie": {
+    id: "1_2_cutie",
     name: "큐티",
     role: "Cute doll evolution",
     description: "러블리돌의 성숙해진 형태로 귀여움을 잃지 않은 채 비율이 성장한 인형 큐티.",
@@ -75,13 +75,13 @@ const monsterDefinitions = {
     skillCooldown: 4.2,
     projectileSpeed: 380,
     moveSpeed: 155,
-    spriteSheet: "assets/monsters/cutie/cutie-spritesheet-game.png",
+    spriteSheet: "assets/monsters/1_2_cutie/1_2_cutie-spritesheet-game.png",
     colors: { main: "#c56038", light: "#ffca8f", dark: "#5d2c27", accent: "#faebbe" },
     base: { attack: 48, attackSpeed: 0.88, maxHp: 270, defense: 22, skillDamage: 96 },
     growth: { attack: 18, attackSpeed: 0.08, maxHp: 78, defense: 10, skillDamage: 35 }
   },
-  unnyangsam: {
-    id: "unnyangsam",
+  "2_2_unnyangsam": {
+    id: "2_2_unnyangsam",
     name: "운냥삼",
     role: "Speed cat fighter",
     description: "운냥이가 한층 더 민첩하고 강인하게 진화하여 삼색 냥발톱과 빠른 권법을 사용하는 운냥삼.",
@@ -89,13 +89,13 @@ const monsterDefinitions = {
     skillCooldown: 2.8,
     projectileSpeed: 520,
     moveSpeed: 185,
-    spriteSheet: "assets/monsters/unnyangsam/unnyangsam-spritesheet-game.png",
+    spriteSheet: "assets/monsters/2_2_unnyangsam/2_2_unnyangsam-spritesheet-game.png",
     colors: { main: "#58ab58", light: "#c2ed82", dark: "#205433", accent: "#ab66c4" },
     base: { attack: 32, attackSpeed: 1.25, maxHp: 200, defense: 14, skillDamage: 68 },
     growth: { attack: 12, attackSpeed: 0.12, maxHp: 58, defense: 6, skillDamage: 24 }
   },
-  hatefulclops: {
-    id: "hatefulclops",
+  "0_3_hatefulclops": {
+    id: "0_3_hatefulclops",
     name: "혐우클롭스",
     role: "Demonic eye tyrant",
     description: "사이클롭시스가 최종 한계 돌파하여 탄생한 혐우클롭스. 붉은 마기를 휘감고 엄청난 빔 세례를 퍼붓습니다.",
@@ -103,13 +103,13 @@ const monsterDefinitions = {
     skillCooldown: 1.4,
     projectileSpeed: 750,
     moveSpeed: 225,
-    spriteSheet: "assets/monsters/hatefulclops/hatefulclops-spritesheet-game.png",
+    spriteSheet: "assets/monsters/0_3_hatefulclops/0_3_hatefulclops-spritesheet-game.png",
     colors: { main: "#b33a27", light: "#ff9c8a", dark: "#4d120a", accent: "#7deef0" },
     base: { attack: 50, attackSpeed: 2.25, maxHp: 320, defense: 20, skillDamage: 110 },
     growth: { attack: 18, attackSpeed: 0.22, maxHp: 75, defense: 8, skillDamage: 38 }
   },
-  candy: {
-    id: "candy",
+  "1_3_candy": {
+    id: "1_3_candy",
     name: "캔디",
     role: "Sweet hammer candy",
     description: "큐티가 달콤하고 파괴적인 요정으로 승화된 캔디. 거대한 사탕 파도와 헤비 해머로 전장을 파괴합니다.",
@@ -117,13 +117,13 @@ const monsterDefinitions = {
     skillCooldown: 3.8,
     projectileSpeed: 420,
     moveSpeed: 165,
-    spriteSheet: "assets/monsters/candy/candy-spritesheet-game.png",
+    spriteSheet: "assets/monsters/1_3_candy/1_3_candy-spritesheet-game.png",
     colors: { main: "#e06b9b", light: "#ffd9e8", dark: "#802848", accent: "#fff2be" },
     base: { attack: 95, attackSpeed: 1.05, maxHp: 520, defense: 45, skillDamage: 210 },
     growth: { attack: 35, attackSpeed: 0.10, maxHp: 130, defense: 18, skillDamage: 75 }
   },
-  unrang: {
-    id: "unrang",
+  "2_3_unrang": {
+    id: "2_3_unrang",
     name: "운랑이",
     role: "Lightning storm beast",
     description: "운냥삼이 마침내 신수의 반열에 들어선 운랑이. 푸른 뇌전을 방출하고 폭풍처럼 적을 몰아칩니다.",
@@ -131,7 +131,7 @@ const monsterDefinitions = {
     skillCooldown: 2.4,
     projectileSpeed: 580,
     moveSpeed: 195,
-    spriteSheet: "assets/monsters/unrang/unrang-spritesheet-game.png",
+    spriteSheet: "assets/monsters/2_3_unrang/2_3_unrang-spritesheet-game.png",
     colors: { main: "#3f8fb5", light: "#b3e5fc", dark: "#12435c", accent: "#ffeb3b" },
     base: { attack: 72, attackSpeed: 1.55, maxHp: 410, defense: 30, skillDamage: 155 },
     growth: { attack: 24, attackSpeed: 0.15, maxHp: 105, defense: 12, skillDamage: 55 }
@@ -181,24 +181,24 @@ const levelRequirements = {
 };
 
 function getMaxLevel(species) {
-  if (["cyclopse", "lovelydoll", "unnyangi"].includes(species)) return 3;
-  if (["cyclopsis", "cutie", "unnyangsam"].includes(species)) return 5;
+  if (["0_1_cyclopse", "1_1_lovelydoll", "2_1_unnyangi"].includes(species)) return 3;
+  if (["0_2_cyclopsis", "1_2_cutie", "2_2_unnyangsam"].includes(species)) return 5;
   return 10;
 }
 
 function getNextEvolution(species) {
-  if (species === "cyclopse") return "cyclopsis";
-  if (species === "cyclopsis") return "hatefulclops";
-  if (species === "lovelydoll") return "cutie";
-  if (species === "cutie") return "candy";
-  if (species === "unnyangi") return "unnyangsam";
-  if (species === "unnyangsam") return "unrang";
+  if (species === "0_1_cyclopse") return "0_2_cyclopsis";
+  if (species === "0_2_cyclopsis") return "0_3_hatefulclops";
+  if (species === "1_1_lovelydoll") return "1_2_cutie";
+  if (species === "1_2_cutie") return "1_3_candy";
+  if (species === "2_1_unnyangi") return "2_2_unnyangsam";
+  if (species === "2_2_unnyangsam") return "2_3_unrang";
   return null;
 }
 
 function getMonsterStage(species) {
-  if (["cyclopse", "lovelydoll", "unnyangi"].includes(species)) return 1;
-  if (["cyclopsis", "cutie", "unnyangsam"].includes(species)) return 2;
+  if (["0_1_cyclopse", "1_1_lovelydoll", "2_1_unnyangi"].includes(species)) return 1;
+  if (["0_2_cyclopsis", "1_2_cutie", "2_2_unnyangsam"].includes(species)) return 2;
   return 3;
 }
 
@@ -206,11 +206,11 @@ function getUpgradeAction(monster) {
   const nextSpec = getNextEvolution(monster.species);
   const maxLvl = getMaxLevel(monster.species);
   
-  if (monster.species === "cyclopse" || monster.species === "lovelydoll" || monster.species === "unnyangi") {
+  if (monster.species === "0_1_cyclopse" || monster.species === "1_1_lovelydoll" || monster.species === "2_1_unnyangi") {
     if (monster.level >= 3) {
       return { type: "evolve", nextSpecies: nextSpec, stones: 5, crystal: 30, chance: 0.35 };
     }
-  } else if (monster.species === "cyclopsis" || monster.species === "cutie" || monster.species === "unnyangsam") {
+  } else if (monster.species === "0_2_cyclopsis" || monster.species === "1_2_cutie" || monster.species === "2_2_unnyangsam") {
     if (monster.level >= 5) {
       return { type: "evolve", nextSpecies: nextSpec, stones: 10, crystal: 80, chance: 0.25 };
     }
@@ -478,17 +478,18 @@ function createMonster(species) {
 }
 
 function normalizeMonster(savedMonster) {
-  let migratedSpecies = savedMonster.species === "swiftling" ? "cyclopse" : savedMonster.species;
-  if (migratedSpecies === "unnyangeoger") {
-    migratedSpecies = "unnyangsam";
-  }
-  if (migratedSpecies === "balancer") {
-    migratedSpecies = "unnyangi";
-  }
-  if (migratedSpecies === "bruterock") {
-    migratedSpecies = "lovelydoll";
-  }
-  const species = monsterDefinitions[migratedSpecies] ? migratedSpecies : "unnyangi";
+  let spec = savedMonster.species || "";
+  if (spec === "swiftling" || spec === "cyclopse") spec = "0_1_cyclopse";
+  else if (spec === "cyclopsis") spec = "0_2_cyclopsis";
+  else if (spec === "hatefulclops") spec = "0_3_hatefulclops";
+  else if (spec === "bruterock" || spec === "lovelydoll") spec = "1_1_lovelydoll";
+  else if (spec === "cutie") spec = "1_2_cutie";
+  else if (spec === "candy") spec = "1_3_candy";
+  else if (spec === "balancer" || spec === "unnyangi") spec = "2_1_unnyangi";
+  else if (spec === "unnyangeoger" || spec === "unnyangsam") spec = "2_2_unnyangsam";
+  else if (spec === "unrang") spec = "2_3_unrang";
+  
+  const species = monsterDefinitions[spec] ? spec : "2_1_unnyangi";
   const maxLvl = getMaxLevel(species);
   const level = Math.min(maxLvl, Math.max(1, Number(savedMonster.level) || 1));
   const savedStats = savedMonster.species === "swiftling" ? {} : (savedMonster.stats || {});
@@ -624,7 +625,7 @@ function statsMarkup(monster) {
 
 function renderStarterOptions() {
   const container = $("#starter-options");
-  const starterIds = ["cyclopse", "lovelydoll", "unnyangi"];
+  const starterIds = ["0_1_cyclopse", "1_1_lovelydoll", "2_1_unnyangi"];
   container.innerHTML = Object.values(monsterDefinitions)
     .filter((def) => starterIds.includes(def.id))
     .map((definition) => {
@@ -1156,9 +1157,9 @@ function renderShop() {
 
   // 2. 3 Monster Cards to buy
   const monstersToBuy = [
-    { species: "cyclopse", price: 400 },
-    { species: "unnyangi", price: 500 },
-    { species: "lovelydoll", price: 600 }
+    { species: "0_1_cyclopse", price: 400 },
+    { species: "2_1_unnyangi", price: 500 },
+    { species: "1_1_lovelydoll", price: 600 }
   ];
 
   monstersToBuy.forEach((item) => {
@@ -1188,7 +1189,7 @@ function buyMonster(species) {
   const definition = monsterDefinitions[species];
   if (!definition) return;
 
-  const price = species === "cyclopse" ? 400 : species === "lovelydoll" ? 600 : 500;
+  const price = species === "0_1_cyclopse" ? 400 : species === "1_1_lovelydoll" ? 600 : 500;
 
   if (gameState.gold < price) {
     showToast(`Gold가 부족합니다. ${price.toLocaleString()} Gold가 필요합니다.`, "error");
@@ -1560,9 +1561,9 @@ function startPvp() {
   pvpState.playerTeam.forEach(actor => totalLevel += actor.level);
   const avgLevel = Math.max(1, Math.round(totalLevel / pvpState.playerTeam.length));
   
-  // Initialize enemyTeam (unnyangi, cyclopse, lovelydoll)
+  // Initialize enemyTeam (2_1_unnyangi, 0_1_cyclopse, 1_1_lovelydoll)
   const enemyYPositions = [140, 240, 340];
-  const enemySpecies = ["unnyangi", "cyclopse", "lovelydoll"];
+  const enemySpecies = ["2_1_unnyangi", "0_1_cyclopse", "1_1_lovelydoll"];
   pvpState.enemyTeam = enemySpecies.map((species, index) => {
     const stats = getMonsterStats(species, avgLevel);
     const def = monsterDefinitions[species];
@@ -1787,7 +1788,7 @@ function updateAutomatedBattle(dt) {
         baseX = -dirX;
         baseY = -dirY;
       } else {
-        if (actor.species === "cyclopse") {
+        if (actor.species === "0_1_cyclopse") {
           // Cyclopse (Ranged): Comfort Zone 250px - 320px
           if (minDist > 320) {
             baseX = dirX;
@@ -1799,7 +1800,7 @@ function updateAutomatedBattle(dt) {
             baseX = orbitX * 0.7;
             baseY = orbitY * 0.7;
           }
-        } else if (actor.species === "lovelydoll") {
+        } else if (actor.species === "1_1_lovelydoll") {
           // Lovelydoll (Tanker): Comfort Zone 180px - 220px
           if (minDist > 220) {
             baseX = dirX;
@@ -2375,7 +2376,7 @@ function drawFallbackActor(context, actor, definition, renderSize) {
   const x = Math.round(actor.x);
   const y = Math.round(actor.y);
   const scale = renderSize / 96;
-  const sizeBonus = (actor.species === "lovelydoll" ? 4 : 0) * scale;
+  const sizeBonus = (actor.species === "1_1_lovelydoll" ? 4 : 0) * scale;
 
   context.fillStyle = definition.colors.dark;
   context.fillRect(
