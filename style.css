@@ -1286,14 +1286,14 @@ button:disabled {
 /* --- Mining Projectiles Stage Customization --- */
 
 /* 1. Cyclops (0_*) - Laser theme */
-.mine-projectile-3d.0_1_cyclopse {
+.mine-projectile-3d.species-0_1_cyclopse {
   width: 10px;
   height: 10px;
   border: 2px solid var(--ink);
   background: #fff0a3;
   box-shadow: 0 0 6px #fff0a3;
 }
-.mine-projectile-3d.0_2_cyclopsis {
+.mine-projectile-3d.species-0_2_cyclopsis {
   width: 24px;
   height: 8px;
   border-radius: 4px;
@@ -1301,7 +1301,7 @@ button:disabled {
   background: #ff7700;
   box-shadow: 0 0 10px #ff9900, 0 0 4px #ff5500;
 }
-.mine-projectile-3d.0_3_hatefulclops {
+.mine-projectile-3d.species-0_3_hatefulclops {
   width: 32px;
   height: 14px;
   border-radius: 7px;
@@ -1311,7 +1311,7 @@ button:disabled {
 }
 
 /* 2. LovelyDoll (1_*) - Tear/Candy theme */
-.mine-projectile-3d.1_1_lovelydoll {
+.mine-projectile-3d.species-1_1_lovelydoll {
   width: 10px;
   height: 14px;
   border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
@@ -1319,7 +1319,7 @@ button:disabled {
   background: #7cd5ff;
   box-shadow: 0 0 6px #7cd5ff;
 }
-.mine-projectile-3d.1_2_cutie {
+.mine-projectile-3d.species-1_2_cutie {
   width: 12px;
   height: 18px;
   border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
@@ -1327,7 +1327,7 @@ button:disabled {
   background: #3fa5ff;
   box-shadow: 0 0 10px #3fa5ff;
 }
-.mine-projectile-3d.1_2_cutie::after {
+.mine-projectile-3d.species-1_2_cutie::after {
   content: "";
   position: absolute;
   top: 100%;
@@ -1338,7 +1338,7 @@ button:disabled {
   background: linear-gradient(to bottom, #3fa5ff, transparent);
   opacity: 0.6;
 }
-.mine-projectile-3d.1_3_candy {
+.mine-projectile-3d.species-1_3_candy {
   width: 24px;
   height: 24px;
   border-radius: 50%;
@@ -1346,7 +1346,7 @@ button:disabled {
   box-shadow: 0 0 12px #ff66a3, 0 0 4px #ff3385;
   overflow: hidden;
 }
-.mine-projectile-3d.1_3_candy::after {
+.mine-projectile-3d.species-1_3_candy::after {
   content: "";
   position: absolute;
   top: -2px;
@@ -1364,14 +1364,14 @@ button:disabled {
 }
 
 /* 3. Unnyangi (2_*) - Paw/Lightning theme */
-.mine-projectile-3d.2_1_unnyangi {
+.mine-projectile-3d.species-2_1_unnyangi {
   width: 10px;
   height: 10px;
   border: 2px solid var(--ink);
   background: #6fe26f;
   box-shadow: 0 0 6px #6fe26f;
 }
-.mine-projectile-3d.2_2_unnyangsam {
+.mine-projectile-3d.species-2_2_unnyangsam {
   width: 20px;
   height: 20px;
   border: none;
@@ -1381,7 +1381,7 @@ button:disabled {
   border-radius: 0;
   animation: spin-paw 0.8s linear infinite;
 }
-.mine-projectile-3d.2_3_unrang {
+.mine-projectile-3d.species-2_3_unrang {
   width: 24px;
   height: 24px;
   border-radius: 50%;

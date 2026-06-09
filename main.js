@@ -1108,7 +1108,7 @@ function shootMiningProjectile(spotElement, spot, species) {
   if (!projectileLayer || !spotElement || !spot) return;
 
   const proj = document.createElement("span");
-  proj.className = `mine-projectile-3d ${species || ""}`;
+  proj.className = `mine-projectile-3d ${species ? 'species-' + species : ""}`;
 
   // Calculate center of the monster sprite relative to the top-left of the spot
   const dx = Math.round(48 * spot.scale);
