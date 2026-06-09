@@ -73,6 +73,29 @@
 
       <div class="mining-layout">
         <aside class="pixel-panel control-panel">
+          <!-- Player Profile & Talent Info -->
+          <div class="player-panel-card" style="margin-bottom: 12px; border-bottom: 2px dashed #b5a48c; padding-bottom: 12px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+              <span style="font-size: 11px; font-weight: bold; color: var(--ink);">PLAYER LEVEL</span>
+              <strong id="player-level-badge" class="level-badge" style="background: var(--ink); color: #fff; padding: 1px 5px; font-size: 10px; border-radius: 2px;">LV 1</strong>
+            </div>
+            <div class="pixel-bar player-xp-bar" style="height: 10px; margin-bottom: 6px; background: rgba(0,0,0,0.1); border: 2px solid var(--ink); position: relative; overflow: hidden;"><span id="player-xp-fill" style="display: block; height: 100%; width: 0%; background: #52c41a; transition: width 0.3s ease;"></span></div>
+            <div style="font-size: 11px; display: flex; justify-content: space-between; color: var(--ink-soft); margin-bottom: 8px;">
+              <span>XP: <strong id="player-xp-text" style="color: var(--ink);">0 / 100</strong></span>
+              <span>포인트: <strong id="player-talent-points" style="color: #ffaa00;">0</strong></span>
+            </div>
+            
+            <div class="talent-action-box" style="display: flex; gap: 8px; align-items: center; justify-content: space-between;">
+              <div style="font-size: 11px; line-height: 1.2; flex: 1;">
+                <strong style="color: var(--ink);">진화 성공 특성</strong><br>
+                <span style="color: #0088cc; font-weight: bold;" id="player-talent-status">Lv 0 (+0.0%)</span>
+              </div>
+              <button id="upgrade-talent-button" class="primary-button" style="padding: 4px 8px; font-size: 11px;" disabled>
+                강화 (+1)
+              </button>
+            </div>
+          </div>
+
           <h2>Rock Tier</h2>
           <p class="muted">단계를 선택한 뒤 돌을 클릭하면 자동 공격합니다.</p>
           <div id="rock-tier-buttons" class="stacked-buttons"></div>
@@ -101,8 +124,11 @@
                 <span class="click-hint">CLICK TO ATTACK</span>
               </button>
               <div id="damage-layer" class="damage-layer" aria-hidden="true"></div>
+              <div id="mine-auto-evolver" class="mine-evolver-zone" title="몬스터를 보내면 보유한 크리스탈로 자동 강화합니다.">
+                <span class="evolver-label">자동 진화</span>
+              </div>
               <div id="mine-incinerator" class="mine-incinerator-zone" title="선택한 몬스터를 우클릭으로 여기에 보내면 소각(70% 환급)됩니다.">
-                <span class="incinerator-label">소각로 (70% 환급)</span>
+                <span class="incinerator-label">소각 판매</span>
               </div>
             </div>
           </div>

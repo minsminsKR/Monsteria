@@ -190,8 +190,17 @@ const levelRequirements = {
   19: { gold: 22000, crystal: 1150, chance: 0.22 }
 };
 
+// Populate levels 20 to 49 dynamically
+for (let l = 20; l <= 49; l++) {
+  levelRequirements[l] = {
+    gold: Math.round(22000 * Math.pow(l / 19, 1.6)),
+    crystal: Math.round(1150 * Math.pow(l / 19, 1.8)),
+    chance: Math.max(0.05, parseFloat((0.22 * Math.pow(19 / l, 0.75)).toFixed(2)))
+  };
+}
+
 function getMaxLevel(species) {
-  return 20;
+  return 50;
 }
 
 function getMonsterFamilyPrefix(species) {
@@ -263,7 +272,11 @@ function createDefaultGameState() {
     monsters: [],
     miningMonsterId: null,
     pvpMonsterId: null,
-    selectedRock: "stone"
+    selectedRock: "stone",
+    playerLevel: 1,
+    playerXp: 0,
+    talentPoints: 0,
+    investedTalents: 0
   };
 }
 
@@ -418,6 +431,15 @@ function startMiningMovementLoop() {
             incinerateMonster(idx);
           }, 50);
         }
+        
+        if (spot.isTargetingAutoEvolver) {
+          spot.isTargetingAutoEvolver = false;
+          const monster = gameState.monsters[idx];
+          if (monster) {
+            monster.isAutoEvolving = true;
+            showToast(`${monster.name}이(가) 자동 진화를 시작합니다!`, "success");
+          }
+        }
       } else {
         const nxPx = curXpx + (dx / dist) * moveDist;
         const nyPx = curYpx + (dy / dist) * moveDist;
@@ -553,7 +575,11 @@ function saveGame() {
     monsters: gameState.monsters,
     miningMonsterId: gameState.miningMonsterId,
     pvpMonsterId: gameState.pvpMonsterId,
-    selectedRock: gameState.selectedRock
+    selectedRock: gameState.selectedRock,
+    playerLevel: gameState.playerLevel,
+    playerXp: gameState.playerXp,
+    talentPoints: gameState.talentPoints,
+    investedTalents: gameState.investedTalents
   };
 
   localStorage.setItem(SAVE_KEY, JSON.stringify(saveData));
@@ -594,9 +620,14 @@ function loadGame() {
       monsters,
       miningMonsterId: validIds.has(saved.miningMonsterId) ? saved.miningMonsterId : monsters[0].id,
       pvpMonsterId: validIds.has(saved.pvpMonsterId) ? saved.pvpMonsterId : monsters[0].id,
-      selectedRock: rockDefinitions[saved.selectedRock] ? saved.selectedRock : "stone"
+      selectedRock: rockDefinitions[saved.selectedRock] ? saved.selectedRock : "stone",
+      playerLevel: Math.max(1, Number(saved.playerLevel) || 1),
+      playerXp: Math.max(0, Number(saved.playerXp) || 0),
+      talentPoints: Math.max(0, Number(saved.talentPoints) || 0),
+      investedTalents: Math.max(0, Number(saved.investedTalents) || 0)
     };
     syncDisplayResources();
+    updatePlayerUi();
   } catch (error) {
     console.warn("Monsteria save could not be loaded.", error);
     localStorage.removeItem(SAVE_KEY);
@@ -830,6 +861,7 @@ function updateResourceDisplays() {
   if (shopStones) shopStones.textContent = Math.floor(gameState.evoStones).toLocaleString();
   
   updateResourceDisplaysVisual();
+  updatePlayerUi();
 }
 
 function updateResourceDisplaysVisual() {
@@ -841,6 +873,92 @@ function updateResourceDisplaysVisual() {
   
   const evoEl = $("#evo-stone-display");
   if (evoEl) evoEl.textContent = Math.floor(displayState.evoStones).toLocaleString();
+}
+
+function updatePlayerUi() {
+  const levelBadge = $("#player-level-badge");
+  if (levelBadge) {
+    levelBadge.textContent = `LV ${gameState.playerLevel || 1}`;
+  }
+
+  const reqXp = Math.round(100 * (gameState.playerLevel || 1) * 1.3);
+  const curXp = gameState.playerXp || 0;
+  
+  const xpText = $("#player-xp-text");
+  if (xpText) {
+    xpText.textContent = `${curXp} / ${reqXp}`;
+  }
+
+  const xpFill = $("#player-xp-fill");
+  if (xpFill) {
+    const pct = Math.min(100, Math.max(0, (curXp / reqXp) * 100));
+    xpFill.style.width = `${pct}%`;
+  }
+
+  const talentPointsEl = $("#player-talent-points");
+  if (talentPointsEl) {
+    talentPointsEl.textContent = gameState.talentPoints || 0;
+  }
+
+  const talentStatusEl = $("#player-talent-status");
+  if (talentStatusEl) {
+    const baseBonus = ((gameState.investedTalents || 0) * 2.0).toFixed(1);
+    talentStatusEl.textContent = `Lv ${gameState.investedTalents || 0} (+${baseBonus}%)`;
+  }
+
+  const upgradeBtn = $("#upgrade-talent-button");
+  if (upgradeBtn) {
+    if ((gameState.talentPoints || 0) > 0) {
+      upgradeBtn.removeAttribute("disabled");
+    } else {
+      upgradeBtn.setAttribute("disabled", "true");
+    }
+  }
+}
+
+function addPlayerXp(amount) {
+  if (amount <= 0) return;
+  gameState.playerXp = (gameState.playerXp || 0) + amount;
+  let leveledUp = false;
+  
+  while (true) {
+    const reqXp = Math.round(100 * (gameState.playerLevel || 1) * 1.3);
+    if (gameState.playerXp >= reqXp) {
+      gameState.playerXp -= reqXp;
+      gameState.playerLevel = (gameState.playerLevel || 1) + 1;
+      leveledUp = true;
+      if (gameState.playerLevel % 10 === 0) {
+        gameState.talentPoints = (gameState.talentPoints || 0) + 1;
+        showToast(`플레이어 레벨업! LV ${gameState.playerLevel} 달성 (특성 포인트 +1 획득!)`, "success");
+      } else {
+        showToast(`플레이어 레벨업! LV ${gameState.playerLevel} 달성`, "success");
+      }
+    } else {
+      break;
+    }
+  }
+  
+  if (leveledUp) {
+    soundManager.play("upgrade");
+  }
+  
+  saveGame();
+  updateResourceDisplays();
+}
+
+function upgradePlayerTalent() {
+  if ((gameState.talentPoints || 0) > 0) {
+    gameState.talentPoints -= 1;
+    gameState.investedTalents = (gameState.investedTalents || 0) + 1;
+    soundManager.play("upgrade");
+    showToast(`진화 성공 특성을 강화했습니다! 현재 레벨: ${gameState.investedTalents}`, "success");
+    saveGame();
+    updateResourceDisplays();
+    renderMining();
+    if (uiState.currentScreen === "evolution") {
+      renderEvolution();
+    }
+  }
 }
 
 function selectStarter(species) {
@@ -1018,7 +1136,7 @@ function renderMining() {
           </div>
           
           <div class="evo-stats">
-            <div>확률: <strong>${Math.round(action.chance * 100)}%</strong></div>
+            <div>확률: <strong>${Math.round(Math.min(1.0, action.chance + getEvolutionChanceBonus(monster.level)) * 100)}%</strong>${gameState.investedTalents > 0 ? ` <span style="font-size:10px; color:#52c41a;">(+${Math.round(getEvolutionChanceBonus(monster.level) * 100)}%)</span>` : ''}</div>
             <div>비용: <strong style="${gameState.gold < action.gold ? 'color:#ff5500;' : ''}">${action.gold.toLocaleString()} G</strong></div>
             <div style="grid-column: span 2;">필요 크리스탈: <strong style="${gameState.crystal < action.crystal ? 'color:#ff5500;' : ''}">${action.crystal} / ${gameState.crystal}</strong></div>
           </div>
@@ -1137,7 +1255,7 @@ function runMonsterAttackLoop(monsterId) {
   const spotElement = $(`#mining-spot-${index}`);
 
   const topPct = parseFloat(spot.top);
-  const isWaiting = !isNaN(topPct) && topPct >= 70;
+  const isWaiting = (!isNaN(topPct) && topPct >= 70) || currentMonster.isAutoEvolving || spot.isTargetingIncinerator || spot.isTargetingAutoEvolver;
 
   if (uiState.currentScreen === "mining" && spotElement && !isWaiting) {
     // Face the central rock (placed at 50% left)
@@ -1354,7 +1472,8 @@ function incinerateMonster(index) {
 
   // Refund gold immediately
   gameState.gold += refund;
-  updateResourceDisplays();
+  const xpGain = monster.level * 5;
+  addPlayerXp(xpGain);
 
   // Apply the CSS animation classes to the DOM element
   const spotElement = $(`#mining-spot-${index}`);
@@ -1544,7 +1663,7 @@ function renderEvolution() {
     const action = getUpgradeAction(monster);
     let label = "";
     if (action.type === "levelUp") {
-      label = `LV Up (${Math.round(action.chance * 100)}%)`;
+      label = `LV Up (${Math.round(Math.min(1.0, action.chance + getEvolutionChanceBonus(monster.level)) * 100)}%)`;
     } else {
       label = "MAX";
     }
@@ -1587,7 +1706,7 @@ function renderEvolution() {
     $("#evolution-details").innerHTML = `
       <h2>${monster.name} / LV${monster.level} → LV${nextLevel}</h2>
       <div class="evolution-costs">
-        <div>SUCCESS<strong>${Math.round(action.chance * 100)}%</strong></div>
+        <div>SUCCESS<strong>${Math.round(Math.min(1.0, action.chance + getEvolutionChanceBonus(monster.level)) * 100)}%${gameState.investedTalents > 0 ? ` <span style="font-size:11px; color:#52c41a; font-weight:normal;">(+${Math.round(getEvolutionChanceBonus(monster.level) * 100)}%)</span>` : ''}</strong></div>
         <div>GOLD<strong>${action.gold.toLocaleString()} required</strong></div>
         <div>CRYSTAL<strong>${action.crystal} required</strong></div>
       </div>
@@ -1616,6 +1735,26 @@ function selectEvolutionMonster(monsterId) {
   renderEvolution();
 }
 
+function getUpgradeAction(monster) {
+  const maxLvl = getMaxLevel(monster.species);
+  
+  if (monster.level < maxLvl) {
+    const req = levelRequirements[monster.level];
+    return { type: "levelUp", gold: req.gold, crystal: req.crystal, chance: req.chance };
+  }
+  
+  return { type: "max" };
+}
+
+function getEvolutionChanceBonus(level) {
+  const talents = gameState.investedTalents || 0;
+  if (level <= 10) return talents * 0.02;
+  if (level <= 20) return talents * 0.01;
+  if (level <= 30) return talents * 0.003;
+  if (level <= 40) return talents * 0.002;
+  return talents * 0.001;
+}
+
 function attemptEvolution() {
   const monster = getMonsterById(uiState.selectedEvolutionMonsterId);
   if (!monster) return;
@@ -1624,6 +1763,8 @@ function attemptEvolution() {
   if (action.type === "max") {
     return;
   }
+
+  const finalChance = Math.min(1.0, action.chance + getEvolutionChanceBonus(monster.level));
 
   if (gameState.gold < action.gold || gameState.crystal < action.crystal) {
     uiState.evolutionResult = `재료 부족: Gold ${action.gold.toLocaleString()}개와 Crystal ${action.crystal.toLocaleString()}개가 필요합니다.`;
@@ -1635,7 +1776,7 @@ function attemptEvolution() {
 
   gameState.gold -= action.gold;
   gameState.crystal -= action.crystal;
-  const succeeded = Math.random() < action.chance;
+  const succeeded = Math.random() < finalChance;
 
   if (succeeded) {
     monster.level += 1;
@@ -1675,6 +1816,8 @@ function attemptQuickEvolution(monsterIndex) {
   const action = getUpgradeAction(monster);
   if (action.type === "max") return;
 
+  const finalChance = Math.min(1.0, action.chance + getEvolutionChanceBonus(monster.level));
+
   if (gameState.gold < action.gold || gameState.crystal < action.crystal) {
     showToast("성장 재료가 부족합니다.", "error");
     return;
@@ -1682,7 +1825,7 @@ function attemptQuickEvolution(monsterIndex) {
 
   gameState.gold -= action.gold;
   gameState.crystal -= action.crystal;
-  const succeeded = Math.random() < action.chance;
+  const succeeded = Math.random() < finalChance;
 
   if (succeeded) {
     monster.level += 1;
@@ -1712,6 +1855,87 @@ function attemptQuickEvolution(monsterIndex) {
   saveGame();
   updateResourceDisplays();
   renderMining();
+}
+
+function triggerAutoEvoVisualEffect(monsterIndex, succeeded) {
+  const spotEl = document.getElementById(`mining-spot-${monsterIndex}`);
+  if (!spotEl) return;
+  
+  const className = succeeded ? "auto-evo-success" : "auto-evo-fail";
+  spotEl.classList.remove("auto-evo-success", "auto-evo-fail");
+  void spotEl.offsetWidth; // Trigger reflow
+  spotEl.classList.add(className);
+  
+  setTimeout(() => {
+    spotEl.classList.remove(className);
+  }, 800);
+}
+
+function attemptAutoEvolution(index) {
+  const monster = gameState.monsters[index];
+  if (!monster) return;
+
+  const action = getUpgradeAction(monster);
+  if (action.type === "max") {
+    monster.isAutoEvolving = false;
+    showToast(`${monster.name}이(가) 최대 레벨에 도달하여 자동 진화를 종료합니다.`, "info");
+    renderMining();
+    return;
+  }
+
+  if (gameState.gold < action.gold || gameState.crystal < action.crystal) {
+    return;
+  }
+
+  gameState.gold -= action.gold;
+  gameState.crystal -= action.crystal;
+  
+  const finalChance = Math.min(1.0, action.chance + getEvolutionChanceBonus(monster.level));
+  const succeeded = Math.random() < finalChance;
+
+  if (succeeded) {
+    monster.level += 1;
+    const prefix = getMonsterFamilyPrefix(monster.species);
+    const nextSpecies = getSpeciesForLevel(prefix, monster.level);
+    
+    let evolved = false;
+    if (nextSpecies && nextSpecies !== monster.species) {
+      monster.species = nextSpecies;
+      monster.name = monsterDefinitions[nextSpecies].name;
+      evolved = true;
+    }
+    
+    monster.stats = getMonsterStats(monster.species, monster.level);
+    soundManager.play("upgrade");
+    
+    if (evolved) {
+      showToast(`[자동] ${monster.name}(으)로 자동 진화! (LV${monster.level})`, "success");
+    } else {
+      showToast(`[자동] ${monster.name} LV${monster.level} 레벨업 성공!`, "success");
+    }
+  } else {
+    soundManager.play("break");
+  }
+
+  triggerAutoEvoVisualEffect(index, succeeded);
+
+  saveGame();
+  updateResourceDisplays();
+  renderMining();
+}
+
+let autoEvolutionInterval = null;
+function startAutoEvolutionLoop() {
+  if (autoEvolutionInterval) return;
+  autoEvolutionInterval = setInterval(() => {
+    if (uiState.currentScreen !== "mining" || !miningState.active) return;
+    
+    gameState.monsters.forEach((monster, index) => {
+      if (monster.isAutoEvolving) {
+        attemptAutoEvolution(index);
+      }
+    });
+  }, 1500);
 }
 
 function animateEvolutionResult(succeeded) {
@@ -3195,6 +3419,11 @@ function bindEvents() {
   $("#exit-pvp-button").addEventListener("click", exitPvp);
   $("#battle-return-button").addEventListener("click", exitPvp);
 
+  const upgradeTalentBtn = $("#upgrade-talent-button");
+  if (upgradeTalentBtn) {
+    upgradeTalentBtn.addEventListener("click", upgradePlayerTalent);
+  }
+
   const mineStage = $("#mine-stage");
   if (mineStage) {
     mineStage.addEventListener("contextmenu", (event) => {
@@ -3221,6 +3450,25 @@ function bindEvents() {
         }
       }
 
+      const clickedAutoEvolver = event.target.closest("#mine-auto-evolver");
+      const evoEl = $("#mine-auto-evolver");
+      let targetIsAutoEvolver = clickedAutoEvolver ? true : false;
+
+      if (!targetIsAutoEvolver && evoEl) {
+        const evoRect = evoEl.getBoundingClientRect();
+        const ex0 = evoRect.left - rect.left;
+        const ex1 = evoRect.right - rect.left;
+        const ey0 = evoRect.top - rect.top;
+        const ey1 = evoRect.bottom - rect.top;
+
+        if (clickX >= ex0 && clickX <= ex1 && clickY >= ey0 && clickY <= ey1) {
+          targetIsAutoEvolver = true;
+        }
+      }
+
+      if (targetIsIncinerator) targetIsAutoEvolver = false;
+      if (targetIsAutoEvolver) targetIsIncinerator = false;
+
       let leftPercent, topPercent;
       if (targetIsIncinerator && incEl) {
         const incRect = incEl.getBoundingClientRect();
@@ -3228,6 +3476,12 @@ function bindEvents() {
         const incCenterY = (incRect.top + incRect.height / 2) - rect.top;
         leftPercent = ((incCenterX / rect.width) * 100).toFixed(2) + "%";
         topPercent = ((incCenterY / rect.height) * 100).toFixed(2) + "%";
+      } else if (targetIsAutoEvolver && evoEl) {
+        const evoRect = evoEl.getBoundingClientRect();
+        const evoCenterX = (evoRect.left + evoRect.width / 2) - rect.left;
+        const evoCenterY = (evoRect.top + evoRect.height / 2) - rect.top;
+        leftPercent = ((evoCenterX / rect.width) * 100).toFixed(2) + "%";
+        topPercent = ((evoCenterY / rect.height) * 100).toFixed(2) + "%";
       } else {
         leftPercent = ((clickX / rect.width) * 100).toFixed(2) + "%";
         topPercent = ((clickY / rect.height) * 100).toFixed(2) + "%";
@@ -3240,6 +3494,12 @@ function bindEvents() {
         spot.targetTop = topPercent;
         spot.isMoving = true;
         spot.isTargetingIncinerator = targetIsIncinerator;
+        spot.isTargetingAutoEvolver = targetIsAutoEvolver;
+
+        const monster = gameState.monsters[idx];
+        if (monster) {
+          monster.isAutoEvolving = false;
+        }
 
         startMiningMovementLoop();
       }
@@ -3303,6 +3563,7 @@ function init() {
   loadGame();
   syncDisplayResources();
   startResourceRollingLoop();
+  startAutoEvolutionLoop();
 
   if (gameState.started) {
     resetMiningRock(gameState.selectedRock);
