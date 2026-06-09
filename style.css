@@ -1283,6 +1283,131 @@ button:disabled {
   z-index: 10;
 }
 
+/* --- Mining Projectiles Stage Customization --- */
+
+/* 1. Cyclops (0_*) - Laser theme */
+.mine-projectile-3d.0_1_cyclopse {
+  width: 10px;
+  height: 10px;
+  border: 2px solid var(--ink);
+  background: #fff0a3;
+  box-shadow: 0 0 6px #fff0a3;
+}
+.mine-projectile-3d.0_2_cyclopsis {
+  width: 24px;
+  height: 8px;
+  border-radius: 4px;
+  border: 2px solid var(--ink);
+  background: #ff7700;
+  box-shadow: 0 0 10px #ff9900, 0 0 4px #ff5500;
+}
+.mine-projectile-3d.0_3_hatefulclops {
+  width: 32px;
+  height: 14px;
+  border-radius: 7px;
+  border: 3px solid #ff0055;
+  background: #ffffff;
+  box-shadow: 0 0 15px #ff0055, 0 0 5px #ff0055;
+}
+
+/* 2. LovelyDoll (1_*) - Tear/Candy theme */
+.mine-projectile-3d.1_1_lovelydoll {
+  width: 10px;
+  height: 14px;
+  border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+  border: 2px solid var(--ink);
+  background: #7cd5ff;
+  box-shadow: 0 0 6px #7cd5ff;
+}
+.mine-projectile-3d.1_2_cutie {
+  width: 12px;
+  height: 18px;
+  border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+  border: 2px solid var(--ink);
+  background: #3fa5ff;
+  box-shadow: 0 0 10px #3fa5ff;
+}
+.mine-projectile-3d.1_2_cutie::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 6px;
+  height: 12px;
+  background: linear-gradient(to bottom, #3fa5ff, transparent);
+  opacity: 0.6;
+}
+.mine-projectile-3d.1_3_candy {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 3px solid var(--ink);
+  box-shadow: 0 0 12px #ff66a3, 0 0 4px #ff3385;
+  overflow: hidden;
+}
+.mine-projectile-3d.1_3_candy::after {
+  content: "";
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: conic-gradient(
+    #ff66a3 0deg 45deg, #ffffff 45deg 90deg,
+    #ff66a3 90deg 135deg, #ffffff 135deg 180deg,
+    #ff66a3 180deg 225deg, #ffffff 225deg 270deg,
+    #ff66a3 270deg 315deg, #ffffff 315deg 360deg
+  );
+  border-radius: 50%;
+  animation: spin-candy 0.3s linear infinite;
+}
+
+/* 3. Unnyangi (2_*) - Paw/Lightning theme */
+.mine-projectile-3d.2_1_unnyangi {
+  width: 10px;
+  height: 10px;
+  border: 2px solid var(--ink);
+  background: #6fe26f;
+  box-shadow: 0 0 6px #6fe26f;
+}
+.mine-projectile-3d.2_2_unnyangsam {
+  width: 20px;
+  height: 20px;
+  border: none;
+  background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%2358ab58" stroke="%23172033" stroke-width="2"><path d="M12 14c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3zm-4-3c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm8 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm-6-5c-.83 0-1.5.67-1.5 1.5S9.17 9 10 9s1.5-.67 1.5-1.5S10.83 6 10 6zm4 0c-.83 0-1.5.67-1.5 1.5S13.17 9 14 9s1.5-.67 1.5-1.5S14.83 6 14 6z"/></svg>') no-repeat center;
+  background-size: contain;
+  box-shadow: none;
+  border-radius: 0;
+  animation: spin-paw 0.8s linear infinite;
+}
+.mine-projectile-3d.2_3_unrang {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 3px solid var(--ink);
+  background: radial-gradient(circle, #ffffff 10%, #3cd3ff 70%);
+  box-shadow: 0 0 15px #3cd3ff, 0 0 5px #00aaff;
+  animation: electric-pulse 0.15s ease-in-out infinite alternate;
+}
+
+@keyframes spin-candy {
+  100% { transform: rotate(360deg); }
+}
+@keyframes spin-paw {
+  100% { transform: translate(-50%, -50%) rotate(360deg); }
+}
+@keyframes electric-pulse {
+  0% {
+    transform: translate(-50%, -50%) scale(0.9);
+    box-shadow: 0 0 10px #3cd3ff, 0 0 3px #00aaff;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1.15);
+    box-shadow: 0 0 22px #3cd3ff, 0 0 8px #00d2ff, 0 0 3px #ffffff;
+  }
+}
+
 @keyframes stone-float {
   50% { transform: translateY(-8px); }
 }

@@ -1082,7 +1082,7 @@ function runMonsterAttackLoop(monsterId) {
       sprite.classList.add("is-attacking");
       setTimeout(() => sprite.classList.remove("is-attacking"), 420);
     }
-    shootMiningProjectile(spotElement, spot);
+    shootMiningProjectile(spotElement, spot, currentMonster.species);
   }
 
   const currentGeneration = miningState.generation;
@@ -1101,14 +1101,14 @@ function runMonsterAttackLoop(monsterId) {
   }, attackInterval);
 }
 
-function shootMiningProjectile(spotElement, spot) {
+function shootMiningProjectile(spotElement, spot, species) {
   if (document.hidden) return;
   if (uiState.currentScreen !== "mining") return;
   const projectileLayer = $("#projectile-layer");
   if (!projectileLayer || !spotElement || !spot) return;
 
   const proj = document.createElement("span");
-  proj.className = "mine-projectile-3d";
+  proj.className = `mine-projectile-3d ${species || ""}`;
 
   // Calculate center of the monster sprite relative to the top-left of the spot
   const dx = Math.round(48 * spot.scale);
@@ -2216,6 +2216,7 @@ function fireProjectile(actor, targetX, targetY, isSkill, owner) {
   pvpState.projectiles.push({
     owner,
     isSkill,
+    species: actor.species,
     x: actor.x + (dx / length) * 18,
     y: actor.y + (dy / length) * 18,
     vx: (dx / length) * speed,
@@ -2673,13 +2674,327 @@ function drawFallbackActor(context, actor, definition, renderSize) {
 function drawPvpProjectile(context, projectile) {
   const x = Math.round(projectile.x);
   const y = Math.round(projectile.y);
-  const size = projectile.isSkill ? 18 : 10;
-  context.fillStyle = "#172033";
-  context.fillRect(x - size / 2 - 2, y - size / 2 - 2, size + 4, size + 4);
-  context.fillStyle = projectile.color;
-  context.fillRect(x - size / 2, y - size / 2, size, size);
-  context.fillStyle = "#ffffff";
-  context.fillRect(x - size / 4, y - size / 4, Math.max(3, size / 3), Math.max(3, size / 3));
+  const species = projectile.species || "";
+  const isSkill = projectile.isSkill;
+  
+  // Base radius size calculation
+  const radius = isSkill ? 12 : 6;
+  const angle = Math.atan2(projectile.vy, projectile.vx);
+
+  // Helper function: shadow glow config
+  const setGlow = (color, blur) => {
+    context.shadowColor = color;
+    context.shadowBlur = blur;
+  };
+  const resetGlow = () => {
+    context.shadowColor = "transparent";
+    context.shadowBlur = 0;
+  };
+
+  // Save context state
+  context.save();
+
+  // 1. Cyclops (0_*) - Lasers
+  if (species.startsWith("0_")) {
+    if (species === "0_1_cyclopse") {
+      // Stage 1: Small yellow sphere
+      context.beginPath();
+      context.arc(x, y, radius + 2, 0, Math.PI * 2);
+      context.fillStyle = "#172033";
+      context.fill();
+
+      const grad = context.createRadialGradient(x - 1.5, y - 1.5, 1, x, y, radius);
+      grad.addColorStop(0, "#ffffff");
+      grad.addColorStop(0.3, "#fff0a3");
+      grad.addColorStop(1, "#c98218");
+      context.beginPath();
+      context.arc(x, y, radius, 0, Math.PI * 2);
+      context.fillStyle = grad;
+      context.fill();
+
+    } else if (species === "0_2_cyclopsis") {
+      // Stage 2: Orange laser capsule & Glow
+      setGlow("#ff8800", isSkill ? 14 : 8);
+      context.translate(x, y);
+      context.rotate(angle);
+      
+      const width = isSkill ? 32 : 20;
+      const height = isSkill ? 12 : 8;
+
+      // Stroke
+      context.fillStyle = "#172033";
+      context.beginPath();
+      context.roundRect(-width/2 - 2, -height/2 - 2, width + 4, height + 4, height/2 + 2);
+      context.fill();
+
+      // Orange gradient fill
+      const grad = context.createLinearGradient(-width/2, 0, width/2, 0);
+      grad.addColorStop(0, "#ffbb00");
+      grad.addColorStop(0.5, "#ff6600");
+      grad.addColorStop(1, "#cc3300");
+
+      context.fillStyle = grad;
+      context.beginPath();
+      context.roundRect(-width/2, -height/2, width, height, height/2);
+      context.fill();
+
+      // White core
+      context.fillStyle = "#ffffff";
+      context.beginPath();
+      context.roundRect(-width/4, -height/4, width/2, height/2, height/4);
+      context.fill();
+
+    } else if (species === "0_3_hatefulclops") {
+      // Stage 3: Thick demonic laser beam capsule (Red outline, White core, intense red glow)
+      setGlow("#ff0055", isSkill ? 24 : 14);
+      context.translate(x, y);
+      context.rotate(angle);
+      
+      const width = isSkill ? 40 : 28;
+      const height = isSkill ? 18 : 12;
+
+      // Outer Red/Dark stroke
+      context.fillStyle = "#172033";
+      context.beginPath();
+      context.roundRect(-width/2 - 3, -height/2 - 3, width + 6, height + 6, height/2 + 3);
+      context.fill();
+
+      // Red fill
+      context.fillStyle = "#ff0055";
+      context.beginPath();
+      context.roundRect(-width/2 - 1, -height/2 - 1, width + 2, height + 2, height/2 + 1);
+      context.fill();
+
+      // Pure White core
+      context.fillStyle = "#ffffff";
+      context.beginPath();
+      context.roundRect(-width/2 + 3, -height/3, width - 6, (height * 2)/3, height/3);
+      context.fill();
+    }
+
+  // 2. LovelyDoll (1_*) - Tears/Candies
+  } else if (species.startsWith("1_")) {
+    if (species === "1_1_lovelydoll") {
+      // Stage 1: Small teardrop
+      context.translate(x, y);
+      context.rotate(angle);
+      
+      context.fillStyle = "#172033";
+      context.beginPath();
+      context.arc(-2, 0, radius + 2, Math.PI/2, -Math.PI/2);
+      context.lineTo(radius * 1.5 + 2, 0);
+      context.closePath();
+      context.fill();
+
+      const grad = context.createRadialGradient(-2, 0, 1, -2, 0, radius);
+      grad.addColorStop(0, "#ffffff");
+      grad.addColorStop(0.4, "#7cd5ff");
+      grad.addColorStop(1, "#3fa5ff");
+
+      context.fillStyle = grad;
+      context.beginPath();
+      context.arc(-2, 0, radius, Math.PI/2, -Math.PI/2);
+      context.lineTo(radius * 1.5, 0);
+      context.closePath();
+      context.fill();
+
+    } else if (species === "1_2_cutie") {
+      // Stage 2: Blue tear with long tail trail
+      resetGlow();
+      const tailLength = isSkill ? 40 : 25;
+      const tailGrad = context.createLinearGradient(x, y, x - Math.cos(angle) * tailLength, y - Math.sin(angle) * tailLength);
+      tailGrad.addColorStop(0, "rgba(63, 165, 255, 0.7)");
+      tailGrad.addColorStop(0.5, "rgba(63, 165, 255, 0.3)");
+      tailGrad.addColorStop(1, "rgba(63, 165, 255, 0)");
+
+      context.strokeStyle = tailGrad;
+      context.lineWidth = isSkill ? 10 : 6;
+      context.lineCap = "round";
+      context.beginPath();
+      context.moveTo(x, y);
+      context.lineTo(x - Math.cos(angle) * tailLength, y - Math.sin(angle) * tailLength);
+      context.stroke();
+
+      // Main tear drop body
+      context.translate(x, y);
+      context.rotate(angle);
+
+      const r = radius * 1.1;
+
+      context.fillStyle = "#172033";
+      context.beginPath();
+      context.arc(-3, 0, r + 2, Math.PI/2, -Math.PI/2);
+      context.lineTo(r * 1.6 + 2, 0);
+      context.closePath();
+      context.fill();
+
+      const bodyGrad = context.createRadialGradient(-3, 0, 1, -3, 0, r);
+      bodyGrad.addColorStop(0, "#ffffff");
+      bodyGrad.addColorStop(0.4, "#3fa5ff");
+      bodyGrad.addColorStop(1, "#0066cc");
+
+      context.fillStyle = bodyGrad;
+      context.beginPath();
+      context.arc(-3, 0, r, Math.PI/2, -Math.PI/2);
+      context.lineTo(r * 1.6, 0);
+      context.closePath();
+      context.fill();
+
+    } else if (species === "1_3_candy") {
+      // Stage 3: High-speed spinning candy wheel with pink/white swirls
+      setGlow("#ff66a3", isSkill ? 16 : 10);
+      context.translate(x, y);
+      
+      const spinAngle = (projectile.life * 22) % (Math.PI * 2);
+      context.rotate(spinAngle);
+
+      const r = radius * 1.4;
+
+      // Stroke outer
+      context.beginPath();
+      context.arc(0, 0, r + 2.5, 0, Math.PI * 2);
+      context.fillStyle = "#172033";
+      context.fill();
+
+      // Pink background disk
+      context.beginPath();
+      context.arc(0, 0, r, 0, Math.PI * 2);
+      context.fillStyle = "#ff66a3";
+      context.fill();
+
+      // White spiral rays (6 segments)
+      context.fillStyle = "#ffffff";
+      for (let i = 0; i < 6; i++) {
+        context.beginPath();
+        context.moveTo(0, 0);
+        const startRad = (i * Math.PI * 2) / 6;
+        const endRad = startRad + (Math.PI * 2) / 12;
+        context.arc(0, 0, r, startRad, endRad);
+        context.closePath();
+        context.fill();
+      }
+
+      // Center candy gem
+      context.beginPath();
+      context.arc(0, 0, r / 3.5, 0, Math.PI * 2);
+      context.fillStyle = "#ffffff";
+      context.fill();
+
+      context.beginPath();
+      context.arc(0, 0, r / 5, 0, Math.PI * 2);
+      context.fillStyle = "#ff0066";
+      context.fill();
+    }
+
+  // 3. Unnyangi (2_*) - Paws/Lightning
+  } else if (species.startsWith("2_")) {
+    if (species === "2_1_unnyangi") {
+      // Stage 1: Small green sphere
+      context.beginPath();
+      context.arc(x, y, radius + 2, 0, Math.PI * 2);
+      context.fillStyle = "#172033";
+      context.fill();
+
+      const grad = context.createRadialGradient(x - 1.5, y - 1.5, 1, x, y, radius);
+      grad.addColorStop(0, "#ffffff");
+      grad.addColorStop(0.3, "#6fe26f");
+      grad.addColorStop(1, "#205433");
+      context.beginPath();
+      context.arc(x, y, radius, 0, Math.PI * 2);
+      context.fillStyle = grad;
+      context.fill();
+
+    } else if (species === "2_2_unnyangsam") {
+      // Stage 2: Spinning green cat paw emblem
+      context.translate(x, y);
+      const spinAngle = (projectile.life * 10) % (Math.PI * 2);
+      context.rotate(spinAngle);
+
+      const r = radius * 1.3;
+
+      const drawPaw = (ctx, padR, toeR) => {
+        ctx.beginPath();
+        ctx.arc(0, r * 0.15, padR, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.arc(-r * 0.65, -r * 0.15, toeR, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(-r * 0.25, -r * 0.55, toeR, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(r * 0.25, -r * 0.55, toeR, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(r * 0.65, -r * 0.15, toeR, 0, Math.PI * 2);
+        ctx.fill();
+      };
+
+      context.fillStyle = "#172033";
+      drawPaw(context, r * 0.5 + 2.5, r * 0.22 + 2);
+
+      context.fillStyle = "#58ab58";
+      drawPaw(context, r * 0.5, r * 0.22);
+
+      context.fillStyle = "#c2ed82";
+      context.beginPath();
+      context.arc(0, r * 0.15, r * 0.25, 0, Math.PI * 2);
+      context.fill();
+
+    } else if (species === "2_3_unrang") {
+      // Stage 3: Electric lightning ball
+      const r = radius * 1.4;
+      
+      resetGlow();
+      context.strokeStyle = "rgba(100, 220, 255, 0.85)";
+      context.lineWidth = 1.5;
+      
+      const sparkCount = isSkill ? 5 : 3;
+      for (let i = 0; i < sparkCount; i++) {
+        const baseAngle = Math.random() * Math.PI * 2;
+        const length = r * (1.1 + Math.random() * 0.8);
+        const midX = x + Math.cos(baseAngle) * (length * 0.5) + (Math.random() - 0.5) * 6;
+        const midY = y + Math.sin(baseAngle) * (length * 0.5) + (Math.random() - 0.5) * 6;
+        const endX = x + Math.cos(baseAngle) * length;
+        const endY = y + Math.sin(baseAngle) * length;
+
+        context.beginPath();
+        context.moveTo(x, y);
+        context.lineTo(midX, midY);
+        context.lineTo(endX, endY);
+        context.stroke();
+      }
+
+      setGlow("#3cd3ff", isSkill ? 18 : 12);
+      
+      context.beginPath();
+      context.arc(x, y, r + 2, 0, Math.PI * 2);
+      context.fillStyle = "#172033";
+      context.fill();
+
+      const grad = context.createRadialGradient(x, y, 1, x, y, r);
+      grad.addColorStop(0, "#ffffff");
+      grad.addColorStop(0.4, "#3cd3ff");
+      grad.addColorStop(1, "#0066cc");
+      
+      context.beginPath();
+      context.arc(x, y, r, 0, Math.PI * 2);
+      context.fillStyle = grad;
+      context.fill();
+    }
+
+  } else {
+    const size = isSkill ? 18 : 10;
+    context.fillStyle = "#172033";
+    context.fillRect(x - size / 2 - 2, y - size / 2 - 2, size + 4, size + 4);
+    context.fillStyle = projectile.color;
+    context.fillRect(x - size / 2, y - size / 2, size, size);
+    context.fillStyle = "#ffffff";
+    context.fillRect(x - size / 4, y - size / 4, Math.max(3, size / 3), Math.max(3, size / 3));
+  }
+
+  context.restore();
 }
 
 function updatePvpMouse(event) {
