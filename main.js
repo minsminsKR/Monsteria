@@ -718,10 +718,20 @@ const displayState = {
   evoStones: 0
 };
 
+const rollingTargetState = {
+  gold: 0,
+  crystal: 0,
+  evoStones: 0
+};
+
 function syncDisplayResources() {
   displayState.gold = gameState.gold;
   displayState.crystal = gameState.crystal;
   displayState.evoStones = gameState.evoStones;
+
+  rollingTargetState.gold = gameState.gold;
+  rollingTargetState.crystal = gameState.crystal;
+  rollingTargetState.evoStones = gameState.evoStones;
 }
 
 let resourceAnimationLoop = null;
@@ -730,31 +740,31 @@ function startResourceRollingLoop() {
   if (resourceAnimationLoop) return;
   const tick = () => {
     let changed = false;
-    if (displayState.gold < gameState.gold) {
-      const diff = gameState.gold - displayState.gold;
+    if (displayState.gold < rollingTargetState.gold) {
+      const diff = rollingTargetState.gold - displayState.gold;
       displayState.gold += Math.max(1, Math.ceil(diff * 0.12));
-      if (displayState.gold > gameState.gold) displayState.gold = gameState.gold;
+      if (displayState.gold > rollingTargetState.gold) displayState.gold = rollingTargetState.gold;
       changed = true;
-    } else if (displayState.gold > gameState.gold) {
-      displayState.gold = gameState.gold;
+    } else if (displayState.gold > rollingTargetState.gold) {
+      displayState.gold = rollingTargetState.gold;
       changed = true;
     }
-    if (displayState.crystal < gameState.crystal) {
-      const diff = gameState.crystal - displayState.crystal;
+    if (displayState.crystal < rollingTargetState.crystal) {
+      const diff = rollingTargetState.crystal - displayState.crystal;
       displayState.crystal += Math.max(1, Math.ceil(diff * 0.12));
-      if (displayState.crystal > gameState.crystal) displayState.crystal = gameState.crystal;
+      if (displayState.crystal > rollingTargetState.crystal) displayState.crystal = rollingTargetState.crystal;
       changed = true;
-    } else if (displayState.crystal > gameState.crystal) {
-      displayState.crystal = gameState.crystal;
+    } else if (displayState.crystal > rollingTargetState.crystal) {
+      displayState.crystal = rollingTargetState.crystal;
       changed = true;
     }
-    if (displayState.evoStones < gameState.evoStones) {
-      const diff = gameState.evoStones - displayState.evoStones;
+    if (displayState.evoStones < rollingTargetState.evoStones) {
+      const diff = rollingTargetState.evoStones - displayState.evoStones;
       displayState.evoStones += Math.max(1, Math.ceil(diff * 0.12));
-      if (displayState.evoStones > gameState.evoStones) displayState.evoStones = gameState.evoStones;
+      if (displayState.evoStones > rollingTargetState.evoStones) displayState.evoStones = rollingTargetState.evoStones;
       changed = true;
-    } else if (displayState.evoStones > gameState.evoStones) {
-      displayState.evoStones = gameState.evoStones;
+    } else if (displayState.evoStones > rollingTargetState.evoStones) {
+      displayState.evoStones = rollingTargetState.evoStones;
       changed = true;
     }
     if (changed) {
@@ -766,6 +776,16 @@ function startResourceRollingLoop() {
 }
 
 function updateResourceDisplays() {
+  if (gameState.gold < rollingTargetState.gold) {
+    rollingTargetState.gold = gameState.gold;
+  }
+  if (gameState.crystal < rollingTargetState.crystal) {
+    rollingTargetState.crystal = gameState.crystal;
+  }
+  if (gameState.evoStones < rollingTargetState.evoStones) {
+    rollingTargetState.evoStones = gameState.evoStones;
+  }
+
   startResourceRollingLoop();
   $("#shop-gold").textContent = Math.floor(gameState.gold).toLocaleString();
   $("#shop-crystal").textContent = Math.floor(gameState.crystal).toLocaleString();
@@ -1135,10 +1155,10 @@ function breakMiningRock() {
   clearMiningTimers();
 
   if (goldReward > 0) {
-    spawnResourceParticles("gold", Math.min(8, Math.max(3, Math.floor(goldReward / 3))), $("#rock-target"));
+    spawnResourceParticles("gold", goldReward, $("#rock-target"));
   }
   if (crystalReward > 0) {
-    spawnResourceParticles("crystal", Math.min(6, crystalReward), $("#rock-target"));
+    spawnResourceParticles("crystal", crystalReward, $("#rock-target"));
   }
 
   gameState.gold += goldReward;
@@ -1395,7 +1415,7 @@ function buyEvolutionStones(quantity) {
 
   gameState.gold -= price;
   soundManager.play("buy");
-  spawnResourceParticles("evoStone", Math.min(8, amount), document.activeElement || document.body);
+  spawnResourceParticles("evoStone", amount, document.activeElement || document.body);
   gameState.evoStones += amount;
   saveGame();
   updateResourceDisplays();
@@ -2833,9 +2853,25 @@ function playLootSoundDebounced() {
   }
 }
 
-function spawnResourceParticles(type, amount, startEl) {
-  if (document.hidden) return;
+function spawnResourceParticles(type, totalReward, startEl) {
+  const targetKey = type === "evoStone" ? "evoStones" : type;
+  
+  if (document.hidden) {
+    rollingTargetState[targetKey] = gameState[targetKey];
+    return;
+  }
   if (!startEl) return;
+  
+  // Decide particle count
+  let particlesCount = Math.min(12, Math.max(3, totalReward));
+  if (type === "gold") {
+    particlesCount = Math.min(12, Math.max(3, Math.floor(totalReward / 3)));
+  }
+  
+  // Calculate value split per particle
+  const baseValue = Math.floor(totalReward / particlesCount);
+  const remainder = totalReward % particlesCount;
+  
   const startRect = startEl.getBoundingClientRect();
   const startX = startRect.left + startRect.width / 2;
   const startY = startRect.top + startRect.height / 2;
@@ -2853,9 +2889,8 @@ function spawnResourceParticles(type, amount, startEl) {
   const targetEl = document.getElementById(targetId);
   if (!targetEl) return;
   
-  const particlesCount = Math.min(12, Math.max(3, amount));
-  
   for (let i = 0; i < particlesCount; i++) {
+    const particleValue = (i === particlesCount - 1) ? (baseValue + remainder) : baseValue;
     const particle = document.createElement("div");
     particle.className = "resource-particle";
     particle.textContent = emoji;
@@ -2902,6 +2937,7 @@ function spawnResourceParticles(type, amount, startEl) {
         if (dist < 12) {
           particle.remove();
           playLootSoundDebounced();
+          rollingTargetState[targetKey] += particleValue;
           return;
         }
         
