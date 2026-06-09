@@ -104,9 +104,6 @@
             <strong>TIP</strong>
             <span>Crystal Rock은 단단하지만 진화용 Crystal을 많이 줍니다.</span>
           </div>
-          <div id="mining-quick-evolve-panel" class="pixel-panel quick-evolve-panel" style="margin-top: 15px;">
-            <!-- Rendered dynamically via renderMining() -->
-          </div>
         </aside>
 
         <div class="pixel-panel mine-stage-panel">
@@ -119,13 +116,20 @@
               <div id="mining-monsters-container" class="mining-monsters-container"></div>
               <div id="projectile-layer" class="projectile-layer" aria-hidden="true"></div>
               <button id="rock-target" class="mine-unit rock-unit centered-rock" aria-label="돌을 공격하려면 클릭">
+                <div class="rock-floating-hp" aria-label="채굴 바위 체력">
+                  <div class="rock-floating-hp-row">
+                    <span id="rock-hp-label">Rock HP</span>
+                    <strong id="rock-hp-text">0 / 0</strong>
+                  </div>
+                  <div class="pixel-bar rock-floating-hp-bar"><span id="rock-hp-fill"></span></div>
+                </div>
                 <div id="rock-sprite"></div>
                 <div id="rock-name" class="unit-nameplate">Stone Rock</div>
                 <span class="click-hint">CLICK TO ATTACK</span>
               </button>
               <div id="damage-layer" class="damage-layer" aria-hidden="true"></div>
-              <div id="mine-auto-evolver" class="mine-evolver-zone" title="몬스터를 보내면 보유한 크리스탈로 자동 강화합니다.">
-                <span class="evolver-label">자동 진화</span>
+              <div id="mine-auto-evolver" class="mine-evolver-zone" title="몬스터를 보내면 보유한 재화로 레벨업을 시도합니다.">
+                <span class="evolver-label">레벨업</span>
               </div>
               <div id="mine-incinerator" class="mine-incinerator-zone" title="선택한 몬스터를 우클릭으로 여기에 보내면 소각(70% 환급)됩니다.">
                 <span class="incinerator-label">소각 판매</span>
@@ -134,17 +138,13 @@
           </div>
 
           <div class="mine-hud">
-            <div class="bar-label">
-              <span id="rock-hp-label">Rock HP</span>
-              <strong id="rock-hp-text">0 / 0</strong>
-            </div>
-            <div class="pixel-bar hp-bar"><span id="rock-hp-fill"></span></div>
             <div class="bar-label cooldown-label">
               <span>Next Attack</span>
               <strong id="attack-state-text">Ready</strong>
             </div>
             <div class="pixel-bar cooldown-bar"><span id="attack-cooldown-fill"></span></div>
             <div id="mine-message" class="mine-message">돌을 클릭해 채굴을 시작하세요.</div>
+            <div id="mining-automation-panel" class="mining-automation-panel"></div>
           </div>
         </div>
 
