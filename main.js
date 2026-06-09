@@ -636,8 +636,9 @@ function monsterSpriteMarkup(species, level, extraClass = "") {
   const spriteSheetStyle = definition?.spriteSheet
     ? ` style="--monster-sprite-sheet: url('${definition.spriteSheet}')"`
     : "";
+  const stage = getMonsterStage(species);
 
-  return `<div class="monster-sprite ${species} lv${level}${spriteSheetClass} ${extraClass}"${spriteSheetStyle} aria-hidden="true"></div>`;
+  return `<div class="monster-sprite ${species} stage${stage} lv${level}${spriteSheetClass} ${extraClass}"${spriteSheetStyle} aria-hidden="true"></div>`;
 }
 
 function preloadMonsterSpriteImages() {

@@ -614,54 +614,20 @@ button:disabled {
   to { background-position: -576px 0; }
 }
 
-.monster-sprite.lv2 {
-  transform: scale(1.08);
-  filter: drop-shadow(6px 7px 0 rgba(23, 32, 51, 0.2)) drop-shadow(0 0 7px rgba(242, 200, 75, 0.6));
+.monster-sprite.stage1 {
+  transform: scale(1.0);
 }
 
-.monster-sprite.lv3 {
-  transform: scale(1.17);
-  filter: drop-shadow(6px 7px 0 rgba(23, 32, 51, 0.2)) drop-shadow(0 0 9px rgba(102, 216, 229, 0.8));
+.monster-sprite.stage2 {
+  transform: scale(1.12);
+  filter: drop-shadow(6px 7px 0 rgba(23, 32, 51, 0.2)) drop-shadow(0 0 8px rgba(242, 200, 75, 0.7));
 }
 
-.monster-sprite.lv4 {
+.monster-sprite.stage3 {
   transform: scale(1.25);
-  filter: drop-shadow(6px 7px 0 rgba(23, 32, 51, 0.2)) drop-shadow(0 0 10px rgba(138, 103, 189, 0.85));
+  filter: drop-shadow(6px 7px 0 rgba(23, 32, 51, 0.2)) drop-shadow(0 0 10px rgba(102, 216, 229, 0.95));
 }
 
-.monster-sprite.lv5 {
-  transform: scale(1.33);
-  filter: drop-shadow(6px 7px 0 rgba(23, 32, 51, 0.2)) drop-shadow(0 0 12px rgba(217, 87, 84, 0.9));
-}
-
-.monster-sprite.lv6 {
-  transform: scale(1.41);
-  filter: drop-shadow(6px 7px 0 rgba(23, 32, 51, 0.2)) drop-shadow(0 0 13px rgba(99, 184, 92, 0.9));
-}
-
-.monster-sprite.lv7 {
-  transform: scale(1.48);
-  filter: drop-shadow(6px 7px 0 rgba(23, 32, 51, 0.2)) drop-shadow(0 0 14px rgba(242, 200, 75, 0.95));
-}
-
-.monster-sprite.lv8 {
-  transform: scale(1.55);
-  filter: drop-shadow(6px 7px 0 rgba(23, 32, 51, 0.2)) drop-shadow(0 0 15px rgba(224, 107, 155, 0.95));
-}
-
-.monster-sprite.lv9 {
-  transform: scale(1.62);
-  filter: drop-shadow(6px 7px 0 rgba(23, 32, 51, 0.2)) drop-shadow(0 0 16px rgba(138, 103, 189, 0.98));
-}
-
-.monster-sprite.lv10 {
-  transform: scale(1.70);
-  filter: drop-shadow(6px 7px 0 rgba(23, 32, 51, 0.2)) drop-shadow(0 0 20px rgba(102, 216, 229, 1)) drop-shadow(0 0 8px rgba(242, 200, 75, 0.8));
-}
-
-.monster-sprite.lv3::before {
-  border-width: 5px;
-}
 
 .rock-sprite {
   position: relative;
