@@ -924,9 +924,9 @@ function renderMining() {
       const waitingLeft = 15 + (index * 12) % 70;
       return {
         left: `${waitingLeft}%`,
-        top: "86%",
+        top: "85%",
         scale: 1.0,
-        zIndex: 86,
+        zIndex: 85,
         facing: 1,
         lunge: ""
       };
@@ -981,9 +981,9 @@ function renderMining() {
       if (action.type === "max") {
         quickEvolvePanel.innerHTML = `
           <h3>Quick Level Up</h3>
-          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; overflow: hidden; width: 100%;">
             ${monsterSpriteMarkup(monster.species, monster.level)}
-            <div>
+            <div style="flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
               <strong>${monster.name}</strong><br>
               <span style="font-size: 11px; color: var(--ink-soft);">LV ${monster.level} (최종 형태)</span>
             </div>
@@ -1009,9 +1009,9 @@ function renderMining() {
         
         quickEvolvePanel.innerHTML = `
           <h3>Quick Level Up</h3>
-          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; overflow: hidden; width: 100%;">
             ${monsterSpriteMarkup(monster.species, monster.level)}
-            <div>
+            <div style="flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
               <strong>${monster.name}</strong><br>
               <span style="font-size: 11px; color: var(--ink-soft);">LV ${monster.level} → LV ${nextLevel}</span>
             </div>
@@ -1137,7 +1137,7 @@ function runMonsterAttackLoop(monsterId) {
   const spotElement = $(`#mining-spot-${index}`);
 
   const topPct = parseFloat(spot.top);
-  const isWaiting = !isNaN(topPct) && topPct >= 78;
+  const isWaiting = !isNaN(topPct) && topPct >= 70;
 
   if (uiState.currentScreen === "mining" && spotElement && !isWaiting) {
     // Face the central rock (placed at 50% left)
