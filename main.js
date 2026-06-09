@@ -919,14 +919,16 @@ function renderMining() {
         pos.zIndex = Math.round(parseFloat(pos.top));
         return pos;
       }
-      const defaultSpot = miningSpots[index % miningSpots.length];
+      
+      // Default to waiting/summon zone (bottom deck floor)
+      const waitingLeft = 15 + (index * 12) % 70;
       return {
-        left: defaultSpot.left,
-        top: defaultSpot.top,
+        left: `${waitingLeft}%`,
+        top: "86%",
         scale: 1.0,
-        zIndex: Math.round(parseFloat(defaultSpot.top)),
-        facing: defaultSpot.facing,
-        lunge: defaultSpot.lunge
+        zIndex: 86,
+        facing: 1,
+        lunge: ""
       };
     });
   }
@@ -960,6 +962,80 @@ function renderMining() {
 
   // Update status summary text
   $("#mining-monster-summary").textContent = `OWNED PARTNERS: ${gameState.monsters.length} / ACTIVE MINERS WORK TOGETHER`;
+
+  // Render Quick Evolution Panel
+  const quickEvolvePanel = $("#mining-quick-evolve-panel");
+  if (quickEvolvePanel) {
+    if (miningState.selectedMonsterIndex === null) {
+      quickEvolvePanel.innerHTML = `
+        <h3>Quick Level Up</h3>
+        <p class="evo-brief">마이닝 중인 파트너 몬스터를 클릭하여 선택하면 이곳에서 바로 퀵 레벨업 및 진화를 진행할 수 있습니다.</p>
+        <div style="font-size: 11px; color: var(--ink-soft); border-top: 1px dashed #ccc; padding-top: 8px; margin-top: 8px;">
+          * 자세한 성장 및 진화 스펙 정보는 메인 메뉴의 <strong>Evolution</strong> 탭에서 확인 가능합니다.
+        </div>
+      `;
+    } else {
+      const monster = gameState.monsters[miningState.selectedMonsterIndex];
+      const action = getUpgradeAction(monster);
+      
+      if (action.type === "max") {
+        quickEvolvePanel.innerHTML = `
+          <h3>Quick Level Up</h3>
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+            ${monsterSpriteMarkup(monster.species, monster.level)}
+            <div>
+              <strong>${monster.name}</strong><br>
+              <span style="font-size: 11px; color: var(--ink-soft);">LV ${monster.level} (최종 형태)</span>
+            </div>
+          </div>
+          <div class="evo-stats" style="grid-template-columns: 1fr;">
+            <div style="text-align: center;">ATK: <strong>${monster.stats.attack}</strong> / HP: <strong>${monster.stats.maxHp}</strong></div>
+          </div>
+          <button class="primary-button wide-button" disabled>MAX LEVEL REACHED</button>
+        `;
+      } else {
+        const nextLevel = monster.level + 1;
+        const prefix = getMonsterFamilyPrefix(monster.species);
+        const nextSpecies = getSpeciesForLevel(prefix, nextLevel);
+        
+        let evolutionNotice = "";
+        if (nextSpecies && nextSpecies !== monster.species) {
+          const nextDef = monsterDefinitions[nextSpecies];
+          evolutionNotice = `<div class="evo-notice-text">★ 성공 시 [${nextDef.name}] (Stage ${getMonsterStage(nextSpecies)}) 진화! ★</div>`;
+        }
+        
+        const canAfford = gameState.gold >= action.gold && gameState.crystal >= action.crystal;
+        const buttonDisabled = !canAfford ? " disabled" : "";
+        
+        quickEvolvePanel.innerHTML = `
+          <h3>Quick Level Up</h3>
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+            ${monsterSpriteMarkup(monster.species, monster.level)}
+            <div>
+              <strong>${monster.name}</strong><br>
+              <span style="font-size: 11px; color: var(--ink-soft);">LV ${monster.level} → LV ${nextLevel}</span>
+            </div>
+          </div>
+          
+          <div class="evo-stats">
+            <div>확률: <strong>${Math.round(action.chance * 100)}%</strong></div>
+            <div>비용: <strong style="${gameState.gold < action.gold ? 'color:#ff5500;' : ''}">${action.gold.toLocaleString()} G</strong></div>
+            <div style="grid-column: span 2;">필요 크리스탈: <strong style="${gameState.crystal < action.crystal ? 'color:#ff5500;' : ''}">${action.crystal} / ${gameState.crystal}</strong></div>
+          </div>
+          
+          ${evolutionNotice}
+          
+          <button id="quick-evolve-button" class="primary-button wide-button"${buttonDisabled} data-quick-evolve="${miningState.selectedMonsterIndex}">
+            QUICK 진화 시도
+          </button>
+          
+          <div style="font-size: 10px; color: var(--ink-soft); margin-top: 6px; text-align: center;">
+            * 상세 스펙 정보는 메인 메뉴 <strong>Evolution</strong> 참조
+          </div>
+        `;
+      }
+    }
+  }
 
   updateMiningUi();
 }
@@ -1060,7 +1136,10 @@ function runMonsterAttackLoop(monsterId) {
   const spot = (miningState.monsterPositions && miningState.monsterPositions[index]) || miningSpots[index % miningSpots.length];
   const spotElement = $(`#mining-spot-${index}`);
 
-  if (uiState.currentScreen === "mining" && spotElement) {
+  const topPct = parseFloat(spot.top);
+  const isWaiting = !isNaN(topPct) && topPct >= 78;
+
+  if (uiState.currentScreen === "mining" && spotElement && !isWaiting) {
     // Face the central rock (placed at 50% left)
     const xPct = parseFloat(spot.left);
     if (!isNaN(xPct)) {
@@ -1089,7 +1168,7 @@ function runMonsterAttackLoop(monsterId) {
   setTimeout(() => {
     if (miningState.active && !miningState.respawning && currentGeneration === miningState.generation) {
       const verifiedMonster = getMonsterById(monsterId);
-      if (verifiedMonster) {
+      if (verifiedMonster && !isWaiting) {
         applyMiningDamage(verifiedMonster.stats.attack);
       }
     }
@@ -1586,6 +1665,53 @@ function attemptEvolution() {
   renderEvolution();
   animateEvolutionResult(succeeded);
   showToast(uiState.evolutionResult, succeeded ? "success" : "error");
+}
+
+function attemptQuickEvolution(monsterIndex) {
+  const index = parseInt(monsterIndex);
+  const monster = gameState.monsters[index];
+  if (!monster) return;
+
+  const action = getUpgradeAction(monster);
+  if (action.type === "max") return;
+
+  if (gameState.gold < action.gold || gameState.crystal < action.crystal) {
+    showToast("성장 재료가 부족합니다.", "error");
+    return;
+  }
+
+  gameState.gold -= action.gold;
+  gameState.crystal -= action.crystal;
+  const succeeded = Math.random() < action.chance;
+
+  if (succeeded) {
+    monster.level += 1;
+    const prefix = getMonsterFamilyPrefix(monster.species);
+    const nextSpecies = getSpeciesForLevel(prefix, monster.level);
+    
+    let evolved = false;
+    if (nextSpecies && nextSpecies !== monster.species) {
+      monster.species = nextSpecies;
+      monster.name = monsterDefinitions[nextSpecies].name;
+      evolved = true;
+    }
+    
+    monster.stats = getMonsterStats(monster.species, monster.level);
+    soundManager.play("upgrade");
+    
+    if (evolved) {
+      showToast(`성공! ${monster.name}(으)로 자동 진화했습니다! (LV${monster.level})`, "success");
+    } else {
+      showToast(`성공! ${monster.name}이 LV${monster.level}(으)로 레벨업했습니다.`, "success");
+    }
+  } else {
+    soundManager.play("break");
+    showToast(`${monster.name} 레벨업 실패!`, "error");
+  }
+
+  saveGame();
+  updateResourceDisplays();
+  renderMining();
 }
 
 function animateEvolutionResult(succeeded) {
@@ -3044,6 +3170,7 @@ function bindEvents() {
     if (button.dataset.buyMonster) buyMonster(button.dataset.buyMonster);
     if (button.dataset.toggleId) togglePvpTeamMember(button.dataset.toggleId);
     if (button.dataset.removeId) togglePvpTeamMember(button.dataset.removeId);
+    if (button.dataset.quickEvolve) attemptQuickEvolution(button.dataset.quickEvolve);
   });
 
   // Mute button setup

@@ -81,11 +81,16 @@
             <strong>TIP</strong>
             <span>Crystal Rock은 단단하지만 진화용 Crystal을 많이 줍니다.</span>
           </div>
+          <div id="mining-quick-evolve-panel" class="pixel-panel quick-evolve-panel" style="margin-top: 15px;">
+            <!-- Rendered dynamically via renderMining() -->
+          </div>
         </aside>
 
         <div class="pixel-panel mine-stage-panel">
           <div id="mine-stage" class="mine-stage">
             <div class="mine-stage-floor"></div>
+            <div class="mine-waiting-floor"></div>
+            <div class="mine-waiting-fence"></div>
 
             <div class="mine-combatants">
               <div id="mining-monsters-container" class="mining-monsters-container"></div>
@@ -97,7 +102,7 @@
               </button>
               <div id="damage-layer" class="damage-layer" aria-hidden="true"></div>
               <div id="mine-incinerator" class="mine-incinerator-zone" title="선택한 몬스터를 우클릭으로 여기에 보내면 소각(70% 환급)됩니다.">
-                <span class="incinerator-label">소각로 (70%)</span>
+                <span class="incinerator-label">소각로 (70% 환급)</span>
               </div>
             </div>
           </div>
