@@ -169,21 +169,51 @@ const rockDefinitions = {
 };
 
 const levelRequirements = {
-  1: { stones: 1, crystal: 4, chance: 0.70 },
-  2: { stones: 2, crystal: 14, chance: 0.40 },
-  3: { stones: 3, crystal: 25, chance: 0.60 },
-  4: { stones: 4, crystal: 45, chance: 0.50 },
-  5: { stones: 5, crystal: 70, chance: 0.55 },
-  6: { stones: 6, crystal: 100, chance: 0.50 },
-  7: { stones: 7, crystal: 140, chance: 0.45 },
-  8: { stones: 8, crystal: 190, chance: 0.40 },
-  9: { stones: 10, crystal: 250, chance: 0.35 }
+  1: { gold: 100, crystal: 4, chance: 0.85 },
+  2: { gold: 200, crystal: 8, chance: 0.80 },
+  3: { gold: 400, crystal: 15, chance: 0.75 },
+  4: { gold: 700, crystal: 25, chance: 0.70 },
+  5: { gold: 1100, crystal: 40, chance: 0.65 },
+  6: { gold: 1600, crystal: 60, chance: 0.60 },
+  7: { gold: 2200, crystal: 85, chance: 0.55 },
+  8: { gold: 2900, crystal: 115, chance: 0.50 },
+  9: { gold: 3700, crystal: 150, chance: 0.45 },
+  10: { gold: 4600, crystal: 190, chance: 0.40 },
+  11: { gold: 5600, crystal: 240, chance: 0.38 },
+  12: { gold: 6700, crystal: 300, chance: 0.36 },
+  13: { gold: 7900, crystal: 370, chance: 0.34 },
+  14: { gold: 9200, crystal: 450, chance: 0.32 },
+  15: { gold: 11000, crystal: 550, chance: 0.30 },
+  16: { gold: 13000, crystal: 670, chance: 0.28 },
+  17: { gold: 15500, crystal: 800, chance: 0.26 },
+  18: { gold: 18500, crystal: 950, chance: 0.24 },
+  19: { gold: 22000, crystal: 1150, chance: 0.22 }
 };
 
 function getMaxLevel(species) {
-  if (["0_1_cyclopse", "1_1_lovelydoll", "2_1_unnyangi"].includes(species)) return 3;
-  if (["0_2_cyclopsis", "1_2_cutie", "2_2_unnyangsam"].includes(species)) return 5;
-  return 10;
+  return 20;
+}
+
+function getMonsterFamilyPrefix(species) {
+  if (!species) return "0";
+  return species.split("_")[0];
+}
+
+function getSpeciesForLevel(familyPrefix, level) {
+  if (level >= 15) {
+    if (familyPrefix === "0") return "0_3_hatefulclops";
+    if (familyPrefix === "1") return "1_3_candy";
+    if (familyPrefix === "2") return "2_3_unrang";
+  } else if (level >= 5) {
+    if (familyPrefix === "0") return "0_2_cyclopsis";
+    if (familyPrefix === "1") return "1_2_cutie";
+    if (familyPrefix === "2") return "2_2_unnyangsam";
+  } else {
+    if (familyPrefix === "0") return "0_1_cyclopse";
+    if (familyPrefix === "1") return "1_1_lovelydoll";
+    if (familyPrefix === "2") return "2_1_unnyangi";
+  }
+  return null;
 }
 
 function getNextEvolution(species) {
@@ -203,22 +233,11 @@ function getMonsterStage(species) {
 }
 
 function getUpgradeAction(monster) {
-  const nextSpec = getNextEvolution(monster.species);
   const maxLvl = getMaxLevel(monster.species);
-  
-  if (monster.species === "0_1_cyclopse" || monster.species === "1_1_lovelydoll" || monster.species === "2_1_unnyangi") {
-    if (monster.level >= 3) {
-      return { type: "evolve", nextSpecies: nextSpec, stones: 5, crystal: 30, chance: 0.35 };
-    }
-  } else if (monster.species === "0_2_cyclopsis" || monster.species === "1_2_cutie" || monster.species === "2_2_unnyangsam") {
-    if (monster.level >= 5) {
-      return { type: "evolve", nextSpecies: nextSpec, stones: 10, crystal: 80, chance: 0.25 };
-    }
-  }
   
   if (monster.level < maxLvl) {
     const req = levelRequirements[monster.level];
-    return { type: "levelUp", stones: req.stones, crystal: req.crystal, chance: req.chance };
+    return { type: "levelUp", gold: req.gold, crystal: req.crystal, chance: req.chance };
   }
   
   return { type: "max" };
@@ -553,6 +572,18 @@ function loadGame() {
     }
 
     const monsters = saved.monsters.map(normalizeMonster);
+    
+    // Save migration: correct species and stats based on current level rules
+    monsters.forEach((monster) => {
+      const prefix = getMonsterFamilyPrefix(monster.species);
+      const correctSpecies = getSpeciesForLevel(prefix, monster.level);
+      if (correctSpecies && correctSpecies !== monster.species) {
+        monster.species = correctSpecies;
+        monster.name = monsterDefinitions[correctSpecies].name;
+      }
+      monster.stats = getMonsterStats(monster.species, monster.level);
+    });
+
     const validIds = new Set(monsters.map((monster) => monster.id));
 
     gameState = {
@@ -787,16 +818,28 @@ function updateResourceDisplays() {
   }
 
   startResourceRollingLoop();
-  $("#shop-gold").textContent = Math.floor(gameState.gold).toLocaleString();
-  $("#shop-crystal").textContent = Math.floor(gameState.crystal).toLocaleString();
-  $("#shop-stones").textContent = Math.floor(gameState.evoStones).toLocaleString();
+  
+  const shopGold = $("#shop-gold");
+  if (shopGold) shopGold.textContent = Math.floor(gameState.gold).toLocaleString();
+  
+  const shopCrystal = $("#shop-crystal");
+  if (shopCrystal) shopCrystal.textContent = Math.floor(gameState.crystal).toLocaleString();
+  
+  const shopStones = $("#shop-stones");
+  if (shopStones) shopStones.textContent = Math.floor(gameState.evoStones).toLocaleString();
+  
   updateResourceDisplaysVisual();
 }
 
 function updateResourceDisplaysVisual() {
-  $("#gold-display").textContent = Math.floor(displayState.gold).toLocaleString();
-  $("#crystal-display").textContent = Math.floor(displayState.crystal).toLocaleString();
-  $("#evo-stone-display").textContent = Math.floor(displayState.evoStones).toLocaleString();
+  const goldEl = $("#gold-display");
+  if (goldEl) goldEl.textContent = Math.floor(displayState.gold).toLocaleString();
+  
+  const crystalEl = $("#crystal-display");
+  if (crystalEl) crystalEl.textContent = Math.floor(displayState.crystal).toLocaleString();
+  
+  const evoEl = $("#evo-stone-display");
+  if (evoEl) evoEl.textContent = Math.floor(displayState.evoStones).toLocaleString();
 }
 
 function selectStarter(species) {
@@ -1333,22 +1376,8 @@ function renderShop() {
   const grid = $("#shop-products-grid");
   if (!grid) return;
 
-  // 1. Evo Stone Card
-  let html = `
-    <div class="pixel-panel product-card">
-      <div class="evo-stone-art"><span></span></div>
-      <div class="product-copy">
-        <p class="eyebrow">SUPPLY</p>
-        <h2>Evolution Stone</h2>
-        <p>몬스터의 진화 시도에 사용되는 신비로운 돌입니다.</p>
-        <div class="price-tag"><span>PRICE</span><strong>120 Gold</strong></div>
-        <div class="product-actions">
-          <button class="primary-button" data-buy-stones="1">Buy 1</button>
-          <button class="secondary-button" data-buy-stones="5">Buy 5</button>
-        </div>
-      </div>
-    </div>
-  `;
+  // 1. Evo Stone Card (Removed)
+  let html = ``;
 
   // 2. 3 Monster Cards to buy
   const monstersToBuy = [
@@ -1434,9 +1463,7 @@ function renderEvolution() {
   $("#evolution-monster-list").innerHTML = gameState.monsters.map((monster) => {
     const action = getUpgradeAction(monster);
     let label = "";
-    if (action.type === "evolve") {
-      label = `Evo (${Math.round(action.chance * 100)}%)`;
-    } else if (action.type === "levelUp") {
+    if (action.type === "levelUp") {
       label = `LV Up (${Math.round(action.chance * 100)}%)`;
     } else {
       label = "MAX";
@@ -1458,35 +1485,33 @@ function renderEvolution() {
   }
 
   $("#evolution-sprite").innerHTML = monsterSpriteMarkup(monster.species, monster.level);
-  $("#evolution-result").textContent = uiState.evolutionResult || "재료를 확인한 뒤 진화를 시도하세요.";
+  $("#evolution-result").textContent = uiState.evolutionResult || "재료를 확인한 뒤 성장을 시도하세요.";
 
   const action = getUpgradeAction(monster);
-  if (action.type === "evolve") {
-    const nextDef = monsterDefinitions[action.nextSpecies];
-    const nextStats = getMonsterStats(action.nextSpecies, 1);
-    const stageFrom = getMonsterStage(monster.species);
+  if (action.type === "levelUp") {
+    const nextLevel = monster.level + 1;
+    const prefix = getMonsterFamilyPrefix(monster.species);
+    const nextSpecies = getSpeciesForLevel(prefix, nextLevel);
+    
+    let evolutionNotice = "";
+    let nextStats;
+    
+    if (nextSpecies && nextSpecies !== monster.species) {
+      const nextDef = monsterDefinitions[nextSpecies];
+      nextStats = getMonsterStats(nextSpecies, nextLevel);
+      evolutionNotice = `<p style="color: #ffa726; font-weight: bold; animation: pulse 1s infinite alternate;">★ 레벨업 성공 시, 즉시 [${nextDef.name}] (Stage ${getMonsterStage(nextSpecies)})으로 자동 진화합니다! ★</p>`;
+    } else {
+      nextStats = getMonsterStats(monster.species, nextLevel);
+    }
     
     $("#evolution-details").innerHTML = `
-      <h2>${monster.name} / Tier Evolution (T${stageFrom} LV${monster.level} → T${stageFrom + 1} LV1)</h2>
+      <h2>${monster.name} / LV${monster.level} → LV${nextLevel}</h2>
       <div class="evolution-costs">
         <div>SUCCESS<strong>${Math.round(action.chance * 100)}%</strong></div>
-        <div>EVO STONE<strong>${action.stones} required</strong></div>
+        <div>GOLD<strong>${action.gold.toLocaleString()} required</strong></div>
         <div>CRYSTAL<strong>${action.crystal} required</strong></div>
       </div>
-      <p>진화형: <strong>${nextDef.name}</strong> (${nextDef.role})</p>
-      <p>성공 시 ATK ${monster.stats.attack} → ${nextStats.attack}, HP ${monster.stats.maxHp} → ${nextStats.maxHp}, SKILL ${nextDef.skillName} (${monster.stats.skillDamage} → ${nextStats.skillDamage})</p>
-    `;
-    $("#evolve-button").disabled = false;
-    $("#evolve-button").textContent = "Attempt Evolution";
-  } else if (action.type === "levelUp") {
-    const nextStats = getMonsterStats(monster.species, monster.level + 1);
-    $("#evolution-details").innerHTML = `
-      <h2>${monster.name} / LV${monster.level} → LV${monster.level + 1}</h2>
-      <div class="evolution-costs">
-        <div>SUCCESS<strong>${Math.round(action.chance * 100)}%</strong></div>
-        <div>EVO STONE<strong>${action.stones} required</strong></div>
-        <div>CRYSTAL<strong>${action.crystal} required</strong></div>
-      </div>
+      ${evolutionNotice}
       <p>성공 시 ATK ${monster.stats.attack} → ${nextStats.attack}, HP ${monster.stats.maxHp} → ${nextStats.maxHp}, SKILL ${monster.stats.skillDamage} → ${nextStats.skillDamage}</p>
     `;
     $("#evolve-button").disabled = false;
@@ -1520,34 +1545,39 @@ function attemptEvolution() {
     return;
   }
 
-  if (gameState.evoStones < action.stones || gameState.crystal < action.crystal) {
-    uiState.evolutionResult = `재료 부족: Evolution Stone ${action.stones}개와 Crystal ${action.crystal}개가 필요합니다.`;
+  if (gameState.gold < action.gold || gameState.crystal < action.crystal) {
+    uiState.evolutionResult = `재료 부족: Gold ${action.gold.toLocaleString()}개와 Crystal ${action.crystal.toLocaleString()}개가 필요합니다.`;
     renderEvolution();
     animateEvolutionResult(false);
-    showToast("진화 재료가 부족합니다.", "error");
+    showToast("레벨업 재료가 부족합니다.", "error");
     return;
   }
 
-  gameState.evoStones -= action.stones;
+  gameState.gold -= action.gold;
   gameState.crystal -= action.crystal;
   const succeeded = Math.random() < action.chance;
 
   if (succeeded) {
-    if (action.type === "evolve") {
-      const oldName = monster.name;
-      const nextDef = monsterDefinitions[action.nextSpecies];
-      monster.species = action.nextSpecies;
-      monster.level = 1;
-      monster.stats = getMonsterStats(action.nextSpecies, 1);
-      monster.name = nextDef.name;
-      uiState.evolutionResult = `SUCCESS! ${oldName}이(가) ${nextDef.name}(T${getMonsterStage(monster.species)} LV1)으로 초월 진화했습니다!`;
+    monster.level += 1;
+    const prefix = getMonsterFamilyPrefix(monster.species);
+    const nextSpecies = getSpeciesForLevel(prefix, monster.level);
+    
+    let evolved = false;
+    if (nextSpecies && nextSpecies !== monster.species) {
+      monster.species = nextSpecies;
+      monster.name = monsterDefinitions[nextSpecies].name;
+      evolved = true;
+    }
+    
+    monster.stats = getMonsterStats(monster.species, monster.level);
+    
+    if (evolved) {
+      uiState.evolutionResult = `SUCCESS! ${monster.name}(으)로 진화하면서 LV${monster.level}이 되었습니다!`;
     } else {
-      monster.level += 1;
-      monster.stats = getMonsterStats(monster.species, monster.level);
       uiState.evolutionResult = `SUCCESS! ${monster.name}이 LV${monster.level}(으)로 레벨업했습니다.`;
     }
   } else {
-    uiState.evolutionResult = `FAILED. ${monster.name}의 ${action.type === "evolve" ? "진화" : "레벨업"}에 실패했습니다.`;
+    uiState.evolutionResult = `FAILED. ${monster.name}의 레벨업에 실패했습니다.`;
   }
 
   saveGame();
