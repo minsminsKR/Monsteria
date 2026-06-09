@@ -2239,3 +2239,21 @@ kbd {
   text-shadow: 1px 1px 0 var(--ink);
   pointer-events: none;
 }
+
+/* === Mining Debris and Resource Particles === */
+.mining-debris {
+  position: absolute;
+  z-index: 10;
+  border-radius: 1px;
+  pointer-events: none;
+  box-shadow: 1px 1px 0 rgba(0,0,0,0.3);
+}
+
+.resource-particle {
+  position: fixed;
+  z-index: 99999;
+  pointer-events: none;
+  font-size: 22px;
+  user-select: none;
+  text-shadow: 0 0 4px rgba(255, 255, 255, 0.4);
+}

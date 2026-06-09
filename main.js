@@ -565,6 +565,7 @@ function loadGame() {
       pvpMonsterId: validIds.has(saved.pvpMonsterId) ? saved.pvpMonsterId : monsters[0].id,
       selectedRock: rockDefinitions[saved.selectedRock] ? saved.selectedRock : "stone"
     };
+    syncDisplayResources();
   } catch (error) {
     console.warn("Monsteria save could not be loaded.", error);
     localStorage.removeItem(SAVE_KEY);
@@ -588,6 +589,8 @@ function resetSave() {
   uiState.selectedEvolutionMonsterId = null;
   uiState.evolutionResult = "";
   resetMiningRock("stone");
+  syncDisplayResources();
+  updateResourceDisplays();
   showStarterScreen();
   showToast("저장 데이터가 초기화되었습니다.", "success");
 }
@@ -709,14 +712,71 @@ function renderScreen(screenName) {
   if (screenName === "pvp" && !pvpState.active) renderPvpSetup();
 }
 
-function updateResourceDisplays() {
-  $("#gold-display").textContent = Math.floor(gameState.gold).toLocaleString();
-  $("#crystal-display").textContent = Math.floor(gameState.crystal).toLocaleString();
-  $("#evo-stone-display").textContent = Math.floor(gameState.evoStones).toLocaleString();
+const displayState = {
+  gold: 0,
+  crystal: 0,
+  evoStones: 0
+};
 
+function syncDisplayResources() {
+  displayState.gold = gameState.gold;
+  displayState.crystal = gameState.crystal;
+  displayState.evoStones = gameState.evoStones;
+}
+
+let resourceAnimationLoop = null;
+
+function startResourceRollingLoop() {
+  if (resourceAnimationLoop) return;
+  const tick = () => {
+    let changed = false;
+    if (displayState.gold < gameState.gold) {
+      const diff = gameState.gold - displayState.gold;
+      displayState.gold += Math.max(1, Math.ceil(diff * 0.12));
+      if (displayState.gold > gameState.gold) displayState.gold = gameState.gold;
+      changed = true;
+    } else if (displayState.gold > gameState.gold) {
+      displayState.gold = gameState.gold;
+      changed = true;
+    }
+    if (displayState.crystal < gameState.crystal) {
+      const diff = gameState.crystal - displayState.crystal;
+      displayState.crystal += Math.max(1, Math.ceil(diff * 0.12));
+      if (displayState.crystal > gameState.crystal) displayState.crystal = gameState.crystal;
+      changed = true;
+    } else if (displayState.crystal > gameState.crystal) {
+      displayState.crystal = gameState.crystal;
+      changed = true;
+    }
+    if (displayState.evoStones < gameState.evoStones) {
+      const diff = gameState.evoStones - displayState.evoStones;
+      displayState.evoStones += Math.max(1, Math.ceil(diff * 0.12));
+      if (displayState.evoStones > gameState.evoStones) displayState.evoStones = gameState.evoStones;
+      changed = true;
+    } else if (displayState.evoStones > gameState.evoStones) {
+      displayState.evoStones = gameState.evoStones;
+      changed = true;
+    }
+    if (changed) {
+      updateResourceDisplaysVisual();
+    }
+    resourceAnimationLoop = requestAnimationFrame(tick);
+  };
+  resourceAnimationLoop = requestAnimationFrame(tick);
+}
+
+function updateResourceDisplays() {
+  startResourceRollingLoop();
   $("#shop-gold").textContent = Math.floor(gameState.gold).toLocaleString();
   $("#shop-crystal").textContent = Math.floor(gameState.crystal).toLocaleString();
   $("#shop-stones").textContent = Math.floor(gameState.evoStones).toLocaleString();
+  updateResourceDisplaysVisual();
+}
+
+function updateResourceDisplaysVisual() {
+  $("#gold-display").textContent = Math.floor(displayState.gold).toLocaleString();
+  $("#crystal-display").textContent = Math.floor(displayState.crystal).toLocaleString();
+  $("#evo-stone-display").textContent = Math.floor(displayState.evoStones).toLocaleString();
 }
 
 function selectStarter(species) {
@@ -1013,6 +1073,7 @@ function applyMiningDamage(damage) {
     if (isCrit) {
       soundManager.play("break"); // Heavier critical hit sound
       spawnDamageNumber(finalDamage, true);
+      spawnMiningDebris($("#rock-target"), miningState.type);
 
       // Mine Stage screen shake
       const mineStage = $("#mine-stage");
@@ -1025,6 +1086,7 @@ function applyMiningDamage(damage) {
     } else {
       soundManager.play("hit");
       spawnDamageNumber(finalDamage, false);
+      spawnMiningDebris($("#rock-target"), miningState.type);
     }
   }
   miningState.hp = Math.max(0, miningState.hp - finalDamage);
@@ -1071,6 +1133,14 @@ function breakMiningRock() {
 
   miningState.respawning = true;
   clearMiningTimers();
+
+  if (goldReward > 0) {
+    spawnResourceParticles("gold", Math.min(8, Math.max(3, Math.floor(goldReward / 3))), $("#rock-target"));
+  }
+  if (crystalReward > 0) {
+    spawnResourceParticles("crystal", Math.min(6, crystalReward), $("#rock-target"));
+  }
+
   gameState.gold += goldReward;
   gameState.crystal += crystalReward;
   saveGame();
@@ -1325,6 +1395,7 @@ function buyEvolutionStones(quantity) {
 
   gameState.gold -= price;
   soundManager.play("buy");
+  spawnResourceParticles("evoStone", Math.min(8, amount), document.activeElement || document.body);
   gameState.evoStones += amount;
   saveGame();
   updateResourceDisplays();
@@ -2737,6 +2808,8 @@ function init() {
   renderStarterOptions();
   bindEvents();
   loadGame();
+  syncDisplayResources();
+  startResourceRollingLoop();
 
   if (gameState.started) {
     resetMiningRock(gameState.selectedRock);
@@ -2749,3 +2822,176 @@ function init() {
 }
 
 init();
+
+// Particle & sound helper functions
+let lastLootSoundTime = 0;
+function playLootSoundDebounced() {
+  const now = performance.now();
+  if (now - lastLootSoundTime >= 65) {
+    soundManager.play("loot");
+    lastLootSoundTime = now;
+  }
+}
+
+function spawnResourceParticles(type, amount, startEl) {
+  if (document.hidden) return;
+  if (!startEl) return;
+  const startRect = startEl.getBoundingClientRect();
+  const startX = startRect.left + startRect.width / 2;
+  const startY = startRect.top + startRect.height / 2;
+  
+  let targetId = "gold-display";
+  let emoji = "🪙";
+  if (type === "crystal") {
+    targetId = "crystal-display";
+    emoji = "💎";
+  } else if (type === "evoStone") {
+    targetId = "evo-stone-display";
+    emoji = "🔮";
+  }
+  
+  const targetEl = document.getElementById(targetId);
+  if (!targetEl) return;
+  
+  const particlesCount = Math.min(12, Math.max(3, amount));
+  
+  for (let i = 0; i < particlesCount; i++) {
+    const particle = document.createElement("div");
+    particle.className = "resource-particle";
+    particle.textContent = emoji;
+    
+    let px = startX + (Math.random() - 0.5) * 32;
+    let py = startY + (Math.random() - 0.5) * 32;
+    
+    particle.style.left = `${px}px`;
+    particle.style.top = `${py}px`;
+    document.body.appendChild(particle);
+    
+    const angle = -Math.PI / 2 + (Math.random() - 0.5) * 1.6;
+    const speed = 150 + Math.random() * 150;
+    let vx = Math.cos(angle) * speed;
+    let vy = Math.sin(angle) * speed;
+    
+    let state = "parabolic";
+    let elapsed = 0;
+    
+    const tick = (now) => {
+      if (!particle.parentNode) return;
+      const dt = 0.016;
+      elapsed += dt;
+      
+      const targetRect = targetEl.getBoundingClientRect();
+      const tx = targetRect.left + targetRect.width / 2;
+      const ty = targetRect.top + targetRect.height / 2;
+      
+      if (state === "parabolic") {
+        vy += 420 * dt;
+        px += vx * dt;
+        py += vy * dt;
+        
+        particle.style.transform = `rotate(${elapsed * 400}deg)`;
+        
+        if (elapsed >= 0.35) {
+          state = "magnet";
+        }
+      } else {
+        const dx = tx - px;
+        const dy = ty - py;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        
+        if (dist < 12) {
+          particle.remove();
+          playLootSoundDebounced();
+          return;
+        }
+        
+        const pullSpeed = 460 + (elapsed - 0.35) * 450;
+        px += (dx / dist) * pullSpeed * dt;
+        py += (dy / dist) * pullSpeed * dt;
+        
+        particle.style.transform = "";
+      }
+      
+      particle.style.left = `${px}px`;
+      particle.style.top = `${py}px`;
+      
+      requestAnimationFrame(tick);
+    };
+    
+    requestAnimationFrame(tick);
+  }
+}
+
+function spawnMiningDebris(startEl, rockType) {
+  if (document.hidden) return;
+  if (!startEl) return;
+  const rect = startEl.getBoundingClientRect();
+  const container = $("#mine-stage");
+  if (!container) return;
+  
+  const containerRect = container.getBoundingClientRect();
+  const startX = (rect.left + rect.width / 2) - containerRect.left;
+  const startY = (rect.top + rect.height / 2) - containerRect.top;
+  
+  let colors = ["#8c8c8c", "#a6a6a6", "#595959"];
+  if (rockType === "iron") {
+    colors = ["#d38d58", "#8c583c", "#a06440", "#555b5c"];
+  } else if (rockType === "crystal") {
+    colors = ["#5eb9ce", "#a874d0", "#bcf5e7", "#35618c"];
+  }
+  
+  const debrisCount = 4 + Math.floor(Math.random() * 4);
+  
+  for (let i = 0; i < debrisCount; i++) {
+    const deb = document.createElement("span");
+    deb.className = "mining-debris";
+    deb.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+    
+    const sz = 3 + Math.floor(Math.random() * 4);
+    deb.style.width = `${sz}px`;
+    deb.style.height = `${sz}px`;
+    
+    let px = startX + (Math.random() - 0.5) * 20;
+    let py = startY + (Math.random() - 0.5) * 20;
+    
+    deb.style.left = `${px}px`;
+    deb.style.top = `${py}px`;
+    
+    container.appendChild(deb);
+    
+    const angle = -Math.PI / 2 + (Math.random() - 0.5) * 2.2;
+    const speed = 70 + Math.random() * 120;
+    let vx = Math.cos(angle) * speed;
+    let vy = Math.sin(angle) * speed;
+    
+    let elapsed = 0;
+    const lifeTime = 0.45 + Math.random() * 0.25;
+    
+    const tick = (now) => {
+      if (!deb.parentNode) return;
+      const dt = 0.016;
+      elapsed += dt;
+      
+      if (elapsed >= lifeTime) {
+        deb.remove();
+        return;
+      }
+      
+      vy += 350 * dt;
+      px += vx * dt;
+      py += vy * dt;
+      
+      deb.style.left = `${px}px`;
+      deb.style.top = `${py}px`;
+      
+      if (elapsed > lifeTime * 0.65) {
+        const alpha = (lifeTime - elapsed) / (lifeTime * 0.35);
+        deb.style.opacity = Math.max(0, alpha);
+      }
+      
+      requestAnimationFrame(tick);
+    };
+    
+    requestAnimationFrame(tick);
+  }
+}
