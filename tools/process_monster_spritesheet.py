@@ -57,6 +57,16 @@ def positive_int(value: str) -> int:
     return number
 
 
+def non_negative_int(value: str) -> int:
+    try:
+        number = int(value)
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError("expected a non-negative integer") from exc
+    if number < 0:
+        raise argparse.ArgumentTypeError("expected a non-negative integer")
+    return number
+
+
 def byte_value(value: str) -> int:
     try:
         number = int(value)
@@ -170,7 +180,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--padding",
-        type=positive_int,
+        type=non_negative_int,
         default=10,
         metavar="PX",
         help="minimum transparent padding inside each 96x96 output cell (default: 10)",
@@ -224,7 +234,10 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--no-trim",
         action="store_true",
-        help="do not crop and align cells individually; scale and center the entire cell uniformly",
+        help=(
+            "do not crop, align, or scale cells individually; key each full "
+            "source cell and scale every cell with the same source-grid transform"
+        ),
     )
     return parser
 
@@ -574,14 +587,6 @@ def process_sheet(
             bounds = cell_bounds(image.size, source_cols, source_rows, col, row)
             if no_trim:
                 keyed_cell = keyed_sheet.crop(bounds)
-                margin_top = round(keyed_cell.height * 0.12)
-                margin_bottom = round(keyed_cell.height * 0.05)
-                if margin_top > 0:
-                    transparent_box = Image.new("RGBA", (keyed_cell.width, margin_top), (0, 0, 0, 0))
-                    keyed_cell.paste(transparent_box, (0, 0))
-                if margin_bottom > 0:
-                    transparent_box = Image.new("RGBA", (keyed_cell.width, margin_bottom), (0, 0, 0, 0))
-                    keyed_cell.paste(transparent_box, (0, keyed_cell.height - margin_bottom))
             else:
                 keyed_cell = extract_cell_subject(
                     keyed_sheet,
