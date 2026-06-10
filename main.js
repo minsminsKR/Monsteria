@@ -219,6 +219,48 @@ const monsterDefinitions = {
     colors: { main: "#1de9b6", light: "#ffffff", dark: "#00b0ff", accent: "#00e5ff" },
     base: { attack: 350, attackSpeed: 2.15, maxHp: 2450, defense: 155, skillDamage: 960 },
     growth: { attack: 125, attackSpeed: 0.21, maxHp: 620, defense: 58, skillDamage: 375 }
+  },
+  "0_6_cosmic_overlord": {
+    id: "0_6_cosmic_overlord",
+    name: "코스믹오버로드",
+    role: "Singularity God-Eye",
+    description: "어비스모나크가 우주 그 자체를 삼킨 궁극의 형태. 은하를 꿰뚫는 특이점 광선으로 시공간을 소멸시키는 절대자.",
+    skillName: "Singularity Annihilation",
+    skillCooldown: 0.8,
+    projectileSpeed: 980,
+    moveSpeed: 255,
+    spriteSheet: "assets/monsters/0_6_cosmic_overlord/0_6_cosmic_overlord-spritesheet-game.png",
+    colors: { main: "#311b92", light: "#b388ff", dark: "#12005e", accent: "#00e5ff" },
+    base: { attack: 540, attackSpeed: 3.45, maxHp: 4200, defense: 240, skillDamage: 1650 },
+    growth: { attack: 190, attackSpeed: 0.32, maxHp: 980, defense: 88, skillDamage: 580 }
+  },
+  "1_6_seraph_valkyria": {
+    id: "1_6_seraph_valkyria",
+    name: "세라프발키리아",
+    role: "Celestial Aegis Archangel",
+    description: "발키리돌이 천상의 빛으로 승천한 6익 대천사. 황금 성창과 심판의 깃털 폭풍으로 전장을 정화하는 수호신.",
+    skillName: "Celestial Judgement",
+    skillCooldown: 2.4,
+    projectileSpeed: 560,
+    moveSpeed: 195,
+    spriteSheet: "assets/monsters/1_6_seraph_valkyria/1_6_seraph_valkyria-spritesheet-game.png",
+    colors: { main: "#fff8e1", light: "#ffffff", dark: "#ff8f00", accent: "#ffd700" },
+    base: { attack: 920, attackSpeed: 1.62, maxHp: 6600, defense: 460, skillDamage: 2600 },
+    growth: { attack: 330, attackSpeed: 0.15, maxHp: 1550, defense: 175, skillDamage: 1020 }
+  },
+  "2_6_divine_kirin": {
+    id: "2_6_divine_kirin",
+    name: "신수기린황",
+    role: "Heavenly Thunder Sovereign",
+    description: "기린냥이 하늘의 신수로 각성한 뇌제(雷帝). 천둥의 관을 쓰고 창세의 뇌전 폭풍을 부리는 폭풍의 황제.",
+    skillName: "Heavenly Thunder Genesis",
+    skillCooldown: 1.3,
+    projectileSpeed: 780,
+    moveSpeed: 225,
+    spriteSheet: "assets/monsters/2_6_divine_kirin/2_6_divine_kirin-spritesheet-game.png",
+    colors: { main: "#00e5ff", light: "#ffffff", dark: "#006064", accent: "#ffd54f" },
+    base: { attack: 720, attackSpeed: 2.35, maxHp: 5200, defense: 330, skillDamage: 2000 },
+    growth: { attack: 260, attackSpeed: 0.23, maxHp: 1280, defense: 120, skillDamage: 780 }
   }
 };
 
@@ -283,8 +325,17 @@ for (let l = 20; l <= 49; l++) {
   };
 }
 
+// Populate ultimate levels 50 to 59 (stage 6 zone) with a steeper cost curve
+for (let l = 50; l <= 59; l++) {
+  levelRequirements[l] = {
+    gold: Math.round(22000 * Math.pow(l / 19, 1.9)),
+    crystal: Math.round(1150 * Math.pow(l / 19, 2.1)),
+    chance: Math.max(0.03, parseFloat((0.22 * Math.pow(19 / l, 0.85)).toFixed(2)))
+  };
+}
+
 function getMaxLevel(species) {
-  return 50;
+  return 60;
 }
 
 function getMonsterFamilyPrefix(species) {
@@ -293,7 +344,11 @@ function getMonsterFamilyPrefix(species) {
 }
 
 function getSpeciesForLevel(familyPrefix, level) {
-  if (level >= 40) {
+  if (level >= 50) {
+    if (familyPrefix === "0") return "0_6_cosmic_overlord";
+    if (familyPrefix === "1") return "1_6_seraph_valkyria";
+    if (familyPrefix === "2") return "2_6_divine_kirin";
+  } else if (level >= 40) {
     if (familyPrefix === "0") return "0_5_abyss_monarch";
     if (familyPrefix === "1") return "1_5_valkyria_doll";
     if (familyPrefix === "2") return "2_5_kirin_nyang";
@@ -322,16 +377,19 @@ function getNextEvolution(species) {
   if (species === "0_2_cyclopsis") return "0_3_hatefulclops";
   if (species === "0_3_hatefulclops") return "0_4_goliathclops";
   if (species === "0_4_goliathclops") return "0_5_abyss_monarch";
+  if (species === "0_5_abyss_monarch") return "0_6_cosmic_overlord";
   
   if (species === "1_1_lovelydoll") return "1_2_cutie";
   if (species === "1_2_cutie") return "1_3_candy";
   if (species === "1_3_candy") return "1_4_marionette";
   if (species === "1_4_marionette") return "1_5_valkyria_doll";
+  if (species === "1_5_valkyria_doll") return "1_6_seraph_valkyria";
   
   if (species === "2_1_unnyangi") return "2_2_unnyangsam";
   if (species === "2_2_unnyangsam") return "2_3_unrang";
   if (species === "2_3_unrang") return "2_4_unraiju";
   if (species === "2_4_unraiju") return "2_5_kirin_nyang";
+  if (species === "2_5_kirin_nyang") return "2_6_divine_kirin";
   return null;
 }
 
@@ -341,6 +399,7 @@ function getMonsterStage(species) {
   if (["0_3_hatefulclops", "1_3_candy", "2_3_unrang"].includes(species)) return 3;
   if (["0_4_goliathclops", "1_4_marionette", "2_4_unraiju"].includes(species)) return 4;
   if (["0_5_abyss_monarch", "1_5_valkyria_doll", "2_5_kirin_nyang"].includes(species)) return 5;
+  if (["0_6_cosmic_overlord", "1_6_seraph_valkyria", "2_6_divine_kirin"].includes(species)) return 6;
   return 1;
 }
 
@@ -363,6 +422,131 @@ const spriteRows = {
   hit: 4,
   faint: 5
 };
+
+// ---------------------------------------------------------------------------
+// Achievements
+// ---------------------------------------------------------------------------
+
+const achievementDefinitions = [
+  { id: "first_evolution", name: "첫 진화", description: "몬스터를 처음으로 진화시키기", reward: 50, check: (s) => (s.stats?.evolutions || 0) >= 1 },
+  { id: "evolution_master", name: "진화 마스터", description: "누적 진화 25회 달성", reward: 300, check: (s) => (s.stats?.evolutions || 0) >= 25 },
+  { id: "ultimate_form", name: "궁극의 존재", description: "6단계 궁극진화 몬스터 획득", reward: 1000, check: (s) => (s.collection || []).some((species) => getMonsterStage(species) >= 6) },
+  { id: "collector_9", name: "수집가", description: "도감에 몬스터 9종 등록", reward: 200, check: (s) => (s.collection || []).length >= 9 },
+  { id: "collector_18", name: "몬스터 박사", description: "도감 18종 완성", reward: 1500, check: (s) => (s.collection || []).length >= 18 },
+  { id: "tower_10", name: "탑 등반가", description: "무한의 탑 10층 클리어", reward: 250, check: (s) => (s.tower?.highestFloor || 0) >= 10 },
+  { id: "tower_25", name: "탑 정복자", description: "무한의 탑 25층 클리어", reward: 800, check: (s) => (s.tower?.highestFloor || 0) >= 25 },
+  { id: "tower_50", name: "하늘 위의 존재", description: "무한의 탑 50층 클리어", reward: 2500, check: (s) => (s.tower?.highestFloor || 0) >= 50 },
+  { id: "gold_100k", name: "골드 부자", description: "누적 100,000 골드 획득", reward: 150, check: (s) => (s.stats?.goldEarned || 0) >= 100000 },
+  { id: "gold_1m", name: "골드 재벌", description: "누적 1,000,000 골드 획득", reward: 600, check: (s) => (s.stats?.goldEarned || 0) >= 1000000 },
+  { id: "incinerate_10", name: "소각 기술자", description: "몬스터 10마리 소각", reward: 100, check: (s) => (s.stats?.incinerated || 0) >= 10 },
+  { id: "incinerate_100", name: "불꽃의 거장", description: "몬스터 100마리 소각", reward: 500, check: (s) => (s.stats?.incinerated || 0) >= 100 },
+  { id: "rocks_500", name: "광부의 길", description: "바위 500개 파괴", reward: 200, check: (s) => (s.stats?.rocksBroken || 0) >= 500 },
+  { id: "max_level", name: "한계 돌파", description: "몬스터를 LV60까지 성장시키기", reward: 2000, check: (s) => s.monsters.some((monster) => monster.level >= 60) }
+];
+
+function checkAchievements() {
+  if (!gameState.started) return;
+  if (!Array.isArray(gameState.achievements)) gameState.achievements = [];
+
+  let unlockedAny = false;
+  achievementDefinitions.forEach((achievement) => {
+    if (gameState.achievements.includes(achievement.id)) return;
+    if (!achievement.check(gameState)) return;
+
+    gameState.achievements.push(achievement.id);
+    gameState.crystal += achievement.reward;
+    unlockedAny = true;
+    showToast(`업적 달성! [${achievement.name}] +${achievement.reward} Crystal`, "legendary");
+    soundManager.play("achievement");
+  });
+
+  if (unlockedAny) {
+    saveGame();
+    updateResourceDisplays();
+    if (uiState.currentScreen === "codex") renderCodex();
+  }
+}
+
+function recordSpeciesDiscovery(species) {
+  if (!monsterDefinitions[species]) return false;
+  if (!Array.isArray(gameState.collection)) gameState.collection = [];
+  if (gameState.collection.includes(species)) return false;
+
+  gameState.collection.push(species);
+  const stage = getMonsterStage(species);
+  showToast(`도감 등록! [${monsterDefinitions[species].name}] (Stage ${stage})`, stage >= 5 ? "legendary" : "info");
+  checkAchievements();
+  return true;
+}
+
+function trackStat(key, amount = 1) {
+  if (!gameState.stats) {
+    gameState.stats = { goldEarned: 0, incinerated: 0, evolutions: 0, rocksBroken: 0 };
+  }
+  gameState.stats[key] = (gameState.stats[key] || 0) + amount;
+}
+
+// ---------------------------------------------------------------------------
+// Evolution cutscene
+// ---------------------------------------------------------------------------
+
+let evolutionCutsceneTimer = null;
+
+function playEvolutionCutscene(monster) {
+  const overlay = $("#evolution-cutscene");
+  if (!overlay || document.hidden) return;
+
+  const stage = getMonsterStage(monster.species);
+  const isUltimate = stage >= 6;
+
+  clearTimeout(evolutionCutsceneTimer);
+  overlay.classList.remove("is-hidden", "is-ultimate");
+  if (isUltimate) overlay.classList.add("is-ultimate");
+
+  const title = $("#cutscene-title");
+  if (title) title.textContent = isUltimate ? "★ ULTIMATE EVOLUTION ★" : "EVOLUTION!";
+  const nameEl = $("#cutscene-name");
+  if (nameEl) nameEl.textContent = `${monster.name} — STAGE ${stage}`;
+
+  const spriteWrap = $("#cutscene-sprite");
+  if (spriteWrap) {
+    spriteWrap.innerHTML = monsterSpriteMarkup(monster.species, monster.level);
+    spriteWrap.classList.remove("revealed");
+    void spriteWrap.offsetWidth;
+  }
+
+  const particleLayer = overlay.querySelector(".cutscene-particles");
+  if (particleLayer) {
+    particleLayer.innerHTML = "";
+    const particleCount = isUltimate ? 38 : 22;
+    for (let index = 0; index < particleCount; index += 1) {
+      const particle = document.createElement("span");
+      const angle = Math.random() * Math.PI * 2;
+      const distance = 90 + Math.random() * 220;
+      particle.style.setProperty("--px", `${Math.cos(angle) * distance}px`);
+      particle.style.setProperty("--py", `${Math.sin(angle) * distance}px`);
+      particle.style.animationDelay = `${620 + Math.random() * 520}ms`;
+      if (isUltimate) particle.classList.add("cosmic");
+      particleLayer.appendChild(particle);
+    }
+  }
+
+  soundManager.play("charge");
+  setTimeout(() => {
+    if (overlay.classList.contains("is-hidden")) return;
+    spriteWrap?.classList.add("revealed");
+    soundManager.play(isUltimate ? "victory" : "success");
+  }, 720);
+
+  evolutionCutsceneTimer = setTimeout(() => {
+    overlay.classList.add("is-hidden");
+  }, isUltimate ? 3400 : 2500);
+
+  overlay.onclick = () => {
+    clearTimeout(evolutionCutsceneTimer);
+    overlay.classList.add("is-hidden");
+  };
+}
 
 const monsterSpriteImages = {};
 
@@ -429,7 +613,12 @@ function createDefaultGameState() {
     playerXp: 0,
     talentPoints: 0,
     investedTalents: 0,
-    automation: createDefaultAutomationSettings()
+    automation: createDefaultAutomationSettings(),
+    tower: { highestFloor: 0 },
+    collection: [],
+    achievements: [],
+    stats: { goldEarned: 0, incinerated: 0, evolutions: 0, rocksBroken: 0 },
+    lastSeen: 0
   };
 }
 
@@ -438,6 +627,7 @@ let gameState = createDefaultGameState();
 const uiState = {
   currentScreen: "starter",
   selectedEvolutionMonsterId: null,
+  selectedCodexSpecies: null,
   evolutionResult: ""
 };
 
@@ -621,6 +811,7 @@ function commandMonsterToStageZone(index, zoneId, flags = {}) {
   }
 
   startMiningMovementLoop();
+  if (flags.levelUp) updateEvolverZoneStatus();
   return true;
 }
 
@@ -758,6 +949,119 @@ function resolveMonsterZoneEntry(index, spot) {
 
 function pinMonsterToLevelUpZone(index) {
   // No-op to avoid teleporting monster to the center of the level-up zone
+}
+
+function spawnTeleportBurst(left, top) {
+  // Bursts live on the stage itself so renderMining() rebuilds don't wipe them
+  const stage = $("#mine-stage");
+  if (!stage) return;
+
+  const burst = document.createElement("div");
+  burst.className = "teleport-burst";
+  burst.style.left = left;
+  burst.style.top = top;
+  stage.appendChild(burst);
+  setTimeout(() => burst.remove(), 520);
+}
+
+function teleportMonsterToWaiting(index) {
+  const spot = miningState.monsterPositions?.[index];
+  if (!spot) return null;
+
+  const fromPosition = { left: spot.left, top: spot.top };
+
+  const next = getMiningSpawnCenterPosition(index);
+  Object.assign(spot, next, {
+    targetLeft: next.left,
+    targetTop: next.top,
+    isMoving: false,
+    isTargetingIncinerator: false,
+    isTargetingAutoEvolver: false,
+    isAutomationMove: false
+  });
+
+  const spotEl = document.getElementById(`mining-spot-${index}`);
+  if (spotEl) {
+    spotEl.style.left = spot.left;
+    spotEl.style.top = spot.top;
+    spotEl.style.zIndex = spot.zIndex;
+    const sprite = spotEl.querySelector(".monster-sprite");
+    if (sprite) sprite.classList.remove("is-walking", "is-attacking");
+    const wrapper = spotEl.querySelector(".monster-sprite-wrapper");
+    if (wrapper) wrapper.style.transform = spot.facing < 0 ? "scaleX(-1)" : "";
+  }
+
+  saveMiningPositions();
+  return fromPosition;
+}
+
+function playTeleportVisuals(index, fromPosition) {
+  if (fromPosition) spawnTeleportBurst(fromPosition.left, fromPosition.top);
+
+  const spot = miningState.monsterPositions?.[index];
+  if (spot) spawnTeleportBurst(spot.left, spot.top);
+
+  const spotEl = document.getElementById(`mining-spot-${index}`);
+  if (spotEl) {
+    spotEl.classList.remove("teleport-in");
+    void spotEl.offsetWidth;
+    spotEl.classList.add("teleport-in");
+    setTimeout(() => spotEl.classList.remove("teleport-in"), 620);
+  }
+
+  soundManager.play("teleport");
+}
+
+// Level-up loop: attempt -> teleport to waiting -> walk back to the zone -> repeat
+const levelUpLoopTimers = new Map(); // monsterId -> timeout id
+
+function cancelLevelUpLoop(monsterId) {
+  const timer = levelUpLoopTimers.get(monsterId);
+  if (timer) {
+    clearTimeout(timer);
+    levelUpLoopTimers.delete(monsterId);
+  }
+}
+
+function scheduleLevelUpLoopReturn(monsterId, automation) {
+  cancelLevelUpLoop(monsterId);
+
+  const timer = setTimeout(() => {
+    levelUpLoopTimers.delete(monsterId);
+
+    const index = gameState.monsters.findIndex((monster) => monster.id === monsterId);
+    if (index < 0) {
+      updateEvolverZoneStatus();
+      return;
+    }
+
+    // If the player left the mining screen, keep the loop alive until they return
+    if (uiState.currentScreen !== "mining") {
+      scheduleLevelUpLoopReturn(monsterId, automation);
+      return;
+    }
+
+    const monster = gameState.monsters[index];
+    const settings = getAutomationSettingsForFamily(getMonsterFamilyPrefix(monster.species));
+    const action = getUpgradeAction(monster);
+    if (action.type === "max" || monster.level >= settings.targetLevel) {
+      updateEvolverZoneStatus();
+      return;
+    }
+
+    const commanded = commandMonsterToStageZone(index, "mine-auto-evolver", {
+      levelUp: true,
+      automation: Boolean(automation)
+    });
+    if (!commanded) {
+      // Spot busy (e.g. mid-incineration) — retry shortly
+      scheduleLevelUpLoopReturn(monsterId, automation);
+      return;
+    }
+    updateEvolverZoneStatus();
+  }, 600);
+
+  levelUpLoopTimers.set(monsterId, timer);
 }
 
 function sendMonsterBackToWaiting(index) {
@@ -970,18 +1274,21 @@ function normalizeMonster(savedMonster) {
   else if (spec === "hatefulclops") spec = "0_3_hatefulclops";
   else if (spec === "goliathclops") spec = "0_4_goliathclops";
   else if (spec === "abyss_monarch") spec = "0_5_abyss_monarch";
+  else if (spec === "cosmic_overlord") spec = "0_6_cosmic_overlord";
   
   else if (spec === "bruterock" || spec === "lovelydoll") spec = "1_1_lovelydoll";
   else if (spec === "cutie") spec = "1_2_cutie";
   else if (spec === "candy") spec = "1_3_candy";
   else if (spec === "marionette") spec = "1_4_marionette";
   else if (spec === "valkyria_doll") spec = "1_5_valkyria_doll";
+  else if (spec === "seraph_valkyria") spec = "1_6_seraph_valkyria";
   
   else if (spec === "balancer" || spec === "unnyangi") spec = "2_1_unnyangi";
   else if (spec === "unnyangeoger" || spec === "unnyangsam") spec = "2_2_unnyangsam";
   else if (spec === "unrang") spec = "2_3_unrang";
   else if (spec === "unraiju") spec = "2_4_unraiju";
   else if (spec === "kirin_nyang") spec = "2_5_kirin_nyang";
+  else if (spec === "divine_kirin") spec = "2_6_divine_kirin";
   
   const species = monsterDefinitions[spec] ? spec : "2_1_unnyangi";
   const maxLvl = getMaxLevel(species);
@@ -1026,7 +1333,17 @@ function saveGame() {
     playerXp: gameState.playerXp,
     talentPoints: gameState.talentPoints,
     investedTalents: gameState.investedTalents,
-    automation: normalizeAutomationSettings(gameState.automation)
+    automation: normalizeAutomationSettings(gameState.automation),
+    tower: { highestFloor: Math.max(0, Number(gameState.tower?.highestFloor) || 0) },
+    collection: Array.isArray(gameState.collection) ? gameState.collection : [],
+    achievements: Array.isArray(gameState.achievements) ? gameState.achievements : [],
+    stats: {
+      goldEarned: Math.max(0, Number(gameState.stats?.goldEarned) || 0),
+      incinerated: Math.max(0, Number(gameState.stats?.incinerated) || 0),
+      evolutions: Math.max(0, Number(gameState.stats?.evolutions) || 0),
+      rocksBroken: Math.max(0, Number(gameState.stats?.rocksBroken) || 0)
+    },
+    lastSeen: Date.now()
   };
 
   localStorage.setItem(SAVE_KEY, JSON.stringify(saveData));
@@ -1072,8 +1389,25 @@ function loadGame() {
       playerXp: Math.max(0, Number(saved.playerXp) || 0),
       talentPoints: Math.max(0, Number(saved.talentPoints) || 0),
       investedTalents: Math.max(0, Number(saved.investedTalents) || 0),
-      automation: normalizeAutomationSettings(saved.automation)
+      automation: normalizeAutomationSettings(saved.automation),
+      tower: { highestFloor: Math.max(0, Number(saved.tower?.highestFloor) || 0) },
+      collection: Array.isArray(saved.collection) ? saved.collection.filter((species) => monsterDefinitions[species]) : [],
+      achievements: Array.isArray(saved.achievements) ? saved.achievements : [],
+      stats: {
+        goldEarned: Math.max(0, Number(saved.stats?.goldEarned) || 0),
+        incinerated: Math.max(0, Number(saved.stats?.incinerated) || 0),
+        evolutions: Math.max(0, Number(saved.stats?.evolutions) || 0),
+        rocksBroken: Math.max(0, Number(saved.stats?.rocksBroken) || 0)
+      },
+      lastSeen: Math.max(0, Number(saved.lastSeen) || 0)
     };
+
+    // Sync codex with currently owned monsters
+    gameState.monsters.forEach((monster) => {
+      if (!gameState.collection.includes(monster.species)) {
+        gameState.collection.push(monster.species);
+      }
+    });
     syncDisplayResources();
     updatePlayerUi();
   } catch (error) {
@@ -1222,6 +1556,8 @@ function renderScreen(screenName) {
   if (screenName === "monsters") renderMonsters();
   if (screenName === "shop") renderShop();
   if (screenName === "evolution") renderEvolution();
+  if (screenName === "tower") renderTower();
+  if (screenName === "codex") renderCodex();
   if (screenName === "pvp" && !pvpState.active) renderPvpSetup();
 }
 
@@ -1460,6 +1796,7 @@ function selectStarter(species) {
     pvpMonsterId: monster.id
   };
   uiState.selectedEvolutionMonsterId = monster.id;
+  recordSpeciesDiscovery(species);
   resetMiningRock("stone");
   saveGame();
   showGameUi();
@@ -1565,6 +1902,7 @@ function renderMining() {
 
   renderMiningAutomationPanel();
   updateMiningUi();
+  updateEvolverZoneStatus();
 }
 
 function renderMiningAutomationPanel() {
@@ -1596,14 +1934,22 @@ function renderMiningAutomationPanel() {
             ${settings.autoLevelUp ? "ON" : "OFF"}
           </button>
         </div>
-        <label class="automation-field">
+        <div class="automation-field">
           <span>목표 LV</span>
-          <input type="number" min="1" max="50" step="1" value="${settings.targetLevel}" data-automation-family="${family.prefix}" data-automation-field="targetLevel">
-        </label>
-        <label class="automation-field">
+          <div class="automation-stepper">
+            <button type="button" class="stepper-button" data-step="-1" data-step-family="${family.prefix}" data-step-field="targetLevel" aria-label="목표 레벨 감소">−</button>
+            <input type="number" min="1" max="60" step="1" value="${settings.targetLevel}" data-automation-family="${family.prefix}" data-automation-field="targetLevel">
+            <button type="button" class="stepper-button" data-step="1" data-step-family="${family.prefix}" data-step-field="targetLevel" aria-label="목표 레벨 증가">+</button>
+          </div>
+        </div>
+        <div class="automation-field">
           <span>판매 LV</span>
-          <input type="number" min="0" max="50" step="1" value="${settings.sellLevel}" data-automation-family="${family.prefix}" data-automation-field="sellLevel">
-        </label>
+          <div class="automation-stepper">
+            <button type="button" class="stepper-button" data-step="-1" data-step-family="${family.prefix}" data-step-field="sellLevel" aria-label="판매 레벨 감소">−</button>
+            <input type="number" min="0" max="60" step="1" value="${settings.sellLevel}" data-automation-family="${family.prefix}" data-automation-field="sellLevel">
+            <button type="button" class="stepper-button" data-step="1" data-step-family="${family.prefix}" data-step-field="sellLevel" aria-label="판매 레벨 증가">+</button>
+          </div>
+        </div>
       </div>
     `;
   }).join("");
@@ -1953,8 +2299,11 @@ function breakMiningRock() {
 
   gameState.gold += goldReward;
   gameState.crystal += crystalReward;
+  trackStat("goldEarned", goldReward);
+  trackStat("rocksBroken");
   saveGame();
   updateResourceDisplays();
+  checkAchievements();
 
   if (uiState.currentScreen === "mining") {
     $("#rock-target").classList.add("is-breaking");
@@ -2033,8 +2382,11 @@ function incinerateMonster(index, options = {}) {
 
   // Refund gold immediately
   gameState.gold += refund;
+  trackStat("goldEarned", refund);
+  trackStat("incinerated");
   const xpGain = monster.level * 5;
   addPlayerXp(xpGain, { showToastMessages: !options.auto });
+  checkAchievements();
 
   // Apply the CSS animation classes to the DOM element
   const spotElement = $(`#mining-spot-${index}`);
@@ -2088,17 +2440,30 @@ function incinerateMonster(index, options = {}) {
 // Monster management and shop
 // ---------------------------------------------------------------------------
 
+function getStageStarsMarkup(stage) {
+  return `<span class="stage-stars stage-stars-${stage}" title="Stage ${stage}">${"★".repeat(stage)}</span>`;
+}
+
+function isEvolutionImminent(monster) {
+  const prefix = getMonsterFamilyPrefix(monster.species);
+  const nextSpecies = getSpeciesForLevel(prefix, monster.level + 1);
+  return monster.level < getMaxLevel(monster.species) && nextSpecies && nextSpecies !== monster.species;
+}
+
 function renderMonsters() {
   $("#monster-list").innerHTML = gameState.monsters.map((monster) => {
     const definition = monsterDefinitions[monster.species];
     const isMining = monster.id === gameState.miningMonsterId;
     const isPvp = monster.id === gameState.pvpMonsterId;
+    const stage = getMonsterStage(monster.species);
+    const imminent = isEvolutionImminent(monster);
     return `
-      <article class="monster-management-card pixel-panel">
+      <article class="monster-management-card pixel-panel card-tier-${stage}">
         <div class="monster-card-visual">${monsterSpriteMarkup(monster.species, monster.level)}</div>
         <div class="monster-card-copy">
-          <h2>${monster.name}</h2>
+          <h2>${monster.name} ${getStageStarsMarkup(stage)}</h2>
           <span class="level-badge">LV${monster.level} / ${definition.role}</span>
+          ${imminent ? '<span class="evolution-imminent-badge">진화 임박!</span>' : ""}
           ${statsMarkup(monster)}
         </div>
         <div class="monster-card-actions">
@@ -2209,6 +2574,7 @@ function buyMonster(species) {
   soundManager.play("buy");
   const newMonster = createMonster(species);
   gameState.monsters.push(newMonster);
+  recordSpeciesDiscovery(species);
   addMiningPositionForMonster(newMonster, gameState.monsters.length - 1);
   if (miningState.active) {
     scheduleMonsterAttack(newMonster);
@@ -2263,7 +2629,7 @@ function renderEvolution() {
     return `
       <button class="evolution-list-button ${monster.id === uiState.selectedEvolutionMonsterId ? "active" : ""}" data-select-evolution="${monster.id}">
         ${monsterSpriteMarkup(monster.species, monster.level)}
-        <span><strong>${monster.name}</strong>LV${monster.level} / ${label}</span>
+        <span><strong>${monster.name} ${getStageStarsMarkup(getMonsterStage(monster.species))}</strong>LV${monster.level} / ${label}</span>
       </button>
     `;
   }).join("");
@@ -2328,17 +2694,6 @@ function selectEvolutionMonster(monsterId) {
   renderEvolution();
 }
 
-function getUpgradeAction(monster) {
-  const maxLvl = getMaxLevel(monster.species);
-  
-  if (monster.level < maxLvl) {
-    const req = levelRequirements[monster.level];
-    return { type: "levelUp", gold: req.gold, crystal: req.crystal, chance: req.chance };
-  }
-  
-  return { type: "max" };
-}
-
 function getEvolutionChanceBonus(level) {
   const talents = gameState.investedTalents || 0;
   if (level <= 10) return talents * 0.02;
@@ -2388,6 +2743,10 @@ function attemptEvolution() {
     
     if (evolved) {
       uiState.evolutionResult = `SUCCESS! ${monster.name}(으)로 진화하면서 LV${monster.level}이 되었습니다!`;
+      trackStat("evolutions");
+      if (recordSpeciesDiscovery(monster.species)) {
+        playEvolutionCutscene(monster);
+      }
     } else {
       uiState.evolutionResult = `SUCCESS! ${monster.name}이 LV${monster.level}(으)로 레벨업했습니다.`;
     }
@@ -2400,6 +2759,89 @@ function attemptEvolution() {
   renderEvolution();
   animateEvolutionResult(succeeded);
   showToast(uiState.evolutionResult, succeeded ? "success" : "error");
+  checkAchievements();
+}
+
+function flashLevelUpZone(succeeded, monster) {
+  const zone = $("#mine-auto-evolver");
+  if (!zone) return;
+
+  const flashClass = succeeded ? "zone-flash-success" : "zone-flash-fail";
+  zone.classList.remove("zone-flash-success", "zone-flash-fail");
+  void zone.offsetWidth;
+  zone.classList.add(flashClass);
+  setTimeout(() => zone.classList.remove(flashClass), 700);
+
+  const float = document.createElement("span");
+  float.className = `evolver-float ${succeeded ? "success" : "fail"}`;
+  float.textContent = succeeded ? `LV${monster.level} UP!` : "FAIL";
+  zone.appendChild(float);
+  setTimeout(() => float.remove(), 1000);
+}
+
+function getActiveLevelUpMonsterIndex() {
+  if (!miningState.monsterPositions) return -1;
+
+  for (let index = 0; index < gameState.monsters.length; index += 1) {
+    if (miningState.monsterPositions[index]?.isTargetingAutoEvolver) return index;
+  }
+  for (let index = 0; index < gameState.monsters.length; index += 1) {
+    const monster = gameState.monsters[index];
+    if (monster && levelUpLoopTimers.has(monster.id)) return index;
+  }
+  for (let index = 0; index < gameState.monsters.length; index += 1) {
+    const spot = miningState.monsterPositions[index];
+    if (!spot || spot.isMoving) continue;
+    if (doesMonsterEntryOverlapZone(index, "mine-auto-evolver", spot)) return index;
+  }
+  return -1;
+}
+
+function updateEvolverZoneStatus() {
+  const zone = $("#mine-auto-evolver");
+  const card = $("#evolver-status");
+  if (!zone || !card) return;
+
+  const index = getActiveLevelUpMonsterIndex();
+  const monster = index >= 0 ? gameState.monsters[index] : null;
+  if (!monster) {
+    zone.classList.remove("is-busy");
+    card.classList.add("is-hidden");
+    return;
+  }
+
+  zone.classList.add("is-busy");
+  card.classList.remove("is-hidden");
+
+  const settings = getAutomationSettingsForFamily(getMonsterFamilyPrefix(monster.species));
+  const targetLevel = Math.max(settings.targetLevel, monster.level);
+  const action = getUpgradeAction(monster);
+
+  const nameEl = $("#evolver-status-name");
+  if (nameEl) nameEl.textContent = monster.name;
+
+  const infoEl = $("#evolver-status-info");
+  const costEl = $("#evolver-status-cost");
+  if (action.type === "max") {
+    if (infoEl) infoEl.textContent = `LV${monster.level} · MAX`;
+    if (costEl) costEl.textContent = "";
+  } else {
+    const chance = Math.min(1, action.chance + getEvolutionChanceBonus(monster.level));
+    if (infoEl) infoEl.textContent = `LV${monster.level} → ${targetLevel} · 성공률 ${(chance * 100).toFixed(0)}%`;
+    if (costEl) {
+      const goldShort = gameState.gold < action.gold;
+      const crystalShort = gameState.crystal < action.crystal;
+      costEl.innerHTML =
+        `<span class="${goldShort ? "cost-short" : ""}">G ${action.gold.toLocaleString()}</span>` +
+        `<span class="${crystalShort ? "cost-short" : ""}">C ${action.crystal.toLocaleString()}</span>` +
+        `${goldShort || crystalShort ? '<em>재화 대기</em>' : ""}`;
+    }
+  }
+
+  const fill = $("#evolver-progress-fill");
+  if (fill) {
+    fill.style.width = `${Math.min(100, (monster.level / targetLevel) * 100).toFixed(1)}%`;
+  }
 }
 
 function triggerLevelUpZoneVisualEffect(monsterIndex, succeeded) {
@@ -2432,23 +2874,22 @@ function attemptMiningZoneLevelUp(index, options = {}) {
   let effectSucceeded = false;
 
   if (action.type === "max") {
-    if (pinAfter) {
-      pinMonsterToLevelUpZone(index);
-      saveMiningPositions();
-    }
-    sendMonsterBackToWaiting(index);
-    saveMiningPositions();
+    cancelLevelUpLoop(monster.id);
+    const fromPosition = teleportMonsterToWaiting(index);
     if (showManualToasts) {
       showToast(`${monster.name}은(는) 이미 최대 레벨입니다.`, "info");
     }
     saveGame();
+    updateEvolverZoneStatus();
     if (renderAfter && uiState.currentScreen === "mining") renderMining();
+    playTeleportVisuals(index, fromPosition);
     return { attempted: false, reason: "max" };
   }
 
   if (gameState.gold < action.gold || gameState.crystal < action.crystal) {
     // Monster stays in place — checkStandingMonstersEvolution will retry when resources arrive
     saveGame();
+    updateEvolverZoneStatus();
     if (renderAfter && uiState.currentScreen === "mining") renderMining();
     return { attempted: false, reason: "materials" };
   }
@@ -2464,6 +2905,7 @@ function attemptMiningZoneLevelUp(index, options = {}) {
   const succeeded = Math.random() < finalChance;
   shouldShowEffect = true;
   effectSucceeded = succeeded;
+  let deferredToast = null;
 
   if (succeeded) {
     monster.level += 1;
@@ -2481,24 +2923,21 @@ function attemptMiningZoneLevelUp(index, options = {}) {
     soundManager.play("upgrade");
     
     if (evolved) {
+      trackStat("evolutions");
+      if (recordSpeciesDiscovery(monster.species)) {
+        playEvolutionCutscene(monster);
+      }
       if (showManualToasts || showAutoSuccessToast) {
         showToast(`${showManualToasts ? "성공" : "자동"}! ${monster.name}(으)로 진화하며 LV${monster.level}이 되었습니다!`, "success");
       }
-    } else {
-      if (showManualToasts || showAutoSuccessToast) {
-        showToast(`${showManualToasts ? "성공" : "자동"}! ${monster.name} LV${monster.level} 레벨업!`, "success");
-      }
+    } else if (showManualToasts || showAutoSuccessToast) {
+      deferredToast = { message: `성공! ${monster.name} LV${monster.level} 레벨업!`, type: "success" };
     }
   } else {
     soundManager.play("break");
     if (showManualToasts) {
-      showToast(`${monster.name} 레벨업 실패!`, "error");
+      deferredToast = { message: `${monster.name} 레벨업 실패!`, type: "error" };
     }
-  }
-
-  if (pinAfter) {
-    pinMonsterToLevelUpZone(index);
-    saveMiningPositions();
   }
 
   const nextAction = getUpgradeAction(monster);
@@ -2508,17 +2947,37 @@ function attemptMiningZoneLevelUp(index, options = {}) {
   
   const reachedTarget = monster.level >= targetLevel;
   const isMax = nextAction.type === "max";
+  const willContinue = !reachedTarget && !isMax;
 
-  if (reachedTarget || isMax) {
-    sendMonsterBackToWaiting(index);
-    saveMiningPositions();
+  // Success or fail, the monster always teleports back to the waiting area
+  const fromPosition = teleportMonsterToWaiting(index);
+
+  if (willContinue) {
+    // Walk back to the zone and try again until the target level is reached
+    scheduleLevelUpLoopReturn(monster.id, followUpAutomation);
+  } else {
+    cancelLevelUpLoop(monster.id);
+    if (reachedTarget && !isMax && (showManualToasts || followUpAutomation)) {
+      showToast(`${monster.name} 목표 LV${targetLevel} 도달! 레벨업을 종료합니다.`, "info");
+    }
+  }
+
+  // While the loop keeps running, the zone flash/float already shows each result
+  if (deferredToast && !willContinue) {
+    showToast(deferredToast.message, deferredToast.type);
   }
 
   saveGame();
   updateResourceDisplays();
+  updateEvolverZoneStatus();
+  checkAchievements();
   if (renderAfter && uiState.currentScreen === "mining") renderMining();
+
+  // Visual feedback after the DOM rebuild so effects aren't wiped
+  playTeleportVisuals(index, fromPosition);
   if (shouldShowEffect) {
     triggerLevelUpZoneVisualEffect(index, effectSucceeded);
+    flashLevelUpZone(effectSucceeded, monster);
   }
   if (followUpAutomation) {
     requestMiningAutomationTick({ allowPurchases: false });
@@ -2590,6 +3049,7 @@ function runAutomationPurchases(maxPurchases = 6) {
       if (gameState._cheatInfiniteResources) { gameState.gold = 999999999; gameState.crystal = 999999999; }
       const monster = createMonster(family.species);
       gameState.monsters.push(monster);
+      recordSpeciesDiscovery(family.species);
       addMiningPositionForMonster(monster, gameState.monsters.length - 1);
       if (miningState.active) {
         scheduleMonsterAttack(monster);
@@ -2694,6 +3154,309 @@ function animateEvolutionResult(succeeded) {
   }, 800);
 
   setTimeout(() => chamber.classList.remove("evolution-success", "evolution-fail"), 1000);
+}
+
+// ---------------------------------------------------------------------------
+// Endless Tower
+// ---------------------------------------------------------------------------
+
+const towerState = {
+  active: false,
+  floor: 1
+};
+
+function isTowerBossFloor(floor) {
+  return floor % 5 === 0;
+}
+
+function getSpeciesForStage(prefix, stage) {
+  return getSpeciesForLevel(prefix, stage <= 1 ? 1 : (stage - 1) * 10);
+}
+
+function getTowerFloorConfig(floor) {
+  const boss = isTowerBossFloor(floor);
+  const enemyLevel = Math.min(60, Math.max(1, Math.ceil(floor * 1.35)));
+  const overflow = Math.max(0, floor * 1.35 - 60);
+  const statMultiplier = 1 + overflow * 0.035 + (boss ? 0.25 : 0);
+  const families = ["0", "1", "2"];
+
+  const units = families.map((prefix) => ({
+    species: getSpeciesForLevel(prefix, enemyLevel),
+    level: enemyLevel,
+    multiplier: statMultiplier,
+    isBoss: false
+  }));
+
+  if (boss) {
+    const bossPrefix = families[Math.floor(floor / 5) % families.length];
+    const currentStage = getMonsterStage(getSpeciesForLevel(bossPrefix, enemyLevel));
+    const bossStage = Math.min(6, currentStage + 1);
+    units[1] = {
+      species: getSpeciesForStage(bossPrefix, bossStage),
+      level: Math.min(60, enemyLevel + 5),
+      multiplier: statMultiplier * 1.6,
+      isBoss: true
+    };
+  }
+
+  return { floor, boss, units };
+}
+
+function getTowerRewards(floor, firstClear) {
+  const boss = isTowerBossFloor(floor);
+  const multiplier = (boss ? 3 : 1) * (firstClear ? 2 : 1);
+  return {
+    gold: Math.round(140 * floor * multiplier),
+    crystal: Math.round(5 * floor * multiplier)
+  };
+}
+
+function getTowerTeamIds() {
+  if (uiState.pvpTeamIds && uiState.pvpTeamIds.length > 0) {
+    return uiState.pvpTeamIds.filter((id) => getMonsterById(id));
+  }
+  return [...gameState.monsters]
+    .sort((a, b) => b.level - a.level)
+    .slice(0, 3)
+    .map((monster) => monster.id);
+}
+
+function renderTower() {
+  const best = gameState.tower?.highestFloor || 0;
+  const nextFloor = best + 1;
+
+  const bestEl = $("#tower-best-floor");
+  if (bestEl) bestEl.textContent = best > 0 ? `${best}F 클리어` : "기록 없음";
+  const nextEl = $("#tower-next-floor");
+  if (nextEl) nextEl.textContent = `${nextFloor}F${isTowerBossFloor(nextFloor) ? " ☠ BOSS" : ""}`;
+
+  const config = getTowerFloorConfig(nextFloor);
+  const preview = $("#tower-floor-preview");
+  if (preview) {
+    preview.innerHTML = `
+      <h3>${nextFloor}F 등장 적</h3>
+      <div class="tower-enemy-row">
+        ${config.units.map((unit) => `
+          <div class="tower-enemy-cell ${unit.isBoss ? "boss" : ""}">
+            <div class="tower-sprite-box">${monsterSpriteMarkup(unit.species, unit.level)}</div>
+            <span>${unit.isBoss ? "☠ " : ""}${monsterDefinitions[unit.species].name}<br>LV${unit.level}</span>
+          </div>
+        `).join("")}
+      </div>
+    `;
+  }
+
+  const teamIds = getTowerTeamIds();
+  const teamDisplay = $("#tower-team-display");
+  if (teamDisplay) {
+    teamDisplay.innerHTML = teamIds.length === 0
+      ? '<p class="muted">보유 몬스터가 없습니다. 상점에서 영입하세요.</p>'
+      : teamIds.map((id) => {
+          const monster = getMonsterById(id);
+          if (!monster) return "";
+          return `
+            <div class="tower-team-cell">
+              <div class="tower-sprite-box">${monsterSpriteMarkup(monster.species, monster.level)}</div>
+              <span>${monster.name}<br>LV${monster.level}</span>
+            </div>
+          `;
+        }).join("");
+  }
+
+  const challengeButton = $("#tower-challenge-button");
+  if (challengeButton) {
+    challengeButton.disabled = teamIds.length === 0;
+    challengeButton.textContent = `${nextFloor}F 도전 시작`;
+  }
+}
+
+function startTowerChallenge(floor) {
+  if (pvpState.active) return;
+  const targetFloor = Number.isFinite(floor) ? floor : (gameState.tower?.highestFloor || 0) + 1;
+  const teamIds = getTowerTeamIds();
+  if (teamIds.length === 0) {
+    showToast("도전할 몬스터가 없습니다.", "error");
+    return;
+  }
+
+  uiState.pvpTeamIds = teamIds.slice(0, 3);
+  towerState.active = true;
+  towerState.floor = targetFloor;
+  showScreen("pvp");
+  startPvp({ tower: true, floor: targetFloor });
+}
+
+// ---------------------------------------------------------------------------
+// Codex and achievements rendering
+// ---------------------------------------------------------------------------
+
+function renderCodex() {
+  const grid = $("#codex-grid");
+  if (!grid) return;
+
+  const ordered = Object.keys(monsterDefinitions).sort((a, b) => {
+    const [familyA, stageA] = a.split("_");
+    const [familyB, stageB] = b.split("_");
+    return familyA === familyB ? Number(stageA) - Number(stageB) : Number(familyA) - Number(familyB);
+  });
+  const discovered = new Set(gameState.collection || []);
+
+  const heading = $("#codex-heading-status");
+  if (heading) heading.textContent = `도감 등록: ${discovered.size} / ${ordered.length}종`;
+
+  grid.innerHTML = ordered.map((species) => {
+    const definition = monsterDefinitions[species];
+    const stage = getMonsterStage(species);
+    const isFound = discovered.has(species);
+    const isActive = uiState.selectedCodexSpecies === species;
+    return `
+      <button class="codex-cell ${isFound ? "found" : "unknown"}${isActive ? " active" : ""}" data-codex-species="${species}">
+        <div class="codex-sprite-box">${monsterSpriteMarkup(species, 1)}</div>
+        <span class="codex-cell-name">${isFound ? definition.name : "???"}</span>
+        ${getStageStarsMarkup(stage)}
+      </button>
+    `;
+  }).join("");
+
+  renderCodexDetail();
+  renderAchievements();
+}
+
+function renderCodexDetail() {
+  const detail = $("#codex-detail");
+  if (!detail) return;
+
+  const species = uiState.selectedCodexSpecies;
+  if (!species || !monsterDefinitions[species]) {
+    detail.innerHTML = '<p class="muted">몬스터를 선택하면 상세 정보가 표시됩니다.</p>';
+    return;
+  }
+
+  const definition = monsterDefinitions[species];
+  const discovered = new Set(gameState.collection || []);
+  if (!discovered.has(species)) {
+    detail.innerHTML = `
+      <h3>??? ${getStageStarsMarkup(getMonsterStage(species))}</h3>
+      <p class="muted">아직 발견하지 못한 몬스터입니다. 진화나 영입으로 도감을 완성하세요.</p>
+    `;
+    return;
+  }
+
+  const stats = getMonsterStats(species, 1);
+  detail.innerHTML = `
+    <h3>${definition.name} ${getStageStarsMarkup(getMonsterStage(species))}</h3>
+    <p class="codex-role">${definition.role} / SKILL: ${definition.skillName}</p>
+    <p>${definition.description}</p>
+    <div class="stat-grid">
+      <div class="stat"><span>ATK</span><strong>${stats.attack}</strong></div>
+      <div class="stat"><span>SPD</span><strong>${stats.attackSpeed}/s</strong></div>
+      <div class="stat"><span>HP</span><strong>${stats.maxHp}</strong></div>
+      <div class="stat"><span>DEF</span><strong>${stats.defense}</strong></div>
+      <div class="stat"><span>SKILL</span><strong>${stats.skillName}</strong></div>
+      <div class="stat"><span>DMG</span><strong>${stats.skillDamage}</strong></div>
+    </div>
+  `;
+}
+
+function renderAchievements() {
+  const list = $("#achievement-list");
+  if (!list) return;
+
+  const unlocked = new Set(gameState.achievements || []);
+  list.innerHTML = achievementDefinitions.map((achievement) => {
+    const isUnlocked = unlocked.has(achievement.id);
+    return `
+      <div class="achievement-row ${isUnlocked ? "unlocked" : ""}">
+        <span class="achievement-medal">${isUnlocked ? "🏆" : "🔒"}</span>
+        <div class="achievement-copy">
+          <strong>${achievement.name}</strong>
+          <span>${achievement.description}</span>
+        </div>
+        <span class="achievement-reward">+${achievement.reward} 💎</span>
+      </div>
+    `;
+  }).join("");
+}
+
+// ---------------------------------------------------------------------------
+// Offline (idle) rewards
+// ---------------------------------------------------------------------------
+
+let pendingOfflineRewards = null;
+
+function computeOfflineRewards() {
+  const lastSeen = gameState.lastSeen || 0;
+  if (!lastSeen || gameState.monsters.length === 0) return null;
+
+  const elapsedMs = Date.now() - lastSeen;
+  if (elapsedMs < 90 * 1000) return null;
+
+  const cappedSeconds = Math.min(elapsedMs / 1000, 8 * 3600);
+  const rock = rockDefinitions[gameState.selectedRock] || rockDefinitions.stone;
+  const teamDps = gameState.monsters.reduce(
+    (sum, monster) => sum + monster.stats.attack * monster.stats.attackSpeed,
+    0
+  );
+  if (teamDps <= 0) return null;
+
+  // Offline mining runs at 60% efficiency, with a respawn-limited cap
+  const rocksPerSecond = Math.min(0.5, teamDps / rock.maxHp);
+  const rocksBroken = Math.floor(rocksPerSecond * cappedSeconds * 0.6);
+  if (rocksBroken < 1) return null;
+
+  const goldAverage = (rock.gold[0] + rock.gold[1]) / 2;
+  const crystalAverage = (rock.crystal[0] + rock.crystal[1]) / 2;
+  return {
+    gold: Math.round(rocksBroken * goldAverage),
+    crystal: Math.round(rocksBroken * crystalAverage),
+    rocksBroken,
+    seconds: cappedSeconds
+  };
+}
+
+function formatOfflineDuration(seconds) {
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  if (hours > 0) return `${hours}시간 ${minutes}분`;
+  return `${minutes}분`;
+}
+
+function maybeShowOfflineRewards() {
+  const rewards = computeOfflineRewards();
+  if (!rewards) return;
+
+  pendingOfflineRewards = rewards;
+  const goldEl = $("#offline-reward-gold");
+  if (goldEl) goldEl.textContent = `+${rewards.gold.toLocaleString()}`;
+  const crystalEl = $("#offline-reward-crystal");
+  if (crystalEl) crystalEl.textContent = `+${rewards.crystal.toLocaleString()}`;
+  const copyEl = $("#offline-reward-copy");
+  if (copyEl) {
+    copyEl.textContent = `자리를 비운 ${formatOfflineDuration(rewards.seconds)} 동안 파트너들이 바위 ${rewards.rocksBroken.toLocaleString()}개를 부쉈습니다! (최대 8시간)`;
+  }
+  $("#offline-reward-modal")?.classList.remove("is-hidden");
+}
+
+function claimOfflineRewards() {
+  if (!pendingOfflineRewards) {
+    $("#offline-reward-modal")?.classList.add("is-hidden");
+    return;
+  }
+
+  const rewards = pendingOfflineRewards;
+  pendingOfflineRewards = null;
+
+  gameState.gold += rewards.gold;
+  gameState.crystal += rewards.crystal;
+  trackStat("goldEarned", rewards.gold);
+  trackStat("rocksBroken", rewards.rocksBroken);
+  soundManager.play("buy");
+  saveGame();
+  syncDisplayResources();
+  updateResourceDisplays();
+  checkAchievements();
+  $("#offline-reward-modal")?.classList.add("is-hidden");
+  showToast(`오프라인 보상 수령! +${rewards.gold.toLocaleString()} Gold, +${rewards.crystal.toLocaleString()} Crystal`, "success");
 }
 
 // ---------------------------------------------------------------------------
@@ -2805,8 +3568,12 @@ function renderPvpSetup() {
   $("#start-pvp-button").disabled = !hasMembers;
 }
 
-function startPvp() {
+function startPvp(options = {}) {
   if (pvpState.active) return;
+  const towerMode = options && options.tower === true;
+  if (!towerMode) {
+    towerState.active = false;
+  }
   if (!uiState.pvpTeamIds || uiState.pvpTeamIds.length === 0) {
     const activePvpId = gameState.pvpMonsterId || gameState.monsters[0]?.id;
     uiState.pvpTeamIds = activePvpId ? [activePvpId] : [];
@@ -2880,28 +3647,41 @@ function startPvp() {
   pvpState.playerTeam.forEach(actor => totalLevel += actor.level);
   const avgLevel = Math.max(1, Math.round(totalLevel / pvpState.playerTeam.length));
   
-  // Initialize enemyTeam (2_1_unnyangi, 0_1_cyclopse, 1_1_lovelydoll)
+  // Build the enemy roster: tower floors or the default practice dummies
+  let enemyConfigs;
+  if (towerMode) {
+    enemyConfigs = getTowerFloorConfig(options.floor || 1).units;
+  } else {
+    enemyConfigs = ["2_1_unnyangi", "0_1_cyclopse", "1_1_lovelydoll"].map((species) => ({
+      species,
+      level: avgLevel,
+      multiplier: 1,
+      isBoss: false
+    }));
+  }
+
   const enemyYPositions = [140, 240, 340];
-  const enemySpecies = ["2_1_unnyangi", "0_1_cyclopse", "1_1_lovelydoll"];
-  pvpState.enemyTeam = enemySpecies.map((species, index) => {
-    const stats = getMonsterStats(species, avgLevel);
-    const def = monsterDefinitions[species];
+  pvpState.enemyTeam = enemyConfigs.map((config, index) => {
+    const stats = getMonsterStats(config.species, config.level);
+    const def = monsterDefinitions[config.species];
+    const multiplier = config.multiplier || 1;
     return {
       id: "enemy-" + index,
       side: "enemy",
-      species: species,
-      name: "Dummy " + def.name,
-      level: avgLevel,
+      species: config.species,
+      name: towerMode ? (config.isBoss ? "☠ BOSS " + def.name : def.name) : "Dummy " + def.name,
+      level: config.level,
+      isBoss: Boolean(config.isBoss),
       x: 670 + (index % 2) * 35,
       y: enemyYPositions[index],
-      radius: 22,
+      radius: config.isBoss ? 28 : 22,
       moveSpeed: (def.moveSpeed || 110) * 0.9,
-      hp: stats.maxHp,
-      maxHp: stats.maxHp,
-      defense: stats.defense,
-      attack: stats.attack,
+      hp: Math.round(stats.maxHp * multiplier),
+      maxHp: Math.round(stats.maxHp * multiplier),
+      defense: Math.round(stats.defense * multiplier),
+      attack: Math.round(stats.attack * multiplier),
       attackSpeed: stats.attackSpeed,
-      skillDamage: stats.skillDamage,
+      skillDamage: Math.round(stats.skillDamage * multiplier),
       skillCooldown: stats.skillCooldown,
       projectileSpeed: stats.projectileSpeed || 320,
       facing: -1,
@@ -2926,9 +3706,12 @@ function startPvp() {
   $("#pvp-setup").classList.add("is-hidden");
   $("#pvp-battle").classList.remove("is-hidden");
   $("#battle-result-overlay").classList.add("is-hidden");
+  $("#battle-next-floor-button")?.classList.add("is-hidden");
   $("#battle-player-name").textContent = "Player Team";
-  $("#battle-ai-name").textContent = "AI Team";
-  $("#battle-skill-name").textContent = "AUTO COMBAT";
+  $("#battle-ai-name").textContent = towerMode
+    ? `무한의 탑 ${options.floor || 1}F${isTowerBossFloor(options.floor || 1) ? " ☠" : ""}`
+    : "AI Team";
+  $("#battle-skill-name").textContent = towerMode ? `TOWER ${options.floor || 1}F` : "AUTO COMBAT";
   updateBattleHud();
   pvpState.rafId = requestAnimationFrame(pvpFrame);
 }
@@ -2945,8 +3728,17 @@ function stopPvp() {
 }
 
 function exitPvp() {
+  const wasTower = towerState.active;
+  towerState.active = false;
   stopPvp();
-  showScreen("mining");
+  showScreen(wasTower ? "tower" : "mining");
+}
+
+function startNextTowerFloor() {
+  if (!towerState.active) return;
+  const nextFloor = towerState.floor + 1;
+  stopPvp();
+  startTowerChallenge(nextFloor);
 }
 
 function pvpFrame(timestamp) {
@@ -3403,10 +4195,45 @@ function endBattle(victory) {
     soundManager.play("defeat");
   }
 
-  $("#battle-result-title").textContent = victory ? "VICTORY" : "DEFEAT";
-  $("#battle-result-copy").textContent = victory
-    ? "적군 AI 팀을 모두 쓰러뜨렸습니다!"
-    : "아군 팀이 모두 쓰러졌습니다. 다시 도전해 보세요.";
+  const nextFloorButton = $("#battle-next-floor-button");
+  nextFloorButton?.classList.add("is-hidden");
+
+  if (towerState.active) {
+    const floor = towerState.floor;
+    if (victory) {
+      const firstClear = floor > (gameState.tower?.highestFloor || 0);
+      const rewards = getTowerRewards(floor, firstClear);
+      gameState.gold += rewards.gold;
+      gameState.crystal += rewards.crystal;
+      trackStat("goldEarned", rewards.gold);
+      if (firstClear) {
+        gameState.tower.highestFloor = floor;
+      }
+      saveGame();
+      updateResourceDisplays();
+      checkAchievements();
+
+      $("#battle-result-title").textContent = `${floor}F CLEAR!`;
+      $("#battle-result-copy").textContent =
+        `보상: +${rewards.gold.toLocaleString()} Gold, +${rewards.crystal.toLocaleString()} Crystal` +
+        `${firstClear ? " (최초 클리어 2배!)" : ""}`;
+      nextFloorButton?.classList.remove("is-hidden");
+      if (nextFloorButton) {
+        nextFloorButton.textContent = `${floor + 1}F 도전${isTowerBossFloor(floor + 1) ? " ☠" : ""}`;
+      }
+    } else {
+      $("#battle-result-title").textContent = "DEFEAT";
+      $("#battle-result-copy").textContent = `${floor}F 공략 실패... 몬스터를 더 성장시켜 재도전하세요.`;
+    }
+    $("#battle-return-button").textContent = "탑으로 돌아가기";
+  } else {
+    $("#battle-result-title").textContent = victory ? "VICTORY" : "DEFEAT";
+    $("#battle-result-copy").textContent = victory
+      ? "적군 AI 팀을 모두 쓰러뜨렸습니다!"
+      : "아군 팀이 모두 쓰러졌습니다. 다시 도전해 보세요.";
+    $("#battle-return-button").textContent = "Return to Mining";
+  }
+
   $("#battle-result-overlay").classList.remove("is-hidden");
 }
 
@@ -3669,6 +4496,10 @@ function getMonsterSpriteRenderSize(level) {
   else if (level === 7) scale = 1.48;
   else if (level === 8) scale = 1.55;
   else if (level === 9) scale = 1.62;
+  else if (level >= 50) scale = 2.05;
+  else if (level >= 40) scale = 1.92;
+  else if (level >= 30) scale = 1.84;
+  else if (level >= 20) scale = 1.78;
   else if (level >= 10) scale = 1.70;
   return 64 * scale;
 }
@@ -3919,6 +4750,56 @@ function drawPvpProjectile(context, projectile) {
       context.arc(0, 0, r / 1.5, 0, Math.PI * 2);
       context.fillStyle = grad;
       context.fill();
+
+    } else if (species === "0_6_cosmic_overlord") {
+      // Stage 6: Singularity beam - black hole core, cyan accretion disk, magenta corona
+      setGlow("#00e5ff", isSkill ? 38 : 24);
+      context.translate(x, y);
+
+      const r = radius * 2.0;
+      const spin = (projectile.life * -20) % (Math.PI * 2);
+      context.rotate(spin);
+
+      // Magenta outer corona arcs
+      context.strokeStyle = "rgba(224, 64, 251, 0.85)";
+      context.lineWidth = 3.5;
+      for (let i = 0; i < 3; i++) {
+        context.beginPath();
+        context.arc(0, 0, r + 3, i * (Math.PI * 2 / 3), i * (Math.PI * 2 / 3) + 1.4);
+        context.stroke();
+      }
+
+      // Cyan accretion disk (tilted ellipse)
+      context.strokeStyle = "#00e5ff";
+      context.lineWidth = 2.5;
+      context.beginPath();
+      context.ellipse(0, 0, r + 1, r * 0.38, spin * 0.5, 0, Math.PI * 2);
+      context.stroke();
+
+      // Outline + black hole core
+      context.beginPath();
+      context.arc(0, 0, r * 0.68 + 2.5, 0, Math.PI * 2);
+      context.fillStyle = "#12005e";
+      context.fill();
+
+      const grad = context.createRadialGradient(0, 0, 1, 0, 0, r * 0.68);
+      grad.addColorStop(0, "#000000");
+      grad.addColorStop(0.55, "#12005e");
+      grad.addColorStop(0.85, "#7c4dff");
+      grad.addColorStop(1, "#00e5ff");
+      context.beginPath();
+      context.arc(0, 0, r * 0.68, 0, Math.PI * 2);
+      context.fillStyle = grad;
+      context.fill();
+
+      // Starfield sparkles
+      context.fillStyle = "#ffffff";
+      for (let i = 0; i < 4; i++) {
+        const starAngle = spin * 2 + (i * Math.PI) / 2;
+        const sx = Math.cos(starAngle) * r * 0.9;
+        const sy = Math.sin(starAngle) * r * 0.9;
+        context.fillRect(sx - 1, sy - 1, 2.5, 2.5);
+      }
     }
 
   // 2. LovelyDoll (1_*) - Tears/Candies
@@ -4120,6 +5001,64 @@ function drawPvpProjectile(context, projectile) {
       context.beginPath();
       context.arc(0, -r * 0.15, 3.5, 0, Math.PI * 2);
       context.fill();
+
+    } else if (species === "1_6_seraph_valkyria") {
+      // Stage 6: Radiant holy lance with white feather trail and golden halo
+      setGlow("#ffd700", isSkill ? 36 : 22);
+
+      // Feather trail behind the lance
+      resetGlow();
+      const trailLength = isSkill ? 52 : 32;
+      context.fillStyle = "rgba(255, 248, 225, 0.65)";
+      for (let i = 1; i <= 3; i++) {
+        const fx = x - Math.cos(angle) * (trailLength * i) / 3 + (Math.random() - 0.5) * 6;
+        const fy = y - Math.sin(angle) * (trailLength * i) / 3 + (Math.random() - 0.5) * 6;
+        context.beginPath();
+        context.ellipse(fx, fy, 6 - i, 3, angle, 0, Math.PI * 2);
+        context.fill();
+      }
+
+      setGlow("#ffd700", isSkill ? 36 : 22);
+      context.translate(x, y);
+      context.rotate(angle);
+
+      const r = radius * 1.8;
+
+      // Golden halo ring around the lance head
+      context.strokeStyle = "#ffe082";
+      context.lineWidth = 3;
+      context.beginPath();
+      context.arc(0, 0, r * 0.85, 0, Math.PI * 2);
+      context.stroke();
+
+      // Lance body (outline then gradient)
+      context.fillStyle = "#172033";
+      context.beginPath();
+      context.moveTo(r * 1.4 + 2, 0);
+      context.lineTo(-r * 0.9 - 2, -r * 0.42 - 2);
+      context.lineTo(-r * 0.55, 0);
+      context.lineTo(-r * 0.9 - 2, r * 0.42 + 2);
+      context.closePath();
+      context.fill();
+
+      const grad = context.createLinearGradient(-r, 0, r * 1.4, 0);
+      grad.addColorStop(0, "#fff8e1");
+      grad.addColorStop(0.55, "#ffd700");
+      grad.addColorStop(1, "#ffffff");
+      context.fillStyle = grad;
+      context.beginPath();
+      context.moveTo(r * 1.4, 0);
+      context.lineTo(-r * 0.9, -r * 0.42);
+      context.lineTo(-r * 0.55, 0);
+      context.lineTo(-r * 0.9, r * 0.42);
+      context.closePath();
+      context.fill();
+
+      // Cyan gem core
+      context.fillStyle = "#00e5ff";
+      context.beginPath();
+      context.arc(0, 0, 3.5, 0, Math.PI * 2);
+      context.fill();
     }
 
   // 3. Unnyangi (2_*) - Paws/Lightning
@@ -4304,6 +5243,58 @@ function drawPvpProjectile(context, projectile) {
       context.arc(x, y, r, 0, Math.PI * 2);
       context.fillStyle = grad;
       context.fill();
+
+    } else if (species === "2_6_divine_kirin") {
+      // Stage 6: Imperial dual-color (gold/teal) divine thunder orb with rotating ring
+      const r = radius * 2.0;
+
+      resetGlow();
+      const sparkCount = isSkill ? 10 : 6;
+      for (let i = 0; i < sparkCount; i++) {
+        context.strokeStyle = i % 2 === 0 ? "rgba(255, 213, 79, 0.95)" : "rgba(0, 229, 255, 0.95)";
+        context.lineWidth = 2.2;
+        const baseAngle = Math.random() * Math.PI * 2;
+        const length = r * (1.3 + Math.random() * 0.9);
+        const mid1X = x + Math.cos(baseAngle) * (length * 0.3) + (Math.random() - 0.5) * 8;
+        const mid1Y = y + Math.sin(baseAngle) * (length * 0.3) + (Math.random() - 0.5) * 8;
+        const mid2X = x + Math.cos(baseAngle) * (length * 0.65) + (Math.random() - 0.5) * 8;
+        const mid2Y = y + Math.sin(baseAngle) * (length * 0.65) + (Math.random() - 0.5) * 8;
+        const endX = x + Math.cos(baseAngle) * length;
+        const endY = y + Math.sin(baseAngle) * length;
+
+        context.beginPath();
+        context.moveTo(x, y);
+        context.lineTo(mid1X, mid1Y);
+        context.lineTo(mid2X, mid2Y);
+        context.lineTo(endX, endY);
+        context.stroke();
+      }
+
+      setGlow("#ffd54f", isSkill ? 38 : 24);
+
+      // Rotating imperial golden ring
+      const ringSpin = (projectile.life * 14) % (Math.PI * 2);
+      context.strokeStyle = "#ffd54f";
+      context.lineWidth = 3;
+      context.beginPath();
+      context.ellipse(x, y, r + 4, (r + 4) * 0.45, ringSpin, 0, Math.PI * 2);
+      context.stroke();
+
+      context.beginPath();
+      context.arc(x, y, r + 3, 0, Math.PI * 2);
+      context.fillStyle = "#172033";
+      context.fill();
+
+      const grad = context.createRadialGradient(x, y, 1, x, y, r);
+      grad.addColorStop(0, "#ffffff");
+      grad.addColorStop(0.3, "#ffd54f");
+      grad.addColorStop(0.6, "#00e5ff");
+      grad.addColorStop(1, "#006064");
+
+      context.beginPath();
+      context.arc(x, y, r, 0, Math.PI * 2);
+      context.fillStyle = grad;
+      context.fill();
     }
 
   } else {
@@ -4371,6 +5362,23 @@ function bindEvents() {
     if (button.dataset.buyMonster) buyMonster(button.dataset.buyMonster);
     if (button.dataset.toggleId) togglePvpTeamMember(button.dataset.toggleId);
     if (button.dataset.removeId) togglePvpTeamMember(button.dataset.removeId);
+    if (button.dataset.codexSpecies) {
+      uiState.selectedCodexSpecies = button.dataset.codexSpecies;
+      renderCodex();
+    }
+    if (button.dataset.stepField) {
+      const input = document.querySelector(
+        `input[data-automation-family="${button.dataset.stepFamily}"][data-automation-field="${button.dataset.stepField}"]`
+      );
+      if (input) {
+        const delta = Number(button.dataset.step) || 0;
+        const minValue = button.dataset.stepField === "sellLevel" ? 0 : 1;
+        const current = Number.parseInt(input.value, 10);
+        const base = Number.isFinite(current) ? current : minValue;
+        input.value = String(Math.min(60, Math.max(minValue, base + delta)));
+        updateAutomationSettingFromInput(input);
+      }
+    }
   });
 
   document.addEventListener("input", (event) => {
@@ -4429,9 +5437,12 @@ function bindEvents() {
   $("#rock-target").addEventListener("click", startMining);
   $("#mine-toggle-button").addEventListener("click", toggleMining);
   $("#evolve-button").addEventListener("click", attemptEvolution);
-  $("#start-pvp-button").addEventListener("click", startPvp);
+  $("#start-pvp-button").addEventListener("click", () => startPvp());
   $("#exit-pvp-button").addEventListener("click", exitPvp);
   $("#battle-return-button").addEventListener("click", exitPvp);
+  $("#tower-challenge-button")?.addEventListener("click", () => startTowerChallenge());
+  $("#battle-next-floor-button")?.addEventListener("click", startNextTowerFloor);
+  $("#offline-reward-claim")?.addEventListener("click", claimOfflineRewards);
 
   const upgradeTalentBtn = $("#upgrade-talent-button");
   if (upgradeTalentBtn) {
@@ -4514,9 +5525,12 @@ function bindEvents() {
         const monster = gameState.monsters[idx];
         if (monster) {
           monster.isAutoEvolving = false;
+          // Manual command interrupts an in-progress level-up loop
+          if (!targetIsAutoEvolver) cancelLevelUpLoop(monster.id);
         }
 
         startMiningMovementLoop();
+        updateEvolverZoneStatus();
       }
     });
 
@@ -4569,7 +5583,20 @@ function randomInt(min, max) {
 }
 
 function showToast(message, type = "") {
-  // Toast notifications disabled by user request
+  const container = $("#toast-container");
+  if (!container || document.hidden) return;
+
+  const toast = document.createElement("div");
+  toast.className = `toast${type ? " " + type : ""}`;
+  const icons = { success: "✦", error: "✕", info: "◆", legendary: "★" };
+  toast.innerHTML = `<span class="toast-icon">${icons[type] || "●"}</span><span class="toast-text"></span>`;
+  toast.querySelector(".toast-text").textContent = message;
+  container.appendChild(toast);
+
+  while (container.children.length > 4) {
+    container.removeChild(container.firstChild);
+  }
+  setTimeout(() => toast.remove(), type === "legendary" ? 4600 : 3100);
 }
 
 function init() {
@@ -4585,6 +5612,8 @@ function init() {
     uiState.selectedEvolutionMonsterId = gameState.monsters[0]?.id || null;
     showGameUi();
     showScreen("mining");
+    maybeShowOfflineRewards();
+    checkAchievements();
   } else {
     showStarterScreen();
   }

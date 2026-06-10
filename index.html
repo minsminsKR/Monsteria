@@ -45,6 +45,8 @@
     <button data-screen="monsters">Monsters</button>
     <button data-screen="shop">Shop</button>
     <button data-screen="evolution">Evolution</button>
+    <button data-screen="tower">Tower</button>
+    <button data-screen="codex">Codex</button>
     <button data-screen="pvp">PVP Test</button>
     <button id="reset-save-button" class="danger-button">Reset Save</button>
   </nav>
@@ -128,8 +130,15 @@
                 <span class="click-hint">CLICK TO ATTACK</span>
               </button>
               <div id="damage-layer" class="damage-layer" aria-hidden="true"></div>
-              <div id="mine-auto-evolver" class="mine-evolver-zone" title="몬스터를 보내면 보유한 재화로 레벨업을 시도합니다.">
+              <div id="mine-auto-evolver" class="mine-evolver-zone" title="몬스터를 보내면 목표 레벨까지 레벨업을 반복 시도합니다.">
+                <span class="evolver-ring" aria-hidden="true"></span>
                 <span class="evolver-label">레벨업</span>
+                <div id="evolver-status" class="evolver-status is-hidden" aria-live="polite">
+                  <strong id="evolver-status-name"></strong>
+                  <span id="evolver-status-info"></span>
+                  <div class="pixel-bar evolver-progress-bar"><span id="evolver-progress-fill"></span></div>
+                  <div id="evolver-status-cost" class="evolver-status-cost"></div>
+                </div>
               </div>
               <div id="mine-incinerator" class="mine-incinerator-zone" title="선택한 몬스터를 우클릭으로 여기에 보내면 소각(70% 환급)됩니다.">
                 <span class="incinerator-label">소각 판매</span>
@@ -230,6 +239,62 @@
       </div>
     </section>
 
+    <section id="tower-screen" class="screen">
+      <div class="screen-heading">
+        <div>
+          <p class="eyebrow">ENDLESS CHALLENGE</p>
+          <h1>무한의 탑</h1>
+        </div>
+        <div id="tower-heading-status" class="heading-status">층을 오를수록 강해지는 적들을 물리치고 보상을 획득하세요.</div>
+      </div>
+      <div class="tower-layout">
+        <div class="pixel-panel tower-status-panel">
+          <div class="tower-visual">
+            <div class="tower-art"><span></span><span></span><span></span></div>
+          </div>
+          <div class="tower-info">
+            <div class="tower-record-row"><span>최고 기록</span><strong id="tower-best-floor">-</strong></div>
+            <div class="tower-record-row"><span>다음 도전</span><strong id="tower-next-floor">1F</strong></div>
+            <div id="tower-floor-preview" class="tower-floor-preview"></div>
+            <button id="tower-challenge-button" class="primary-button wide-button">도전 시작</button>
+            <p class="muted">5층마다 보스가 등장하며, 보스 처치 시 대량 보상을 획득합니다. 팀은 PVP 화면에서 편성한 팀을 사용합니다.</p>
+          </div>
+        </div>
+        <div class="pixel-panel tower-team-panel">
+          <h2>도전 팀</h2>
+          <div id="tower-team-display" class="tower-team-display"></div>
+          <div class="pixel-divider"></div>
+          <h2>보상 안내</h2>
+          <div class="tower-reward-guide">
+            <div class="control-row"><span>일반 층</span><strong>Gold + Crystal</strong></div>
+            <div class="control-row"><span>보스 층 (5층 단위)</span><strong>보상 3배</strong></div>
+            <div class="control-row"><span>최초 클리어</span><strong>추가 보너스</strong></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="codex-screen" class="screen">
+      <div class="screen-heading">
+        <div>
+          <p class="eyebrow">MONSTER ENCYCLOPEDIA</p>
+          <h1>도감 &amp; 업적</h1>
+        </div>
+        <div id="codex-heading-status" class="heading-status"></div>
+      </div>
+      <div class="codex-layout">
+        <div class="pixel-panel codex-panel">
+          <h2>몬스터 도감</h2>
+          <div id="codex-grid" class="codex-grid"></div>
+          <div id="codex-detail" class="codex-detail"></div>
+        </div>
+        <div class="pixel-panel achievements-panel">
+          <h2>업적</h2>
+          <div id="achievement-list" class="achievement-list"></div>
+        </div>
+      </div>
+    </section>
+
     <section id="pvp-screen" class="screen">
       <div id="pvp-setup">
         <div class="screen-heading">
@@ -273,6 +338,7 @@
           <div id="battle-result-overlay" class="battle-result-overlay is-hidden">
             <strong id="battle-result-title">VICTORY</strong>
             <span id="battle-result-copy"></span>
+            <button id="battle-next-floor-button" class="primary-button is-hidden">다음 층 도전</button>
             <button id="battle-return-button" class="primary-button">Return to Mining</button>
           </div>
         </div>
@@ -285,6 +351,29 @@
       </div>
     </section>
   </main>
+
+  <div id="evolution-cutscene" class="evolution-cutscene is-hidden" aria-hidden="true">
+    <div class="cutscene-beams"></div>
+    <div class="cutscene-particles"></div>
+    <div class="cutscene-stage">
+      <div id="cutscene-sprite" class="cutscene-sprite"></div>
+    </div>
+    <div id="cutscene-title" class="cutscene-title">EVOLUTION!</div>
+    <div id="cutscene-name" class="cutscene-name"></div>
+  </div>
+
+  <div id="offline-reward-modal" class="offline-reward-modal is-hidden" aria-hidden="true">
+    <div class="offline-reward-card pixel-panel">
+      <div class="offline-reward-icon">⛏️</div>
+      <h2>어서 오세요!</h2>
+      <p id="offline-reward-copy">파트너들이 자리를 지키며 채굴했습니다.</p>
+      <div class="offline-reward-rows">
+        <div class="offline-reward-row gold"><span>GOLD</span><strong id="offline-reward-gold">0</strong></div>
+        <div class="offline-reward-row crystal"><span>CRYSTAL</span><strong id="offline-reward-crystal">0</strong></div>
+      </div>
+      <button id="offline-reward-claim" class="primary-button wide-button">한 번에 수령하기</button>
+    </div>
+  </div>
 
   <div id="toast-container" class="toast-container" aria-live="polite"></div>
 

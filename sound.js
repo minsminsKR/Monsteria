@@ -548,6 +548,55 @@ class SoundManager {
         } catch (e) {}
         break;
 
+      case "teleport":
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(320, t);
+        osc.frequency.exponentialRampToValueAtTime(1400, t + 0.16);
+        gain.gain.setValueAtTime(0.14 * masterVol, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
+        osc.start(t);
+        osc.stop(t + 0.2);
+        break;
+
+      case "upgrade":
+        osc.type = "square";
+        osc.frequency.setValueAtTime(440, t); // A4
+        osc.frequency.setValueAtTime(554.37, t + 0.06); // C#5
+        osc.frequency.setValueAtTime(659.25, t + 0.12); // E5
+        gain.gain.setValueAtTime(0.16 * masterVol, t);
+        gain.gain.setValueAtTime(0.16 * masterVol, t + 0.12);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.26);
+        osc.start(t);
+        osc.stop(t + 0.26);
+        break;
+
+      case "achievement":
+        osc.type = "triangle";
+        osc.frequency.setValueAtTime(659.25, t); // E5
+        osc.frequency.setValueAtTime(783.99, t + 0.09); // G5
+        osc.frequency.setValueAtTime(987.77, t + 0.18); // B5
+        osc.frequency.setValueAtTime(1318.51, t + 0.27); // E6
+        gain.gain.setValueAtTime(0.22 * masterVol, t);
+        gain.gain.setValueAtTime(0.22 * masterVol, t + 0.27);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.65);
+        osc.start(t);
+        osc.stop(t + 0.65);
+
+        try {
+          const shimmer = this.ctx.createOscillator();
+          const shimmerGain = this.ctx.createGain();
+          shimmer.type = "sine";
+          shimmer.frequency.setValueAtTime(2637.02, t + 0.27); // E7 sparkle
+          shimmer.connect(shimmerGain);
+          shimmerGain.connect(this.synthGain || this.ctx.destination);
+          shimmerGain.gain.setValueAtTime(0.0001, t);
+          shimmerGain.gain.setValueAtTime(0.08 * masterVol, t + 0.27);
+          shimmerGain.gain.exponentialRampToValueAtTime(0.001, t + 0.7);
+          shimmer.start(t);
+          shimmer.stop(t + 0.7);
+        } catch (e) {}
+        break;
+
       case "hurt":
         osc.type = "sawtooth";
         osc.frequency.setValueAtTime(110, t);
