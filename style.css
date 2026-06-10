@@ -601,25 +601,6 @@ button:disabled {
   --sprite-accent: #ffeb3b;
 }
 
-.monster-sprite.\30 _2_cyclopsis.has-sprite-sheet {
-  background-image: url('assets/monsters/0_2_cyclopsis/0_2_cyclopsis-spritesheet-game.png');
-}
-.monster-sprite.\31 _2_cutie.has-sprite-sheet {
-  background-image: url('assets/monsters/1_2_cutie/1_2_cutie-spritesheet-game.png');
-}
-.monster-sprite.\32 _2_unnyangsam.has-sprite-sheet {
-  background-image: url('assets/monsters/2_2_unnyangsam/2_2_unnyangsam-spritesheet-game.png');
-}
-.monster-sprite.\30 _3_hatefulclops.has-sprite-sheet {
-  background-image: url('assets/monsters/0_2_cyclopsis/0_2_cyclopsis-spritesheet-game.png');
-}
-.monster-sprite.\31 _3_candy.has-sprite-sheet {
-  background-image: url('assets/monsters/1_2_cutie/1_2_cutie-spritesheet-game.png');
-}
-.monster-sprite.\32 _3_unrang.has-sprite-sheet {
-  background-image: url('assets/monsters/2_2_unnyangsam/2_2_unnyangsam-spritesheet-game.png');
-}
-
 .monster-sprite.has-sprite-sheet {
   width: 96px;
   height: 96px;
@@ -2751,92 +2732,6 @@ kbd {
 .monster-sprite.lv48 { --level-scale: 1.15; }
 .monster-sprite.lv49 { --level-scale: 1.15; }
 .monster-sprite.lv50 { --level-scale: 1.15; }
-
-/* --- SINGLE IMAGE ANIMATIONS --- */
-.monster-sprite.is-single-image {
-  width: 96px;
-  height: 96px;
-  background-image: var(--monster-sprite-sheet);
-  background-repeat: no-repeat;
-  background-position: center bottom;
-  background-size: contain;
-  image-rendering: pixelated;
-  /* Breathing idle */
-  animation: monster-breathing 1.5s ease-in-out infinite;
-}
-
-.monster-sprite.is-single-image::before,
-.monster-sprite.is-single-image::after {
-  display: none;
-}
-
-@keyframes monster-breathing {
-  0%, 100% {
-    transform: scale(calc(var(--stage-scale, 1.0) * var(--level-scale, 1.0))) translateY(0);
-  }
-  50% {
-    transform: scale(calc(var(--stage-scale, 1.0) * var(--level-scale, 1.0) * 1.03)) translateY(-2px);
-  }
-}
-
-/* Walking */
-.monster-sprite.is-single-image.is-walking {
-  animation: monster-walk-single 0.6s ease-in-out infinite;
-}
-@keyframes monster-walk-single {
-  0%, 100% {
-    transform: scale(calc(var(--stage-scale, 1.0) * var(--level-scale, 1.0))) rotate(0deg);
-  }
-  25% {
-    transform: scale(calc(var(--stage-scale, 1.0) * var(--level-scale, 1.0))) translateY(-4px) rotate(-3deg);
-  }
-  75% {
-    transform: scale(calc(var(--stage-scale, 1.0) * var(--level-scale, 1.0))) translateY(-4px) rotate(3deg);
-  }
-}
-
-/* Attacking */
-.monster-sprite.is-single-image.is-attacking {
-  animation: monster-attack-single 0.4s ease-out;
-}
-@keyframes monster-attack-single {
-  0% {
-    transform: scale(calc(var(--stage-scale, 1.0) * var(--level-scale, 1.0))) translateX(0);
-  }
-  30% {
-    transform: scale(calc(var(--stage-scale, 1.0) * var(--level-scale, 1.0) * 1.08)) translateX(12px);
-  }
-  100% {
-    transform: scale(calc(var(--stage-scale, 1.0) * var(--level-scale, 1.0))) translateX(0);
-  }
-}
-
-/* Hit */
-.monster-sprite.is-single-image.is-hit {
-  animation: monster-hit-single 0.2s linear infinite;
-  filter: brightness(1.6) drop-shadow(0 0 8px red);
-}
-@keyframes monster-hit-single {
-  0%, 100% { transform: scale(calc(var(--stage-scale, 1.0) * var(--level-scale, 1.0))) translateX(0); }
-  25% { transform: scale(calc(var(--stage-scale, 1.0) * var(--level-scale, 1.0))) translateX(-3px) rotate(-4deg); }
-  75% { transform: scale(calc(var(--stage-scale, 1.0) * var(--level-scale, 1.0))) translateX(3px) rotate(4deg); }
-}
-
-/* Faint */
-.mining-monster-spot.is-fainted .monster-sprite.is-single-image {
-  animation: monster-faint-single 1s ease-in forwards;
-}
-@keyframes monster-faint-single {
-  0% {
-    opacity: 1;
-    transform: scale(calc(var(--stage-scale, 1.0) * var(--level-scale, 1.0))) rotate(0deg);
-  }
-  100% {
-    opacity: 0;
-    transform: scale(calc(var(--stage-scale, 1.0) * var(--level-scale, 1.0) * 0.5)) rotate(90deg) translateY(30px);
-    filter: grayscale(1) brightness(0.2);
-  }
-}
 
 /* --- STAGE 4 & 5 PROJECTILE STYLING --- */
 .mine-projectile-3d.species-0_4_goliathclops {

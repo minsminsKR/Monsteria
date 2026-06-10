@@ -103,8 +103,7 @@ const monsterDefinitions = {
     skillCooldown: 1.4,
     projectileSpeed: 750,
     moveSpeed: 225,
-    spriteSheet: "assets/monsters/0_3_hatefulclops/0_3_hatefulclops.png",
-    isSingleImage: true,
+    spriteSheet: "assets/monsters/0_3_hatefulclops/0_3_hatefulclops-spritesheet-game.png",
     colors: { main: "#b33a27", light: "#ff9c8a", dark: "#4d120a", accent: "#7deef0" },
     base: { attack: 50, attackSpeed: 2.25, maxHp: 320, defense: 20, skillDamage: 110 },
     growth: { attack: 18, attackSpeed: 0.22, maxHp: 75, defense: 8, skillDamage: 38 }
@@ -118,8 +117,7 @@ const monsterDefinitions = {
     skillCooldown: 3.8,
     projectileSpeed: 420,
     moveSpeed: 165,
-    spriteSheet: "assets/monsters/1_3_candy/1_3_candy.png",
-    isSingleImage: true,
+    spriteSheet: "assets/monsters/1_3_candy/1_3_candy-spritesheet-game.png",
     colors: { main: "#e06b9b", light: "#ffd9e8", dark: "#802848", accent: "#fff2be" },
     base: { attack: 95, attackSpeed: 1.05, maxHp: 520, defense: 45, skillDamage: 210 },
     growth: { attack: 35, attackSpeed: 0.10, maxHp: 130, defense: 18, skillDamage: 75 }
@@ -133,8 +131,7 @@ const monsterDefinitions = {
     skillCooldown: 2.4,
     projectileSpeed: 580,
     moveSpeed: 195,
-    spriteSheet: "assets/monsters/2_3_unrang/2_3_unrang.png",
-    isSingleImage: true,
+    spriteSheet: "assets/monsters/2_3_unrang/2_3_unrang-spritesheet-game.png",
     colors: { main: "#3f8fb5", light: "#b3e5fc", dark: "#12435c", accent: "#ffeb3b" },
     base: { attack: 72, attackSpeed: 1.55, maxHp: 410, defense: 30, skillDamage: 155 },
     growth: { attack: 24, attackSpeed: 0.15, maxHp: 105, defense: 12, skillDamage: 55 }
@@ -148,8 +145,7 @@ const monsterDefinitions = {
     skillCooldown: 1.2,
     projectileSpeed: 820,
     moveSpeed: 235,
-    spriteSheet: "assets/monsters/0_4_goliathclops/0_4_goliathclops.png",
-    isSingleImage: true,
+    spriteSheet: "assets/monsters/0_4_goliathclops/0_4_goliathclops-spritesheet-game.png",
     colors: { main: "#ffbb00", light: "#ffffff", dark: "#7b431b", accent: "#ff5500" },
     base: { attack: 120, attackSpeed: 2.65, maxHp: 850, defense: 50, skillDamage: 320 },
     growth: { attack: 42, attackSpeed: 0.26, maxHp: 210, defense: 18, skillDamage: 105 }
@@ -163,8 +159,7 @@ const monsterDefinitions = {
     skillCooldown: 1.0,
     projectileSpeed: 900,
     moveSpeed: 245,
-    spriteSheet: "assets/monsters/0_5_abyss_monarch/0_5_abyss_monarch.png",
-    isSingleImage: true,
+    spriteSheet: "assets/monsters/0_5_abyss_monarch/0_5_abyss_monarch-spritesheet-game.png",
     colors: { main: "#7b1fa2", light: "#000000", dark: "#4a148c", accent: "#aa00ff" },
     base: { attack: 260, attackSpeed: 3.15, maxHp: 1950, defense: 110, skillDamage: 780 },
     growth: { attack: 95, attackSpeed: 0.30, maxHp: 480, defense: 42, skillDamage: 285 }
@@ -178,8 +173,7 @@ const monsterDefinitions = {
     skillCooldown: 3.2,
     projectileSpeed: 460,
     moveSpeed: 175,
-    spriteSheet: "assets/monsters/1_4_marionette/1_4_marionette.png",
-    isSingleImage: true,
+    spriteSheet: "assets/monsters/1_4_marionette/1_4_marionette-spritesheet-game.png",
     colors: { main: "#b3e5fc", light: "#ffffff", dark: "#37474f", accent: "#00b0ff" },
     base: { attack: 210, attackSpeed: 1.25, maxHp: 1350, defense: 95, skillDamage: 540 },
     growth: { attack: 75, attackSpeed: 0.12, maxHp: 340, defense: 38, skillDamage: 195 }
@@ -193,8 +187,7 @@ const monsterDefinitions = {
     skillCooldown: 2.8,
     projectileSpeed: 500,
     moveSpeed: 185,
-    spriteSheet: "assets/monsters/1_5_valkyria_doll/1_5_valkyria_doll.png",
-    isSingleImage: true,
+    spriteSheet: "assets/monsters/1_5_valkyria_doll/1_5_valkyria_doll-spritesheet-game.png",
     colors: { main: "#ffd700", light: "#ffffff", dark: "#7b431b", accent: "#ffeb3b" },
     base: { attack: 450, attackSpeed: 1.45, maxHp: 3100, defense: 210, skillDamage: 1250 },
     growth: { attack: 165, attackSpeed: 0.14, maxHp: 750, defense: 85, skillDamage: 495 }
@@ -208,8 +201,7 @@ const monsterDefinitions = {
     skillCooldown: 2.0,
     projectileSpeed: 640,
     moveSpeed: 205,
-    spriteSheet: "assets/monsters/2_4_unraiju/2_4_unraiju.png",
-    isSingleImage: true,
+    spriteSheet: "assets/monsters/2_4_unraiju/2_4_unraiju-spritesheet-game.png",
     colors: { main: "#ffeb3b", light: "#ffffff", dark: "#f57f17", accent: "#ffff00" },
     base: { attack: 160, attackSpeed: 1.85, maxHp: 1050, defense: 70, skillDamage: 410 },
     growth: { attack: 56, attackSpeed: 0.18, maxHp: 270, defense: 26, skillDamage: 145 }
@@ -223,8 +215,7 @@ const monsterDefinitions = {
     skillCooldown: 1.6,
     projectileSpeed: 700,
     moveSpeed: 215,
-    spriteSheet: "assets/monsters/2_5_kirin_nyang/2_5_kirin_nyang.png",
-    isSingleImage: true,
+    spriteSheet: "assets/monsters/2_5_kirin_nyang/2_5_kirin_nyang-spritesheet-game.png",
     colors: { main: "#1de9b6", light: "#ffffff", dark: "#00b0ff", accent: "#00e5ff" },
     base: { attack: 350, attackSpeed: 2.15, maxHp: 2450, defense: 155, skillDamage: 960 },
     growth: { attack: 125, attackSpeed: 0.21, maxHp: 620, defense: 58, skillDamage: 375 }
@@ -1121,8 +1112,7 @@ function resetSave() {
 function monsterSpriteMarkup(species, level, extraClass = "") {
   const definition = monsterDefinitions[species];
   if (!definition) return "";
-  const isSingle = definition.isSingleImage || false;
-  const spriteSheetClass = definition.spriteSheet ? (isSingle ? " is-single-image" : " has-sprite-sheet") : "";
+  const spriteSheetClass = definition.spriteSheet ? " has-sprite-sheet" : "";
   const spriteSheetStyle = definition.spriteSheet
     ? ` style="--monster-sprite-sheet: url('${definition.spriteSheet}')"`
     : "";
@@ -3559,94 +3549,27 @@ function drawArenaStone(context, x, y) {
 }
 
 function drawActorSpriteOnly(context, actor, image, renderSize, state, frame, isAfterimage = false, customX = null, customY = null, customFacing = null) {
-  const definition = monsterDefinitions[actor.species];
-  const isSingleImage = !!definition?.isSingleImage;
   const x = customX !== null ? customX : Math.round(actor.x);
   const y = customY !== null ? customY : Math.round(actor.y);
   const facing = customFacing !== null ? customFacing : actor.facing;
+  const frameSize = 96;
+  const row = spriteRows[state] ?? spriteRows.idle;
 
   context.save();
   context.translate(x, y);
   context.scale(facing < 0 ? -1 : 1, 1);
 
-  if (isSingleImage) {
-    let animState = state;
-    let elapsed = pvpState.elapsed;
-    let animationStarted = actor.animationStarted;
-    let animationDuration = actor.animationDuration;
-    let hp = actor.hp;
-
-    if (isAfterimage) {
-      animState = "walk";
-    }
-
-    let dx = 0;
-    let dy = 0;
-    let rotate = 0;
-    let sx = 1.0;
-    let sy = 1.0;
-    let opacity = 1.0;
-
-    if (hp <= 0 && !isAfterimage) {
-      const faintProgress = Math.min(1.0, (elapsed - animationStarted) / Math.max(1, animationDuration || 400));
-      rotate = -Math.PI / 2 * faintProgress;
-      dy = renderSize * 0.2 * faintProgress;
-      opacity = 1.0 - faintProgress;
-    } else if (animState === "hit" && !isAfterimage) {
-      const hitTime = elapsed - animationStarted;
-      dx = Math.sin(hitTime * 0.08) * (renderSize * 0.12) * Math.max(0, 1 - hitTime / 300);
-    } else if ((animState === "attack" || animState === "skill") && !isAfterimage) {
-      const progress = Math.max(0, Math.min(0.999, (elapsed - animationStarted) / Math.max(1, animationDuration)));
-      const lungeDist = renderSize * 0.45;
-      if (progress < 0.3) {
-        dx = (progress / 0.3) * lungeDist;
-      } else if (progress < 0.7) {
-        dx = lungeDist;
-      } else {
-        dx = ((1.0 - progress) / 0.3) * lungeDist;
-      }
-      sx = 1.15;
-      sy = 0.9;
-    } else if (animState === "walk") {
-      const bob = Math.sin(elapsed * 0.012) * (renderSize * 0.04);
-      dy = bob;
-      rotate = Math.sin(elapsed * 0.012) * 0.06;
-    } else {
-      const breath = Math.sin(elapsed * 0.005) * 0.03;
-      sy = 1 + breath;
-      sx = 1 - breath;
-    }
-
-    const pivotY = renderSize * 0.3;
-    context.translate(dx, dy + pivotY);
-    if (rotate !== 0) context.rotate(rotate);
-    context.scale(sx, sy);
-    context.translate(0, -pivotY);
-
-    if (opacity < 1.0) {
-      context.globalAlpha *= opacity;
-    }
-
-    context.drawImage(
-      image,
-      0, 0, image.naturalWidth, image.naturalHeight,
-      -renderSize / 2, -renderSize * 0.7, renderSize, renderSize
-    );
-  } else {
-    // Sprite sheet
-    const frameSize = 96;
-    context.drawImage(
-      image,
-      frame * frameSize,
-      spriteRows[state] * frameSize,
-      frameSize,
-      frameSize,
-      -renderSize / 2,
-      -renderSize * 0.7,
-      renderSize,
-      renderSize
-    );
-  }
+  context.drawImage(
+    image,
+    frame * frameSize,
+    row * frameSize,
+    frameSize,
+    frameSize,
+    -renderSize / 2,
+    -renderSize * 0.7,
+    renderSize,
+    renderSize
+  );
   context.restore();
 }
 
