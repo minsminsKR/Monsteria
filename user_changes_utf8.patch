@@ -1,0 +1,1596 @@
+﻿diff --git a/main.js b/main.js
+index 970c43b..9ce603a 100644
+--- a/main.js
++++ b/main.js
+@@ -103,7 +103,7 @@ const monsterDefinitions = {
+     skillCooldown: 1.4,
+     projectileSpeed: 750,
+     moveSpeed: 225,
+-    spriteSheet: "assets/monsters/0_3_hatefulclops/0_3_hatefulclops-spritesheet-game.png",
++    spriteSheet: "assets/monsters/0_2_cyclopsis/0_2_cyclopsis-spritesheet-game.png",
+     colors: { main: "#b33a27", light: "#ff9c8a", dark: "#4d120a", accent: "#7deef0" },
+     base: { attack: 50, attackSpeed: 2.25, maxHp: 320, defense: 20, skillDamage: 110 },
+     growth: { attack: 18, attackSpeed: 0.22, maxHp: 75, defense: 8, skillDamage: 38 }
+@@ -117,7 +117,7 @@ const monsterDefinitions = {
+     skillCooldown: 3.8,
+     projectileSpeed: 420,
+     moveSpeed: 165,
+-    spriteSheet: "assets/monsters/1_3_candy/1_3_candy-spritesheet-game.png",
++    spriteSheet: "assets/monsters/1_2_cutie/1_2_cutie-spritesheet-game.png",
+     colors: { main: "#e06b9b", light: "#ffd9e8", dark: "#802848", accent: "#fff2be" },
+     base: { attack: 95, attackSpeed: 1.05, maxHp: 520, defense: 45, skillDamage: 210 },
+     growth: { attack: 35, attackSpeed: 0.10, maxHp: 130, defense: 18, skillDamage: 75 }
+@@ -131,7 +131,7 @@ const monsterDefinitions = {
+     skillCooldown: 2.4,
+     projectileSpeed: 580,
+     moveSpeed: 195,
+-    spriteSheet: "assets/monsters/2_3_unrang/2_3_unrang-spritesheet-game.png",
++    spriteSheet: "assets/monsters/2_2_unnyangsam/2_2_unnyangsam-spritesheet-game.png",
+     colors: { main: "#3f8fb5", light: "#b3e5fc", dark: "#12435c", accent: "#ffeb3b" },
+     base: { attack: 72, attackSpeed: 1.55, maxHp: 410, defense: 30, skillDamage: 155 },
+     growth: { attack: 24, attackSpeed: 0.15, maxHp: 105, defense: 12, skillDamage: 55 }
+@@ -263,6 +263,53 @@ const spriteRows = {
+ 
+ const monsterSpriteImages = {};
+ 
++const automationFamilies = [
++  { prefix: "0", label: "?ъ씠?대∼??, species: "0_1_cyclopse" },
++  { prefix: "2", label: "?대깷??, species: "2_1_unnyangi" },
++  { prefix: "1", label: "?щ툝由щ룎", species: "1_1_lovelydoll" }
++];
++
++function createDefaultAutomationSettings() {
++  return {
++    families: automationFamilies.reduce((settings, family) => {
++      settings[family.prefix] = {
++        autoBuy: false,
++        targetLevel: 1,
++        sellLevel: 0
++      };
++      return settings;
++    }, {})
++  };
++}
++
++function clampAutomationLevel(value, fallback, allowOff = false) {
++  const parsed = Number.parseInt(value, 10);
++  if (allowOff && parsed === 0) return 0;
++  if (!Number.isFinite(parsed)) return fallback;
++  return Math.min(getMaxLevel("2_1_unnyangi"), Math.max(1, parsed));
++}
++
++function normalizeAutomationSettings(savedSettings = {}) {
++  const normalized = createDefaultAutomationSettings();
++  automationFamilies.forEach((family) => {
++    const savedFamily = savedSettings?.families?.[family.prefix] || {};
++    normalized.families[family.prefix].autoBuy = Boolean(savedFamily.autoBuy);
++    normalized.families[family.prefix].targetLevel = clampAutomationLevel(savedFamily.targetLevel, 1);
++    normalized.families[family.prefix].sellLevel = clampAutomationLevel(savedFamily.sellLevel, 0, true);
++  });
++  return normalized;
++}
++
++function getAutomationSettingsForFamily(prefix) {
++  if (!gameState.automation) {
++    gameState.automation = createDefaultAutomationSettings();
++  }
++  if (!gameState.automation.families?.[prefix]) {
++    gameState.automation = normalizeAutomationSettings(gameState.automation);
++  }
++  return gameState.automation.families[prefix];
++}
++
+ function createDefaultGameState() {
+   return {
+     started: false,
+@@ -276,7 +323,8 @@ function createDefaultGameState() {
+     playerLevel: 1,
+     playerXp: 0,
+     talentPoints: 0,
+-    investedTalents: 0
++    investedTalents: 0,
++    automation: createDefaultAutomationSettings()
+   };
+ }
+ 
+@@ -351,6 +399,279 @@ function getDynamicSpotProperties(leftPercent, topPercent) {
+   return { scale, zIndex, facing, lunge };
+ }
+ 
++function getMiningWaitingCenterPosition() {
++  const left = "52%";
++  const top = "85%";
++  return { left, top, ...getDynamicSpotProperties(left, top) };
++}
++
++function getMiningSpawnCenterPosition(index = 0) {
++  const base = getMiningWaitingCenterPosition();
++  const baseLeft = parseFloat(base.left);
++  const baseTop = parseFloat(base.top);
++  const horizontalStep = 1.1;
++  const verticalStep = 4.8;
++  const offsets = [
++    [0, 0],
++    [-horizontalStep, 0],
++    [horizontalStep, 0],
++    [-horizontalStep / 2, -verticalStep],
++    [horizontalStep / 2, -verticalStep],
++    [-horizontalStep / 2, verticalStep],
++    [horizontalStep / 2, verticalStep],
++    [-horizontalStep * 1.5, -verticalStep / 2],
++    [horizontalStep * 1.5, verticalStep / 2],
++    [-horizontalStep * 2, 0],
++    [horizontalStep * 2, 0],
++    [0, -verticalStep],
++    [0, verticalStep]
++  ];
++  const [dx, dy] = offsets[index % offsets.length];
++  const left = `${(baseLeft + dx).toFixed(2)}%`;
++  const top = `${(baseTop + dy).toFixed(2)}%`;
++  return { left, top, ...getDynamicSpotProperties(left, top) };
++}
++
++function reflowTightMiningSpawnCluster() {
++  if (!miningState.monsterPositions) return false;
++
++  const center = getMiningWaitingCenterPosition();
++  const centerLeft = parseFloat(center.left);
++  const centerTop = parseFloat(center.top);
++  let changed = false;
++
++  miningState.monsterPositions.forEach((spot, index) => {
++    if (!spot || spot.isMoving) return;
++    const left = parseFloat(spot.left);
++    const top = parseFloat(spot.top);
++    if (Number.isNaN(left) || Number.isNaN(top)) return;
++    if (Math.abs(left - centerLeft) > 0.25 || Math.abs(top - centerTop) > 0.25) return;
++
++    const next = getMiningSpawnCenterPosition(index);
++    const nextLeft = parseFloat(next.left);
++    const nextTop = parseFloat(next.top);
++    const needsUpdate =
++      Math.abs(left - nextLeft) > 0.01 ||
++      Math.abs(top - nextTop) > 0.01 ||
++      spot.targetLeft !== next.left ||
++      spot.targetTop !== next.top ||
++      spot.isTargetingIncinerator ||
++      spot.isTargetingAutoEvolver ||
++      spot.isAutomationMove;
++    if (!needsUpdate) return;
++
++    Object.assign(spot, next, {
++      targetLeft: next.left,
++      targetTop: next.top,
++      isMoving: false,
++      isTargetingIncinerator: false,
++      isTargetingAutoEvolver: false,
++      isAutomationMove: false
++    });
++    changed = true;
++  });
++
++  return changed;
++}
++
++function isMiningWaitingZoneSpot(spot) {
++  const topPct = parseFloat(spot?.top);
++  return !Number.isNaN(topPct) && topPct >= 70;
++}
++
++function getStageElementCenterPosition(elementId) {
++  const mineStage = $("#mine-stage");
++  const target = $(`#${elementId}`);
++  if (!mineStage || !target) return null;
++
++  const stageRect = mineStage.getBoundingClientRect();
++  const targetRect = target.getBoundingClientRect();
++  if (!stageRect.width || !stageRect.height) return null;
++
++  const centerX = targetRect.left + targetRect.width / 2 - stageRect.left;
++  const centerY = targetRect.top + targetRect.height / 2 - stageRect.top;
++  return {
++    left: `${((centerX / stageRect.width) * 100).toFixed(2)}%`,
++    top: `${((centerY / stageRect.height) * 100).toFixed(2)}%`
++  };
++}
++
++function commandMonsterToStageZone(index, zoneId, flags = {}) {
++  const spot = miningState.monsterPositions?.[index];
++  if (!spot || spot.isMoving) return false;
++
++  const center = getStageElementCenterPosition(zoneId);
++  if (!center) return false;
++
++  spot.targetLeft = center.left;
++  spot.targetTop = center.top;
++  spot.isMoving = true;
++  spot.isTargetingIncinerator = Boolean(flags.incinerator);
++  spot.isTargetingAutoEvolver = Boolean(flags.levelUp);
++  spot.isAutomationMove = Boolean(flags.automation);
++
++  const monster = gameState.monsters[index];
++  if (monster) {
++    monster.isAutoEvolving = false;
++  }
++
++  startMiningMovementLoop();
++  return true;
++}
++
++function rectsOverlap(a, b) {
++  return Boolean(
++    a &&
++    b &&
++    a.left < b.right &&
++    a.right > b.left &&
++    a.top < b.bottom &&
++    a.bottom > b.top
++  );
++}
++
++function getMonsterZoneEntryRect(index, spot) {
++  const spotEl = document.getElementById(`mining-spot-${index}`);
++  const spriteEl = spotEl?.querySelector(".monster-sprite");
++  const spriteRect = (spriteEl || spotEl)?.getBoundingClientRect();
++  if (spriteRect?.width && spriteRect?.height) {
++    const width = Math.max(18, spriteRect.width * 0.36);
++    const height = Math.max(14, spriteRect.height * 0.22);
++    return {
++      left: spriteRect.left + spriteRect.width / 2 - width / 2,
++      right: spriteRect.left + spriteRect.width / 2 + width / 2,
++      top: spriteRect.bottom - height,
++      bottom: spriteRect.bottom
++    };
++  }
++
++  const mineStage = $("#mine-stage");
++  if (!mineStage || !spot) return null;
++
++  const stageRect = mineStage.getBoundingClientRect();
++  const x = stageRect.left + (parseFloat(spot.left) / 100) * stageRect.width;
++  const y = stageRect.top + (parseFloat(spot.top) / 100) * stageRect.height;
++  return {
++    left: x - 10,
++    right: x + 10,
++    top: y - 8,
++    bottom: y + 8
++  };
++}
++
++function doesMonsterEntryOverlapZone(index, zoneId, spot) {
++  const zone = $(`#${zoneId}`);
++  if (!zone) return false;
++
++  const zoneRect = zone.getBoundingClientRect();
++  return rectsOverlap(getMonsterZoneEntryRect(index, spot), zoneRect);
++}
++
++function stopMovingSpotAtCurrentPosition(index, spot) {
++  spot.targetLeft = spot.left;
++  spot.targetTop = spot.top;
++  spot.isMoving = false;
++  spot.isTargetingIncinerator = false;
++  spot.isTargetingAutoEvolver = false;
++  spot.isAutomationMove = false;
++
++  const spotEl = document.getElementById(`mining-spot-${index}`);
++  if (!spotEl) return;
++
++  const sprite = spotEl.querySelector(".monster-sprite");
++  if (sprite) sprite.classList.remove("is-walking");
++  spotEl.style.left = spot.left;
++  spotEl.style.top = spot.top;
++  spotEl.style.zIndex = spot.zIndex;
++}
++
++function placeMonsterOnZoneCenter(index, zoneId) {
++  const spot = miningState.monsterPositions?.[index];
++  const center = getStageElementCenterPosition(zoneId);
++  if (!spot || !center) return false;
++
++  const dynamic = getDynamicSpotProperties(center.left, center.top);
++  spot.left = center.left;
++  spot.top = center.top;
++  spot.targetLeft = center.left;
++  spot.targetTop = center.top;
++  spot.scale = dynamic.scale;
++  spot.zIndex = Math.max(dynamic.zIndex, zoneId === "mine-incinerator" ? 92 : dynamic.zIndex);
++  spot.facing = dynamic.facing;
++  spot.lunge = dynamic.lunge;
++  spot.isMoving = false;
++  spot.isTargetingIncinerator = false;
++  spot.isTargetingAutoEvolver = false;
++  spot.isAutomationMove = false;
++
++  const spotEl = document.getElementById(`mining-spot-${index}`);
++  if (spotEl) {
++    spotEl.style.left = spot.left;
++    spotEl.style.top = spot.top;
++    spotEl.style.zIndex = spot.zIndex;
++    const sprite = spotEl.querySelector(".monster-sprite");
++    if (sprite) sprite.classList.remove("is-walking", "is-attacking");
++    const wrapper = spotEl.querySelector(".monster-sprite-wrapper");
++    if (wrapper) wrapper.style.transform = spot.facing < 0 ? "scaleX(-1)" : "";
++  }
++
++  return true;
++}
++
++function resolveMonsterZoneEntry(index, spot) {
++  if (!spot?.isMoving) return false;
++
++  if (spot.isTargetingIncinerator && doesMonsterEntryOverlapZone(index, "mine-incinerator", spot)) {
++    const wasAutomationMove = Boolean(spot.isAutomationMove);
++    placeMonsterOnZoneCenter(index, "mine-incinerator");
++    saveMiningPositions();
++    incinerateMonster(index, { auto: wasAutomationMove });
++    return true;
++  }
++
++  if (spot.isTargetingAutoEvolver && doesMonsterEntryOverlapZone(index, "mine-auto-evolver", spot)) {
++    const wasAutomationMove = Boolean(spot.isAutomationMove);
++    stopMovingSpotAtCurrentPosition(index, spot);
++    spot.isAutomationZoneMode = wasAutomationMove;
++    attemptMiningZoneLevelUp(index, {
++      pinAfter: true,
++      showManualToasts: !wasAutomationMove,
++      showAutoSuccessToast: false,
++      renderAfter: true,
++      followUpAutomation: wasAutomationMove
++    });
++    return true;
++  }
++
++  return false;
++}
++
++function pinMonsterToLevelUpZone(index) {
++  placeMonsterOnZoneCenter(index, "mine-auto-evolver");
++}
++
++function walkMonsterToWaitingZone(index) {
++  const spot = miningState.monsterPositions?.[index];
++  if (!spot) return false;
++
++  const center = getMiningSpawnCenterPosition(index);
++  spot.targetLeft = center.left;
++  spot.targetTop = center.top;
++  spot.isMoving = true;
++  spot.isTargetingIncinerator = false;
++  spot.isTargetingAutoEvolver = false;
++  spot.isAutomationMove = true;
++  spot.isAutomationZoneMode = false;
++
++  const monster = gameState.monsters[index];
++  if (monster) {
++    monster.isAutoEvolving = false;
++  }
++
++  startMiningMovementLoop();
++  return true;
++}
++
+ let miningMovementRaf = null;
+ let lastMiningMoveTime = 0;
+ 
+@@ -425,20 +746,25 @@ function startMiningMovementLoop() {
+         }
+         saveMiningPositions();
+         
++        const wasAutomationMove = Boolean(spot.isAutomationMove);
++        spot.isAutomationMove = false;
++
+         if (spot.isTargetingIncinerator) {
+           spot.isTargetingIncinerator = false;
+           setTimeout(() => {
+-            incinerateMonster(idx);
++            incinerateMonster(idx, { auto: wasAutomationMove });
+           }, 50);
+         }
+         
+         if (spot.isTargetingAutoEvolver) {
+           spot.isTargetingAutoEvolver = false;
+-          const monster = gameState.monsters[idx];
+-          if (monster) {
+-            monster.isAutoEvolving = true;
+-            showToast(`${monster.name}??媛) ?먮룞 吏꾪솕瑜??쒖옉?⑸땲??`, "success");
+-          }
++          attemptMiningZoneLevelUp(idx, {
++            pinAfter: true,
++            showManualToasts: !wasAutomationMove,
++            showAutoSuccessToast: false,
++            renderAfter: true,
++            followUpAutomation: wasAutomationMove
++          });
+         }
+       } else {
+         const nxPx = curXpx + (dx / dist) * moveDist;
+@@ -463,6 +789,8 @@ function startMiningMovementLoop() {
+             sprite.classList.add("is-walking");
+           }
+         }
++
++        if (resolveMonsterZoneEntry(idx, spot)) return;
+       }
+     });
+     
+@@ -579,7 +907,8 @@ function saveGame() {
+     playerLevel: gameState.playerLevel,
+     playerXp: gameState.playerXp,
+     talentPoints: gameState.talentPoints,
+-    investedTalents: gameState.investedTalents
++    investedTalents: gameState.investedTalents,
++    automation: normalizeAutomationSettings(gameState.automation)
+   };
+ 
+   localStorage.setItem(SAVE_KEY, JSON.stringify(saveData));
+@@ -624,7 +953,8 @@ function loadGame() {
+       playerLevel: Math.max(1, Number(saved.playerLevel) || 1),
+       playerXp: Math.max(0, Number(saved.playerXp) || 0),
+       talentPoints: Math.max(0, Number(saved.talentPoints) || 0),
+-      investedTalents: Math.max(0, Number(saved.investedTalents) || 0)
++      investedTalents: Math.max(0, Number(saved.investedTalents) || 0),
++      automation: normalizeAutomationSettings(saved.automation)
+     };
+     syncDisplayResources();
+     updatePlayerUi();
+@@ -758,6 +1088,7 @@ function showScreen(screenName) {
+ 
+   if (screenName === "mining") {
+     startMining();
++    requestMiningAutomationTick({ allowPurchases: false });
+   }
+ 
+   // Handle BGM changes during screen navigation
+@@ -916,8 +1247,9 @@ function updatePlayerUi() {
+   }
+ }
+ 
+-function addPlayerXp(amount) {
++function addPlayerXp(amount, options = {}) {
+   if (amount <= 0) return;
++  const { showToastMessages = true } = options;
+   gameState.playerXp = (gameState.playerXp || 0) + amount;
+   let leveledUp = false;
+   
+@@ -929,9 +1261,13 @@ function addPlayerXp(amount) {
+       leveledUp = true;
+       if (gameState.playerLevel % 10 === 0) {
+         gameState.talentPoints = (gameState.talentPoints || 0) + 1;
+-        showToast(`?뚮젅?댁뼱 ?덈꺼?? LV ${gameState.playerLevel} ?ъ꽦 (?뱀꽦 ?ъ씤??+1 ?띾뱷!)`, "success");
++        if (showToastMessages) {
++          showToast(`?뚮젅?댁뼱 ?덈꺼?? LV ${gameState.playerLevel} ?ъ꽦 (?뱀꽦 ?ъ씤??+1 ?띾뱷!)`, "success");
++        }
+       } else {
+-        showToast(`?뚮젅?댁뼱 ?덈꺼?? LV ${gameState.playerLevel} ?ъ꽦`, "success");
++        if (showToastMessages) {
++          showToast(`?뚮젅?댁뼱 ?덈꺼?? LV ${gameState.playerLevel} ?ъ꽦`, "success");
++        }
+       }
+     } else {
+       break;
+@@ -1007,6 +1343,7 @@ function renderMining() {
+ 
+   $("#rock-sprite").innerHTML = `<div class="rock-sprite ${rock.id}" aria-hidden="true"></div>`;
+   $("#rock-name").textContent = rock.name;
++  requestAnimationFrame(updateRockHpGaugePosition);
+ 
+   $("#rock-tier-buttons").innerHTML = Object.values(rockDefinitions).map((definition) => `
+     <button class="tier-button ${definition.id === gameState.selectedRock ? "active" : ""}" data-rock-tier="${definition.id}">
+@@ -1028,7 +1365,7 @@ function renderMining() {
+   $("#rock-reward-preview").innerHTML = `${rock.gold[0]}-${rock.gold[1]} Gold<br>${rock.crystal[0]}-${rock.crystal[1]} Crystal`;
+ 
+   // Initialize or align monster positions
+-  if (!miningState.monsterPositions || miningState.monsterPositions.length !== gameState.monsters.length) {
++  if (!miningState.monsterPositions || miningState.monsterPositions.length !== gameState.monsters.length || gameState.monsters.some((_, index) => !miningState.monsterPositions[index])) {
+     const savedMap = loadMiningPositions() || {};
+     miningState.monsterPositions = gameState.monsters.map((monster, index) => {
+       if (savedMap[monster.id]) {
+@@ -1038,19 +1375,14 @@ function renderMining() {
+         return pos;
+       }
+       
+-      // Default to waiting/summon zone (bottom deck floor)
+-      const waitingLeft = 15 + (index * 12) % 70;
+-      return {
+-        left: `${waitingLeft}%`,
+-        top: "85%",
+-        scale: 1.0,
+-        zIndex: 85,
+-        facing: 1,
+-        lunge: ""
+-      };
++      return getMiningSpawnCenterPosition(index);
+     });
+   }
+ 
++  if (reflowTightMiningSpawnCluster()) {
++    saveMiningPositions();
++  }
++
+   if (miningState.monsterPositions && miningState.monsterPositions.some(p => p.isMoving)) {
+     startMiningMovementLoop();
+   }
+@@ -1061,12 +1393,13 @@ function renderMining() {
+     container.innerHTML = gameState.monsters.map((monster, index) => {
+       const spot = miningState.monsterPositions[index];
+       const isSelected = miningState.selectedMonsterIndex === index ? " selected" : "";
+-      const isWalkingClass = spot.isMoving ? " is-walking" : "";
++      const isFainted = monster.isIncinerating ? " is-fainted" : "";
++      const isWalkingClass = spot.isMoving && !monster.isIncinerating ? " is-walking" : "";
+       const facingStyle = spot.facing < 0 ? "transform: scaleX(-1);" : "";
+       const transformStyle = `transform: translate(-50%, -72px) scale(${spot.scale});`;
+       const combinedStyle = `left: ${spot.left}; top: ${spot.top}; z-index: ${spot.zIndex}; ${transformStyle}`;
+       return `
+-        <div id="mining-spot-${index}" class="mining-monster-spot${isSelected}" style="${combinedStyle}">
++        <div id="mining-spot-${index}" class="mining-monster-spot${isSelected}${isFainted}" style="${combinedStyle}">
+           <div class="monster-sprite-wrapper" style="${facingStyle}">
+             ${monsterSpriteMarkup(monster.species, monster.level, isWalkingClass)}
+           </div>
+@@ -1081,81 +1414,128 @@ function renderMining() {
+   // Update status summary text
+   $("#mining-monster-summary").textContent = `OWNED PARTNERS: ${gameState.monsters.length} / ACTIVE MINERS WORK TOGETHER`;
+ 
+-  // Render Quick Evolution Panel
+-  const quickEvolvePanel = $("#mining-quick-evolve-panel");
+-  if (quickEvolvePanel) {
+-    if (miningState.selectedMonsterIndex === null) {
+-      quickEvolvePanel.innerHTML = `
+-        <h3>Quick Level Up</h3>
+-        <p class="evo-brief">留덉씠??以묒씤 ?뚰듃??紐ъ뒪?곕? ?대┃?섏뿬 ?좏깮?섎㈃ ?닿납?먯꽌 諛붾줈 ???덈꺼??諛?吏꾪솕瑜?吏꾪뻾?????덉뒿?덈떎.</p>
+-        <div style="font-size: 11px; color: var(--ink-soft); border-top: 1px dashed #ccc; padding-top: 8px; margin-top: 8px;">
+-          * ?먯꽭???깆옣 諛?吏꾪솕 ?ㅽ럺 ?뺣낫??硫붿씤 硫붾돱??<strong>Evolution</strong> ??뿉???뺤씤 媛?ν빀?덈떎.
+-        </div>
+-      `;
+-    } else {
+-      const monster = gameState.monsters[miningState.selectedMonsterIndex];
+-      const action = getUpgradeAction(monster);
+-      
+-      if (action.type === "max") {
+-        quickEvolvePanel.innerHTML = `
+-          <h3>Quick Level Up</h3>
+-          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; overflow: hidden; width: 100%;">
+-            ${monsterSpriteMarkup(monster.species, monster.level)}
+-            <div style="flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+-              <strong>${monster.name}</strong><br>
+-              <span style="font-size: 11px; color: var(--ink-soft);">LV ${monster.level} (理쒖쥌 ?뺥깭)</span>
+-            </div>
+-          </div>
+-          <div class="evo-stats" style="grid-template-columns: 1fr;">
+-            <div style="text-align: center;">ATK: <strong>${monster.stats.attack}</strong> / HP: <strong>${monster.stats.maxHp}</strong></div>
+-          </div>
+-          <button class="primary-button wide-button" disabled>MAX LEVEL REACHED</button>
+-        `;
+-      } else {
+-        const nextLevel = monster.level + 1;
+-        const prefix = getMonsterFamilyPrefix(monster.species);
+-        const nextSpecies = getSpeciesForLevel(prefix, nextLevel);
+-        
+-        let evolutionNotice = "";
+-        if (nextSpecies && nextSpecies !== monster.species) {
+-          const nextDef = monsterDefinitions[nextSpecies];
+-          evolutionNotice = `<div class="evo-notice-text">???깃났 ??[${nextDef.name}] (Stage ${getMonsterStage(nextSpecies)}) 吏꾪솕! ??/div>`;
+-        }
+-        
+-        const canAfford = gameState.gold >= action.gold && gameState.crystal >= action.crystal;
+-        const buttonDisabled = !canAfford ? " disabled" : "";
+-        
+-        quickEvolvePanel.innerHTML = `
+-          <h3>Quick Level Up</h3>
+-          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; overflow: hidden; width: 100%;">
+-            ${monsterSpriteMarkup(monster.species, monster.level)}
+-            <div style="flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+-              <strong>${monster.name}</strong><br>
+-              <span style="font-size: 11px; color: var(--ink-soft);">LV ${monster.level} ??LV ${nextLevel}</span>
+-            </div>
+-          </div>
+-          
+-          <div class="evo-stats">
+-            <div>?뺣쪧: <strong>${Math.round(Math.min(1.0, action.chance + getEvolutionChanceBonus(monster.level)) * 100)}%</strong>${gameState.investedTalents > 0 ? ` <span style="font-size:10px; color:#52c41a;">(+${Math.round(getEvolutionChanceBonus(monster.level) * 100)}%)</span>` : ''}</div>
+-            <div>鍮꾩슜: <strong style="${gameState.gold < action.gold ? 'color:#ff5500;' : ''}">${action.gold.toLocaleString()} G</strong></div>
+-            <div style="grid-column: span 2;">?꾩슂 ?щ━?ㅽ깉: <strong style="${gameState.crystal < action.crystal ? 'color:#ff5500;' : ''}">${action.crystal} / ${gameState.crystal}</strong></div>
++  renderMiningAutomationPanel();
++  updateMiningUi();
++}
++
++function renderMiningAutomationPanel() {
++  const panel = $("#mining-automation-panel");
++  if (!panel) return;
++
++  const rows = automationFamilies.map((family) => {
++    const settings = getAutomationSettingsForFamily(family.prefix);
++    const familyMonsters = gameState.monsters.filter((monster) => getMonsterFamilyPrefix(monster.species) === family.prefix);
++    const highestLevel = familyMonsters.reduce((max, monster) => Math.max(max, monster.level), 0);
++    return `
++      <div class="automation-family-row">
++        <div class="automation-family-head">
++          <div class="automation-family-sprite">${monsterSpriteMarkup(family.species, 1)}</div>
++          <div>
++            <strong>${family.label}</strong>
++            <span>${familyMonsters.length}留덈━ / 理쒓퀬 LV ${highestLevel || "-"}</span>
+           </div>
+-          
+-          ${evolutionNotice}
+-          
+-          <button id="quick-evolve-button" class="primary-button wide-button"${buttonDisabled} data-quick-evolve="${miningState.selectedMonsterIndex}">
+-            QUICK 吏꾪솕 ?쒕룄
++        </div>
++        <div class="automation-field automation-buy-field">
++          <span>援щℓ</span>
++          <button type="button" class="automation-buy-toggle ${settings.autoBuy ? "active" : ""}" aria-pressed="${settings.autoBuy ? "true" : "false"}" data-automation-family="${family.prefix}" data-automation-field="autoBuy">
++            ${settings.autoBuy ? "ON" : "OFF"}
+           </button>
+-          
+-          <div style="font-size: 10px; color: var(--ink-soft); margin-top: 6px; text-align: center;">
+-            * ?곸꽭 ?ㅽ럺 ?뺣낫??硫붿씤 硫붾돱 <strong>Evolution</strong> 李몄“
+-          </div>
+-        `;
+-      }
++        </div>
++        <label class="automation-field">
++          <span>紐⑺몴 LV</span>
++          <input type="number" min="1" max="50" step="1" value="${settings.targetLevel}" data-automation-family="${family.prefix}" data-automation-field="targetLevel">
++        </label>
++        <label class="automation-field">
++          <span>?먮ℓ LV</span>
++          <input type="number" min="0" max="50" step="1" value="${settings.sellLevel}" data-automation-family="${family.prefix}" data-automation-field="sellLevel">
++        </label>
++      </div>
++    `;
++  }).join("");
++
++  panel.innerHTML = `
++    <div class="automation-panel-head">
++      <strong>?먮룞 援щℓ 諛??덈꺼??/ ?먮룞 ?먮ℓ</strong>
++      <div id="automation-status" class="automation-status"></div>
++    </div>
++    <div class="automation-settings-list">${rows}</div>
++  `;
++  updateAutomationStatus();
++}
++
++function updateAutomationStatus() {
++  const status = $("#automation-status");
++  if (status) {
++    const activeBuyTargets = automationFamilies.filter((family) => getAutomationSettingsForFamily(family.prefix).autoBuy).length;
++    const activeLevelTargets = automationFamilies.filter((family) => getAutomationSettingsForFamily(family.prefix).targetLevel > 1).length;
++    const activeSaleTargets = automationFamilies.filter((family) => getAutomationSettingsForFamily(family.prefix).sellLevel > 0).length;
++    status.innerHTML = `
++      <span>?먮룞 援щℓ</span><strong>${activeBuyTargets} 怨꾩뿴</strong>
++      <span>?먮룞 ?덈꺼??/span><strong>${activeLevelTargets} 怨꾩뿴</strong>
++      <span>?먮룞 ?먮ℓ</span><strong>${activeSaleTargets} 怨꾩뿴</strong>
++    `;
++  }
++}
++
++function updateAutomationSettingFromInput(input, shouldRender = false) {
++  const family = input.dataset.automationFamily;
++  const field = input.dataset.automationField;
++  const settings = getAutomationSettingsForFamily(family);
++  if (field === "autoBuy") {
++    const nextAutoBuy = input.tagName === "BUTTON" ? !settings.autoBuy : Boolean(input.checked);
++    settings.autoBuy = nextAutoBuy;
++    if (input.tagName === "BUTTON") {
++      input.classList.toggle("active", nextAutoBuy);
++      input.textContent = nextAutoBuy ? "ON" : "OFF";
++      input.setAttribute("aria-pressed", nextAutoBuy ? "true" : "false");
+     }
++    saveGame();
++    updateAutomationStatus();
++    requestMiningAutomationTick({ allowPurchases: nextAutoBuy });
++    return;
+   }
++  if (input.value === "") return;
+ 
+-  updateMiningUi();
++  const allowOff = field === "sellLevel";
++  const fallback = field === "targetLevel" ? settings.targetLevel : settings.sellLevel;
++  const nextValue = clampAutomationLevel(input.value, fallback, allowOff);
++  settings[field] = nextValue;
++  input.value = nextValue;
++  saveGame();
++
++  if (shouldRender) {
++    renderMiningAutomationPanel();
++  } else {
++    updateAutomationStatus();
++  }
++  requestMiningAutomationTick({ allowPurchases: false });
++}
++
++function updateRockHpGaugePosition() {
++  if (uiState.currentScreen !== "mining") return;
++
++  const rockTarget = $("#rock-target");
++  const hp = $(".rock-floating-hp");
++  const sprite = $("#rock-sprite .rock-sprite");
++  const stage = $("#mine-stage");
++  if (!rockTarget || !hp || !sprite || !stage) return;
++
++  const targetRect = rockTarget.getBoundingClientRect();
++  const spriteRect = sprite.getBoundingClientRect();
++  const stageRect = stage.getBoundingClientRect();
++  const hpHeight = hp.offsetHeight || 16;
++  const gap = 8;
++
++  const centerX = spriteRect.left + spriteRect.width / 2 - targetRect.left;
++  const preferredTop = spriteRect.top - targetRect.top - hpHeight - gap;
++  const minTop = stageRect.top - targetRect.top + 6;
++  const top = Math.max(minTop, preferredTop);
++  const width = Math.max(112, Math.min(190, Math.round(spriteRect.width * 1.28)));
++
++  hp.style.left = `${centerX}px`;
++  hp.style.top = `${top}px`;
++  hp.style.width = `${width}px`;
++  hp.style.transform = "translateX(-50%)";
+ }
+ 
+ function updateMiningUi(message) {
+@@ -1167,6 +1547,7 @@ function updateMiningUi(message) {
+   $("#rock-hp-label").textContent = rock ? rock.name : "Rock HP";
+   $("#rock-hp-text").textContent = `${Math.ceil(miningState.hp).toLocaleString()} / ${miningState.maxHp.toLocaleString()}`;
+   $("#rock-hp-fill").style.width = `${hpPercent}%`;
++  updateRockHpGaugePosition();
+   $("#mine-toggle-button").textContent = miningState.active ? "Pause Mining" : "Start Mining";
+   $("#attack-state-text").textContent = miningState.respawning ? "Respawning" : miningState.active ? "Auto Attack" : "Ready";
+   $("#rock-target").disabled = miningState.respawning;
+@@ -1255,7 +1636,7 @@ function runMonsterAttackLoop(monsterId) {
+   const spotElement = $(`#mining-spot-${index}`);
+ 
+   const topPct = parseFloat(spot.top);
+-  const isWaiting = (!isNaN(topPct) && topPct >= 70) || currentMonster.isAutoEvolving || spot.isTargetingIncinerator || spot.isTargetingAutoEvolver;
++  const isWaiting = (!isNaN(topPct) && topPct >= 70) || spot.isTargetingIncinerator || spot.isTargetingAutoEvolver;
+ 
+   if (uiState.currentScreen === "mining" && spotElement && !isWaiting) {
+     // Face the central rock (placed at 50% left)
+@@ -1439,12 +1820,22 @@ function getMonsterRefundValue(species) {
+   return 0;
+ }
+ 
+-function incinerateMonster(index) {
++function getMonsterPurchasePrice(species) {
++  if (species === "0_1_cyclopse") return 400;
++  if (species === "1_1_lovelydoll") return 600;
++  if (species === "2_1_unnyangi") return 500;
++  return 0;
++}
++
++function incinerateMonster(index, options = {}) {
+   const monster = gameState.monsters[index];
+   if (!monster) return;
+ 
+   if (gameState.monsters.length <= 1) {
+-    showToast("理쒖냼 ??留덈━??紐ъ뒪?곕뒗 蹂댁쑀?댁빞 ?⑸땲??", "error");
++    monster.isAutomationSelling = false;
++    if (!options.auto) {
++      showToast("理쒖냼 ??留덈━??紐ъ뒪?곕뒗 蹂댁쑀?댁빞 ?⑸땲??", "error");
++    }
+     const spot = miningState.monsterPositions[index];
+     if (spot) {
+       spot.left = "78%";
+@@ -1458,6 +1849,8 @@ function incinerateMonster(index) {
+ 
+   if (monster.isIncinerating) return;
+   monster.isIncinerating = true;
++  placeMonsterOnZoneCenter(index, "mine-incinerator");
++  saveMiningPositions();
+ 
+   const refund = getMonsterRefundValue(monster.species);
+ 
+@@ -1473,7 +1866,7 @@ function incinerateMonster(index) {
+   // Refund gold immediately
+   gameState.gold += refund;
+   const xpGain = monster.level * 5;
+-  addPlayerXp(xpGain);
++  addPlayerXp(xpGain, { showToastMessages: !options.auto });
+ 
+   // Apply the CSS animation classes to the DOM element
+   const spotElement = $(`#mining-spot-${index}`);
+@@ -1485,7 +1878,9 @@ function incinerateMonster(index) {
+     }
+   }
+ 
+-  showToast(`${monster.name}???뚭컖?섏뿀?듬땲?? +${refund} Gold`, "success");
++  if (!options.auto) {
++    showToast(`${monster.name}???뚭컖?섏뿀?듬땲?? +${refund} Gold`, "success");
++  }
+ 
+   // Defer removal of data until animation finishes (1s)
+   setTimeout(() => {
+@@ -1515,6 +1910,9 @@ function incinerateMonster(index) {
+     saveGame();
+     saveMiningPositions();
+     renderMining();
++    if (options.auto) {
++      requestMiningAutomationTick({ allowPurchases: false });
++    }
+   }, 1000);
+ }
+ 
+@@ -1608,11 +2006,30 @@ function renderShop() {
+   grid.innerHTML = html;
+ }
+ 
++function addMiningPositionForMonster(monster, index = gameState.monsters.length - 1) {
++  if (!monster) return;
++  if (!miningState.monsterPositions) {
++    miningState.monsterPositions = [];
++  }
++
++  gameState.monsters.forEach((_, monsterIndex) => {
++    if (monsterIndex >= index) return;
++    if (miningState.monsterPositions[monsterIndex]) return;
++
++    miningState.monsterPositions[monsterIndex] = getMiningSpawnCenterPosition(monsterIndex);
++  });
++
++  const existing = miningState.monsterPositions[index];
++  if (existing) return;
++
++  miningState.monsterPositions[index] = getMiningSpawnCenterPosition(index);
++}
++
+ function buyMonster(species) {
+   const definition = monsterDefinitions[species];
+   if (!definition) return;
+ 
+-  const price = species === "0_1_cyclopse" ? 400 : species === "1_1_lovelydoll" ? 600 : 500;
++  const price = getMonsterPurchasePrice(species);
+ 
+   if (gameState.gold < price) {
+     showToast(`Gold媛 遺議깊빀?덈떎. ${price.toLocaleString()} Gold媛 ?꾩슂?⑸땲??`, "error");
+@@ -1623,12 +2040,18 @@ function buyMonster(species) {
+   soundManager.play("buy");
+   const newMonster = createMonster(species);
+   gameState.monsters.push(newMonster);
++  addMiningPositionForMonster(newMonster, gameState.monsters.length - 1);
+   if (miningState.active) {
+     scheduleMonsterAttack(newMonster);
+   }
+   saveGame();
++  saveMiningPositions();
+   updateResourceDisplays();
+   renderShop();
++  if (uiState.currentScreen === "mining") {
++    renderMining();
++    requestMiningAutomationTick({ allowPurchases: false });
++  }
+   showToast(`${definition.name}??瑜? ?곸엯?덉뒿?덈떎!`, "success");
+ }
+ 
+@@ -1808,24 +2231,68 @@ function attemptEvolution() {
+   showToast(uiState.evolutionResult, succeeded ? "success" : "error");
+ }
+ 
+-function attemptQuickEvolution(monsterIndex) {
+-  const index = parseInt(monsterIndex);
++function triggerLevelUpZoneVisualEffect(monsterIndex, succeeded) {
++  const spotEl = document.getElementById(`mining-spot-${monsterIndex}`);
++  if (!spotEl) return;
++  
++  const className = succeeded ? "level-up-success" : "level-up-fail";
++  spotEl.classList.remove("level-up-success", "level-up-fail");
++  void spotEl.offsetWidth; // Trigger reflow
++  spotEl.classList.add(className);
++  
++  setTimeout(() => {
++    spotEl.classList.remove(className);
++  }, 800);
++}
++
++function attemptMiningZoneLevelUp(index, options = {}) {
++  const {
++    pinAfter = true,
++    showManualToasts = true,
++    showAutoSuccessToast = false,
++    renderAfter = true,
++    followUpAutomation = false
++  } = options;
+   const monster = gameState.monsters[index];
+-  if (!monster) return;
++  if (!monster) return { attempted: false, reason: "missing" };
+ 
+   const action = getUpgradeAction(monster);
+-  if (action.type === "max") return;
++  let shouldShowEffect = false;
++  let effectSucceeded = false;
+ 
+-  const finalChance = Math.min(1.0, action.chance + getEvolutionChanceBonus(monster.level));
++  if (action.type === "max") {
++    if (pinAfter) {
++      pinMonsterToLevelUpZone(index);
++      saveMiningPositions();
++    }
++    if (showManualToasts) {
++      showToast(`${monster.name}?(?? ?대? 理쒕? ?덈꺼?낅땲??`, "info");
++    }
++    saveGame();
++    if (renderAfter && uiState.currentScreen === "mining") renderMining();
++    return { attempted: false, reason: "max" };
++  }
+ 
+   if (gameState.gold < action.gold || gameState.crystal < action.crystal) {
+-    showToast("?깆옣 ?щ즺媛 遺議깊빀?덈떎.", "error");
+-    return;
++    if (pinAfter) {
++      pinMonsterToLevelUpZone(index);
++      saveMiningPositions();
++    }
++    if (showManualToasts) {
++      showToast("?덈꺼???щ즺媛 遺議깊빀?덈떎.", "error");
++    }
++    saveGame();
++    if (renderAfter && uiState.currentScreen === "mining") renderMining();
++    return { attempted: false, reason: "materials" };
+   }
+ 
+   gameState.gold -= action.gold;
+   gameState.crystal -= action.crystal;
++  
++  const finalChance = Math.min(1.0, action.chance + getEvolutionChanceBonus(monster.level));
+   const succeeded = Math.random() < finalChance;
++  shouldShowEffect = true;
++  effectSucceeded = succeeded;
+ 
+   if (succeeded) {
+     monster.level += 1;
+@@ -1843,99 +2310,213 @@ function attemptQuickEvolution(monsterIndex) {
+     soundManager.play("upgrade");
+     
+     if (evolved) {
+-      showToast(`?깃났! ${monster.name}(??濡??먮룞 吏꾪솕?덉뒿?덈떎! (LV${monster.level})`, "success");
++      if (showManualToasts || showAutoSuccessToast) {
++        showToast(`${showManualToasts ? "?깃났" : "?먮룞"}! ${monster.name}(??濡?吏꾪솕?섎ŉ LV${monster.level}???섏뿀?듬땲??`, "success");
++      }
+     } else {
+-      showToast(`?깃났! ${monster.name}??LV${monster.level}(??濡??덈꺼?낇뻽?듬땲??`, "success");
++      if (showManualToasts || showAutoSuccessToast) {
++        showToast(`${showManualToasts ? "?깃났" : "?먮룞"}! ${monster.name} LV${monster.level} ?덈꺼??`, "success");
++      }
+     }
+   } else {
+     soundManager.play("break");
+-    showToast(`${monster.name} ?덈꺼???ㅽ뙣!`, "error");
++    if (showManualToasts) {
++      showToast(`${monster.name} ?덈꺼???ㅽ뙣!`, "error");
++    }
++  }
++
++  if (pinAfter) {
++    pinMonsterToLevelUpZone(index);
++    saveMiningPositions();
+   }
+ 
+   saveGame();
+   updateResourceDisplays();
+-  renderMining();
++  if (renderAfter && uiState.currentScreen === "mining") renderMining();
++  if (shouldShowEffect) {
++    triggerLevelUpZoneVisualEffect(index, effectSucceeded);
++  }
++  if (followUpAutomation) {
++    requestMiningAutomationTick({ allowPurchases: false });
++  }
++  return { attempted: true, succeeded, monsterId: monster.id, level: monster.level };
+ }
+ 
+-function triggerAutoEvoVisualEffect(monsterIndex, succeeded) {
+-  const spotEl = document.getElementById(`mining-spot-${monsterIndex}`);
+-  if (!spotEl) return;
+-  
+-  const className = succeeded ? "auto-evo-success" : "auto-evo-fail";
+-  spotEl.classList.remove("auto-evo-success", "auto-evo-fail");
+-  void spotEl.offsetWidth; // Trigger reflow
+-  spotEl.classList.add(className);
+-  
+-  setTimeout(() => {
+-    spotEl.classList.remove(className);
+-  }, 800);
++function isMonsterBusyForAutomation(index) {
++  const monster = gameState.monsters[index];
++  const spot = miningState.monsterPositions?.[index];
++  return Boolean(
++    monster?.isIncinerating ||
++    monster?.isAutomationSelling ||
++    spot?.isMoving ||
++    spot?.isTargetingIncinerator ||
++    spot?.isTargetingAutoEvolver
++  );
+ }
+ 
+-function attemptAutoEvolution(index) {
++function getAutoSaleLevel(monster) {
++  const prefix = getMonsterFamilyPrefix(monster.species);
++  return getAutomationSettingsForFamily(prefix).sellLevel;
++}
++
++function shouldAutoSellMonster(monster) {
++  const sellLevel = getAutoSaleLevel(monster);
++  return sellLevel > 0 && monster.level >= sellLevel;
++}
++
++function isMonsterPendingSale(index) {
+   const monster = gameState.monsters[index];
+-  if (!monster) return;
++  const spot = miningState.monsterPositions?.[index];
++  return Boolean(
++    monster?.isIncinerating ||
++    monster?.isAutomationSelling ||
++    spot?.isTargetingIncinerator
++  );
++}
+ 
+-  const action = getUpgradeAction(monster);
+-  if (action.type === "max") {
+-    monster.isAutoEvolving = false;
+-    showToast(`${monster.name}??媛) 理쒕? ?덈꺼???꾨떖?섏뿬 ?먮룞 吏꾪솕瑜?醫낅즺?⑸땲??`, "info");
+-    renderMining();
+-    return;
++let miningAutomationRequestTimer = null;
++let miningAutomationRequestAllowsPurchases = false;
++function requestMiningAutomationTick(options = {}) {
++  miningAutomationRequestAllowsPurchases = miningAutomationRequestAllowsPurchases || Boolean(options.allowPurchases);
++  if (miningAutomationRequestTimer) return;
++
++  miningAutomationRequestTimer = setTimeout(() => {
++    const allowPurchases = miningAutomationRequestAllowsPurchases;
++    miningAutomationRequestTimer = null;
++    miningAutomationRequestAllowsPurchases = false;
++    runMiningAutomationTick({ allowPurchases });
++  }, 0);
++}
++
++function runAutomationPurchases(maxPurchases = 6) {
++  let purchased = 0;
++  const enabledFamilies = automationFamilies.filter((family) => getAutomationSettingsForFamily(family.prefix).autoBuy);
++  if (enabledFamilies.length === 0) return 0;
++
++  while (purchased < maxPurchases) {
++    let boughtThisPass = false;
++
++    for (const family of enabledFamilies) {
++      if (purchased >= maxPurchases) break;
++
++      const price = getMonsterPurchasePrice(family.species);
++      if (price <= 0 || gameState.gold < price) continue;
++
++      gameState.gold -= price;
++      const monster = createMonster(family.species);
++      gameState.monsters.push(monster);
++      addMiningPositionForMonster(monster, gameState.monsters.length - 1);
++      if (miningState.active) {
++        scheduleMonsterAttack(monster);
++      }
++
++      purchased += 1;
++      boughtThisPass = true;
++    }
++
++    if (!boughtThisPass) break;
+   }
+ 
+-  if (gameState.gold < action.gold || gameState.crystal < action.crystal) {
+-    return;
++  if (purchased > 0) {
++    soundManager.play("buy");
++    saveGame();
++    saveMiningPositions();
++    updateResourceDisplays();
++    renderMining();
+   }
+ 
+-  gameState.gold -= action.gold;
+-  gameState.crystal -= action.crystal;
+-  
+-  const finalChance = Math.min(1.0, action.chance + getEvolutionChanceBonus(monster.level));
+-  const succeeded = Math.random() < finalChance;
++  return purchased;
++}
+ 
+-  if (succeeded) {
+-    monster.level += 1;
+-    const prefix = getMonsterFamilyPrefix(monster.species);
+-    const nextSpecies = getSpeciesForLevel(prefix, monster.level);
+-    
+-    let evolved = false;
+-    if (nextSpecies && nextSpecies !== monster.species) {
+-      monster.species = nextSpecies;
+-      monster.name = monsterDefinitions[nextSpecies].name;
+-      evolved = true;
+-    }
+-    
+-    monster.stats = getMonsterStats(monster.species, monster.level);
+-    soundManager.play("upgrade");
+-    
+-    if (evolved) {
+-      showToast(`[?먮룞] ${monster.name}(??濡??먮룞 吏꾪솕! (LV${monster.level})`, "success");
++function runMiningAutomationTick(options = {}) {
++  const { allowPurchases = true } = options;
++  if (!gameState.started || uiState.currentScreen !== "mining") return;
++  if (!miningState.monsterPositions || gameState.monsters.length === 0) return;
++
++  if (allowPurchases) {
++    runAutomationPurchases(6);
++  }
++
++  let pendingSaleCount = gameState.monsters.reduce((count, _, index) => count + (isMonsterPendingSale(index) ? 1 : 0), 0);
++  let remainingSellCommands = Math.max(0, gameState.monsters.length - pendingSaleCount - 1);
++  gameState.monsters.forEach((monster, index) => {
++    if (remainingSellCommands <= 0) return;
++    const spot = miningState.monsterPositions?.[index];
++    if (!spot || !isMiningWaitingZoneSpot(spot)) return;
++    if (isMonsterBusyForAutomation(index) || !shouldAutoSellMonster(monster)) return;
++
++    monster.isAutomationSelling = true;
++    const commanded = commandMonsterToStageZone(index, "mine-incinerator", {
++      incinerator: true,
++      automation: true
++    });
++    if (commanded) {
++      remainingSellCommands -= 1;
++      pendingSaleCount += 1;
+     } else {
+-      showToast(`[?먮룞] ${monster.name} LV${monster.level} ?덈꺼???깃났!`, "success");
++      monster.isAutomationSelling = false;
+     }
+-  } else {
+-    soundManager.play("break");
+-  }
++  });
+ 
+-  triggerAutoEvoVisualEffect(index, succeeded);
++  let reservedGold = gameState.gold;
++  let reservedCrystal = gameState.crystal;
++  gameState.monsters.forEach((monster, index) => {
++    const spot = miningState.monsterPositions?.[index];
++    if (!spot) return;
+ 
+-  saveGame();
+-  updateResourceDisplays();
+-  renderMining();
+-}
++    const prefix = getMonsterFamilyPrefix(monster.species);
++    const targetLevel = getAutomationSettingsForFamily(prefix).targetLevel;
+ 
+-let autoEvolutionInterval = null;
+-function startAutoEvolutionLoop() {
+-  if (autoEvolutionInterval) return;
+-  autoEvolutionInterval = setInterval(() => {
+-    if (uiState.currentScreen !== "mining" || !miningState.active) return;
+-    
+-    gameState.monsters.forEach((monster, index) => {
+-      if (monster.isAutoEvolving) {
+-        attemptAutoEvolution(index);
++    // Check if the monster is in the level-up zone
++    const inLevelUpZone = doesMonsterEntryOverlapZone(index, "mine-auto-evolver", spot);
++
++    if (inLevelUpZone && spot.isAutomationZoneMode) {
++      if (isMonsterBusyForAutomation(index)) return;
++
++      const action = getUpgradeAction(monster);
++      const isMax = action.type === "max";
++      const cannotAfford = !isMax && (reservedGold < action.gold || reservedCrystal < action.crystal);
++
++      if (monster.level >= targetLevel || isMax || cannotAfford) {
++        walkMonsterToWaitingZone(index);
++      } else {
++        reservedGold -= action.gold;
++        reservedCrystal -= action.crystal;
++        attemptMiningZoneLevelUp(index, {
++          pinAfter: true,
++          showManualToasts: false,
++          showAutoSuccessToast: false,
++          renderAfter: true,
++          followUpAutomation: true
++        });
+       }
++      return;
++    }
++
++    if (!isMiningWaitingZoneSpot(spot)) return;
++    if (isMonsterBusyForAutomation(index) || shouldAutoSellMonster(monster)) return;
++
++    if (monster.level >= targetLevel) return;
++
++    const action = getUpgradeAction(monster);
++    if (action.type !== "levelUp") return;
++    if (reservedGold < action.gold || reservedCrystal < action.crystal) return;
++
++    const commanded = commandMonsterToStageZone(index, "mine-auto-evolver", {
++      levelUp: true,
++      automation: true
+     });
+-  }, 1500);
++    if (commanded) {
++      reservedGold -= action.gold;
++      reservedCrystal -= action.crystal;
++    }
++  });
++}
++
++let miningAutomationInterval = null;
++function startMiningAutomationLoop() {
++  if (miningAutomationInterval) return;
++  miningAutomationInterval = setInterval(runMiningAutomationTick, 1000);
+ }
+ 
+ function animateEvolutionResult(succeeded) {
+@@ -3236,6 +3817,201 @@ function drawPvpProjectile(context, projectile) {
+       context.fill();
+     }
+ 
++  // 3. Unnyangi (2_*) - Paws/Lightning
++  } else if (species.startsWith("2_")) {
++    if (species === "2_1_unnyangi") {
++      // Stage 1: Small green sphere
++      context.beginPath();
++      context.arc(x, y, radius + 2, 0, Math.PI * 2);
++      context.fillStyle = "#172033";
++      context.fill();
++
++      const grad = context.createRadialGradient(x - 1.5, y - 1.5, 1, x, y, radius);
++      grad.addColorStop(0, "#ffffff");
++      grad.addColorStop(0.3, "#6fe26f");
++      grad.addColorStop(1, "#205433");
++      context.beginPath();
++      context.arc(x, y, radius, 0, Math.PI * 2);
++      context.fillStyle = grad;
++      context.fill();
++
++    } else if (species === "2_2_unnyangsam") {
++      // Stage 2: Spinning green cat paw emblem
++      context.translate(x, y);
++      const spinAngle = (projectile.life * 10) % (Math.PI * 2);
++      context.rotate(spinAngle);
++
++      const r = radius * 1.3;
++
++      const drawPaw = (ctx, padR, toeR) => {
++        ctx.beginPath();
++        ctx.arc(0, r * 0.15, padR, 0, Math.PI * 2);
++        ctx.fill();
++
++        ctx.beginPath();
++        ctx.arc(-r * 0.65, -r * 0.15, toeR, 0, Math.PI * 2);
++        ctx.fill();
++        ctx.beginPath();
++        ctx.arc(-r * 0.25, -r * 0.55, toeR, 0, Math.PI * 2);
++        ctx.fill();
++        ctx.beginPath();
++        ctx.arc(r * 0.25, -r * 0.55, toeR, 0, Math.PI * 2);
++        ctx.fill();
++        ctx.beginPath();
++        ctx.arc(r * 0.65, -r * 0.15, toeR, 0, Math.PI * 2);
++        ctx.fill();
++      };
++
++      context.fillStyle = "#172033";
++      drawPaw(context, r * 0.5 + 2.5, r * 0.22 + 2);
++
++      context.fillStyle = "#58ab58";
++      drawPaw(context, r * 0.5, r * 0.22);
++
++      context.fillStyle = "#c2ed82";
++      context.beginPath();
++      context.arc(0, r * 0.15, r * 0.25, 0, Math.PI * 2);
++      context.fill();
++
++    } else if (species === "2_3_unrang") {
++      // Stage 3: Electric lightning ball
++      const r = radius * 1.4;
++      
++      resetGlow();
++      context.strokeStyle = "rgba(100, 220, 255, 0.85)";
++// Outer Red/Dark stroke
++      context.fillStyle = "#172033";
++      context.beginPath();
++      context.roundRect(-width/2 - 3, -height/2 - 3, width + 6, height + 6, height/2 + 3);
++      context.fill();
++
++      // Red fill
++      context.fillStyle = "#ff0055";
++      context.beginPath();
++      context.roundRect(-width/2 - 1, -height/2 - 1, width + 2, height + 2, height/2 + 1);
++      context.fill();
++
++      // Pure White core
++      context.fillStyle = "#ffffff";
++      context.beginPath();
++      context.roundRect(-width/2 + 3, -height/3, width - 6, (height * 2)/3, height/3);
++      context.fill();
++    }
++
++  // 2. LovelyDoll (1_*) - Tears/Candies
++  } else if (species.startsWith("1_")) {
++    if (species === "1_1_lovelydoll") {
++      // Stage 1: Small teardrop
++      context.translate(x, y);
++      context.rotate(angle);
++      
++      context.fillStyle = "#172033";
++      context.beginPath();
++      context.arc(-2, 0, radius + 2, Math.PI/2, -Math.PI/2);
++      context.lineTo(radius * 1.5 + 2, 0);
++      context.closePath();
++      context.fill();
++
++      const grad = context.createRadialGradient(-2, 0, 1, -2, 0, radius);
++      grad.addColorStop(0, "#ffffff");
++      grad.addColorStop(0.4, "#7cd5ff");
++      grad.addColorStop(1, "#3fa5ff");
++
++      context.fillStyle = grad;
++      context.beginPath();
++      context.arc(-2, 0, radius, Math.PI/2, -Math.PI/2);
++      context.lineTo(radius * 1.5, 0);
++      context.closePath();
++      context.fill();
++
++    } else if (species === "1_2_cutie") {
++      // Stage 2: Blue tear with long tail trail
++      resetGlow();
++      const tailLength = isSkill ? 40 : 25;
++      const tailGrad = context.createLinearGradient(x, y, x - Math.cos(angle) * tailLength, y - Math.sin(angle) * tailLength);
++      tailGrad.addColorStop(0, "rgba(63, 165, 255, 0.7)");
++      tailGrad.addColorStop(0.5, "rgba(63, 165, 255, 0.3)");
++      tailGrad.addColorStop(1, "rgba(63, 165, 255, 0)");
++
++      context.strokeStyle = tailGrad;
++      context.lineWidth = isSkill ? 10 : 6;
++      context.lineCap = "round";
++      context.beginPath();
++      context.moveTo(x, y);
++      context.lineTo(x - Math.cos(angle) * tailLength, y - Math.sin(angle) * tailLength);
++      context.stroke();
++
++      // Main tear drop body
++      context.translate(x, y);
++      context.rotate(angle);
++
++      const r = radius * 1.1;
++
++      context.fillStyle = "#172033";
++      context.beginPath();
++      context.arc(-3, 0, r + 2, Math.PI/2, -Math.PI/2);
++      context.lineTo(r * 1.6 + 2, 0);
++      context.closePath();
++      context.fill();
++
++      const bodyGrad = context.createRadialGradient(-3, 0, 1, -3, 0, r);
++      bodyGrad.addColorStop(0, "#ffffff");
++      bodyGrad.addColorStop(0.4, "#3fa5ff");
++      bodyGrad.addColorStop(1, "#0066cc");
++
++      context.fillStyle = bodyGrad;
++      context.beginPath();
++      context.arc(-3, 0, r, Math.PI/2, -Math.PI/2);
++      context.lineTo(r * 1.6, 0);
++      context.closePath();
++      context.fill();
++
++    } else if (species === "1_3_candy") {
++      // Stage 3: High-speed spinning candy wheel with pink/white swirls
++      setGlow("#ff66a3", isSkill ? 16 : 10);
++      context.translate(x, y);
++      
++      const spinAngle = (projectile.life * 22) % (Math.PI * 2);
++      context.rotate(spinAngle);
++
++      const r = radius * 1.4;
++
++      // Stroke outer
++      context.beginPath();
++      context.arc(0, 0, r + 2.5, 0, Math.PI * 2);
++      context.fillStyle = "#172033";
++      context.fill();
++
++      // Pink background disk
++      context.beginPath();
++      context.arc(0, 0, r, 0, Math.PI * 2);
++      context.fillStyle = "#ff66a3";
++      context.fill();
++
++      // White spiral rays (6 segments)
++      context.fillStyle = "#ffffff";
++      for (let i = 0; i < 6; i++) {
++        context.beginPath();
++        context.moveTo(0, 0);
++        const startRad = (i * Math.PI * 2) / 6;
++        const endRad = startRad + (Math.PI * 2) / 12;
++        context.arc(0, 0, r, startRad, endRad);
++        context.closePath();
++        context.fill();
++      }
++
++      // Center candy gem
++      context.beginPath();
++      context.arc(0, 0, r / 3.5, 0, Math.PI * 2);
++      context.fillStyle = "#ffffff";
++      context.fill();
++
++      context.beginPath();
++      context.arc(0, 0, r / 5, 0, Math.PI * 2);
++      context.fillStyle = "#ff0066";
++      context.fill();
++    }
++
+   // 3. Unnyangi (2_*) - Paws/Lightning
+   } else if (species.startsWith("2_")) {
+     if (species === "2_1_unnyangi") {
+@@ -3384,6 +4160,11 @@ function bindEvents() {
+       soundManager.play("click");
+     }
+ 
++    if (button.dataset.automationFamily && button.dataset.automationField === "autoBuy") {
++      updateAutomationSettingFromInput(button, false);
++      return;
++    }
++
+     if (button.dataset.screen) showScreen(button.dataset.screen);
+     if (button.dataset.starter) selectStarter(button.dataset.starter);
+     if (button.dataset.rockTier) selectRockTier(button.dataset.rockTier);
+@@ -3394,81 +4175,21 @@ function bindEvents() {
+     if (button.dataset.buyMonster) buyMonster(button.dataset.buyMonster);
+     if (button.dataset.toggleId) togglePvpTeamMember(button.dataset.toggleId);
+     if (button.dataset.removeId) togglePvpTeamMember(button.dataset.removeId);
+-    if (button.dataset.quickEvolve) attemptQuickEvolution(button.dataset.quickEvolve);
+   });
+ 
+-  // Mute button setup
+-  const muteBtn = $("#mute-toggle-button");
+-  if (muteBtn) {
+-    muteBtn.classList.toggle("muted", soundManager.muted);
+-    muteBtn.addEventListener("click", () => {
+-      const isMuted = soundManager.toggleMute();
+-      muteBtn.classList.toggle("muted", isMuted);
+-      // Play a click sound only if we just unmuted
+-      if (!isMuted) {
+-        soundManager.play("click");
+-      }
+-    });
+-  }
+-
+-  $("#reset-save-button").addEventListener("click", resetSave);
+-  $("#rock-target").addEventListener("click", startMining);
+-  $("#mine-toggle-button").addEventListener("click", toggleMining);
+-  $("#evolve-button").addEventListener("click", attemptEvolution);
+-  $("#start-pvp-button").addEventListener("click", startPvp);
+-  $("#exit-pvp-button").addEventListener("click", exitPvp);
+-  $("#battle-return-button").addEventListener("click", exitPvp);
+-
+-  const upgradeTalentBtn = $("#upgrade-talent-button");
+-  if (upgradeTalentBtn) {
+-    upgradeTalentBtn.addEventListener("click", upgradePlayerTalent);
+-  }
+-
+-  const mineStage = $("#mine-stage");
+-  if (mineStage) {
+-    mineStage.addEventListener("contextmenu", (event) => {
+-      if (miningState.selectedMonsterIndex === null) return;
+-      event.preventDefault();
+-
+-      const rect = mineStage.getBoundingClientRect();
+-      const clickX = event.clientX - rect.left;
+-      const clickY = event.clientY - rect.top;
+-
+-      const clickedIncinerator = event.target.closest("#mine-incinerator");
+-      const incEl = $("#mine-incinerator");
+-      let targetIsIncinerator = clickedIncinerator ? true : false;
+-
+-      if (!targetIsIncinerator && incEl) {
+-        const incRect = incEl.getBoundingClientRect();
+-        const ix0 = incRect.left - rect.left;
+-        const ix1 = incRect.right - rect.left;
+-        const iy0 = incRect.top - rect.top;
+-        const iy1 = incRect.bottom - rect.top;
+-
+-        if (clickX >= ix0 && clickX <= ix1 && clickY >= iy0 && clickY <= iy1) {
+-          targetIsIncinerator = true;
+-        }
+-      }
+-
+-      const clickedAutoEvolver = event.target.closest("#mine-auto-evolver");
+-      const evoEl = $("#mine-auto-evolver");
+-      let targetIsAutoEvolver = clickedAutoEvolver ? true : false;
+-
+-      if (!targetIsAutoEvolver && evoEl) {
+-        const evoRect = evoEl.getBoundingClientRect();
+-        const ex0 = evoRect.left - rect.left;
+-        const ex1 = evoRect.right - rect.left;
+-        const ey0 = evoRect.top - rect.top;
+-        const ey1 = evoRect.bottom - rect.top;
+-
+-        if (clickX >= ex0 && clickX <= ex1 && clickY >= ey0 && clickY <= ey1) {
+-          targetIsAutoEvolver = true;
+-        }
+-      }
++  document.addEventListener("input", (event) => {
++    const input = event.target.closest("[data-automation-family][data-automation-field]");
++    if (!input) return;
++    updateAutomationSettingFromInput(input, false);
++  });
+ 
+-      if (targetIsIncinerator) targetIsAutoEvolver = false;
+-      if (targetIsAutoEvolver) targetIsIncinerator = false;
++  document.addEventListener("change", (event) => {
++    const input = event.target.closest("[data-automation-family][data-automation-field]");
++    if (!input) return;
++    updateAutomationSettingFromInput(input, true);
++  });
+ 
++  // Mute button setup
+       let leftPercent, topPercent;
+       if (targetIsIncinerator && incEl) {
+         const incRect = incEl.getBoundingClientRect();
+@@ -3495,6 +4216,7 @@ function bindEvents() {
+         spot.isMoving = true;
+         spot.isTargetingIncinerator = targetIsIncinerator;
+         spot.isTargetingAutoEvolver = targetIsAutoEvolver;
++        spot.isAutomationMove = false;
+ 
+         const monster = gameState.monsters[idx];
+         if (monster) {
+@@ -3541,6 +4263,11 @@ function bindEvents() {
+   });
+ 
+   window.addEventListener("blur", () => {});
++  window.addEventListener("resize", () => {
++    if (uiState.currentScreen === "mining") {
++      updateRockHpGaugePosition();
++    }
++  });
+   window.addEventListener("beforeunload", saveGame);
+ }
+ 
+@@ -3563,8 +4290,7 @@ function init() {
+   loadGame();
+   syncDisplayResources();
+   startResourceRollingLoop();
+-  startAutoEvolutionLoop();
+-
++  startMiningAutomationLoop();
+   if (gameState.started) {
+     resetMiningRock(gameState.selectedRock);
+     uiState.selectedEvolutionMonsterId = gameState.monsters[0]?.id || null;
+@@ -3587,6 +4313,19 @@ function playLootSoundDebounced() {
+   }
+ }
+ 
++function spawnResourceGainPopup(targetEl, amount, type) {
++  if (!targetEl || amount <= 0 || document.hidden) return;
++
++  const rect = targetEl.getBoundingClientRect();
++  const popup = document.createElement("span");
++  popup.className = `resource-gain-popup ${type === "crystal" ? "crystal" : "gold"}`;
++  popup.textContent = `+${amount.toLocaleString()}`;
++  popup.style.left = `${rect.left + rect.width / 2 + (Math.random() - 0.5) * 18}px`;
++  popup.style.top = `${rect.top + rect.height / 2}px`;
++  document.body.appendChild(popup);
++  setTimeout(() => popup.remove(), 900);
++}
++
+ function spawnResourceParticles(type, totalReward, startEl) {
+   const targetKey = type === "evoStone" ? "evoStones" : type;
+   
+@@ -3622,6 +4361,9 @@ function spawnResourceParticles(type, totalReward, startEl) {
+   
+   const targetEl = document.getElementById(targetId);
+   if (!targetEl) return;
++
++  let landedParticles = 0;
++  let landedTotal = 0;
+   
+   for (let i = 0; i < particlesCount; i++) {
+     const particleValue = (i === particlesCount - 1) ? (baseValue + remainder) : baseValue;
+@@ -3672,6 +4414,11 @@ function spawnResourceParticles(type, totalReward, startEl) {
+           particle.remove();
+           playLootSoundDebounced();
+           rollingTargetState[targetKey] += particleValue;
++          landedParticles += 1;
++          landedTotal += particleValue;
++          if (landedParticles === particlesCount) {
++            spawnResourceGainPopup(targetEl, landedTotal, type);
++          }
+           return;
+         }
+         

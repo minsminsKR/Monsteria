@@ -103,7 +103,8 @@ const monsterDefinitions = {
     skillCooldown: 1.4,
     projectileSpeed: 750,
     moveSpeed: 225,
-    spriteSheet: "assets/monsters/0_2_cyclopsis/0_2_cyclopsis-spritesheet-game.png",
+    spriteSheet: "assets/monsters/0_3_hatefulclops/0_3_hatefulclops.png",
+    isSingleImage: true,
     colors: { main: "#b33a27", light: "#ff9c8a", dark: "#4d120a", accent: "#7deef0" },
     base: { attack: 50, attackSpeed: 2.25, maxHp: 320, defense: 20, skillDamage: 110 },
     growth: { attack: 18, attackSpeed: 0.22, maxHp: 75, defense: 8, skillDamage: 38 }
@@ -117,7 +118,8 @@ const monsterDefinitions = {
     skillCooldown: 3.8,
     projectileSpeed: 420,
     moveSpeed: 165,
-    spriteSheet: "assets/monsters/1_2_cutie/1_2_cutie-spritesheet-game.png",
+    spriteSheet: "assets/monsters/1_3_candy/1_3_candy.png",
+    isSingleImage: true,
     colors: { main: "#e06b9b", light: "#ffd9e8", dark: "#802848", accent: "#fff2be" },
     base: { attack: 95, attackSpeed: 1.05, maxHp: 520, defense: 45, skillDamage: 210 },
     growth: { attack: 35, attackSpeed: 0.10, maxHp: 130, defense: 18, skillDamage: 75 }
@@ -131,10 +133,101 @@ const monsterDefinitions = {
     skillCooldown: 2.4,
     projectileSpeed: 580,
     moveSpeed: 195,
-    spriteSheet: "assets/monsters/2_2_unnyangsam/2_2_unnyangsam-spritesheet-game.png",
+    spriteSheet: "assets/monsters/2_3_unrang/2_3_unrang.png",
+    isSingleImage: true,
     colors: { main: "#3f8fb5", light: "#b3e5fc", dark: "#12435c", accent: "#ffeb3b" },
     base: { attack: 72, attackSpeed: 1.55, maxHp: 410, defense: 30, skillDamage: 155 },
     growth: { attack: 24, attackSpeed: 0.15, maxHp: 105, defense: 12, skillDamage: 55 }
+  },
+  "0_4_goliathclops": {
+    id: "0_4_goliathclops",
+    name: "골리앗클롭스",
+    role: "Laser Titan",
+    description: "가슴에 커다란 눈이 생긴 거대한 파괴형 레이저 타이탄.",
+    skillName: "Titan Laser Bombard",
+    skillCooldown: 1.2,
+    projectileSpeed: 820,
+    moveSpeed: 235,
+    spriteSheet: "assets/monsters/0_4_goliathclops/0_4_goliathclops.png",
+    isSingleImage: true,
+    colors: { main: "#ffbb00", light: "#ffffff", dark: "#7b431b", accent: "#ff5500" },
+    base: { attack: 120, attackSpeed: 2.65, maxHp: 850, defense: 50, skillDamage: 320 },
+    growth: { attack: 42, attackSpeed: 0.26, maxHp: 210, defense: 18, skillDamage: 105 }
+  },
+  "0_5_abyss_monarch": {
+    id: "0_5_abyss_monarch",
+    name: "어비스모나크",
+    role: "Abyss Ray Overlord",
+    description: "보랏빛 심연의 불꽃 and 허공의 외눈으로 공간을 파괴하는 종말의 광선 군주.",
+    skillName: "Void Cataclysm Beam",
+    skillCooldown: 1.0,
+    projectileSpeed: 900,
+    moveSpeed: 245,
+    spriteSheet: "assets/monsters/0_5_abyss_monarch/0_5_abyss_monarch.png",
+    isSingleImage: true,
+    colors: { main: "#7b1fa2", light: "#000000", dark: "#4a148c", accent: "#aa00ff" },
+    base: { attack: 260, attackSpeed: 3.15, maxHp: 1950, defense: 110, skillDamage: 780 },
+    growth: { attack: 95, attackSpeed: 0.30, maxHp: 480, defense: 42, skillDamage: 285 }
+  },
+  "1_4_marionette": {
+    id: "1_4_marionette",
+    name: "마리오네트",
+    role: "Ghost Scissors Queen",
+    description: "화려한 드레스와 거대한 크리스탈 가위로 공간을 베는 유령 인형 퀸.",
+    skillName: "Spatial Decapitation",
+    skillCooldown: 3.2,
+    projectileSpeed: 460,
+    moveSpeed: 175,
+    spriteSheet: "assets/monsters/1_4_marionette/1_4_marionette.png",
+    isSingleImage: true,
+    colors: { main: "#b3e5fc", light: "#ffffff", dark: "#37474f", accent: "#00b0ff" },
+    base: { attack: 210, attackSpeed: 1.25, maxHp: 1350, defense: 95, skillDamage: 540 },
+    growth: { attack: 75, attackSpeed: 0.12, maxHp: 340, defense: 38, skillDamage: 195 }
+  },
+  "1_5_valkyria_doll": {
+    id: "1_5_valkyria_doll",
+    name: "발키리돌",
+    role: "Guardian Aegis Goddess",
+    description: "날개 달린 화려한 태엽 천사 갑옷 인형으로 황금 워해머를 휘두르는 수호와 전쟁의 여신.",
+    skillName: "Valkyrie Judgement",
+    skillCooldown: 2.8,
+    projectileSpeed: 500,
+    moveSpeed: 185,
+    spriteSheet: "assets/monsters/1_5_valkyria_doll/1_5_valkyria_doll.png",
+    isSingleImage: true,
+    colors: { main: "#ffd700", light: "#ffffff", dark: "#7b431b", accent: "#ffeb3b" },
+    base: { attack: 450, attackSpeed: 1.45, maxHp: 3100, defense: 210, skillDamage: 1250 },
+    growth: { attack: 165, attackSpeed: 0.14, maxHp: 750, defense: 85, skillDamage: 495 }
+  },
+  "2_4_unraiju": {
+    id: "2_4_unraiju",
+    name: "운뇌수",
+    role: "Swift Lightning Panther",
+    description: "온몸에 황색 전격 갑옷을 두르고 구름 위를 달리는 민첩한 번개 신수.",
+    skillName: "Yellow Thunder Dash",
+    skillCooldown: 2.0,
+    projectileSpeed: 640,
+    moveSpeed: 205,
+    spriteSheet: "assets/monsters/2_4_unraiju/2_4_unraiju.png",
+    isSingleImage: true,
+    colors: { main: "#ffeb3b", light: "#ffffff", dark: "#f57f17", accent: "#ffff00" },
+    base: { attack: 160, attackSpeed: 1.85, maxHp: 1050, defense: 70, skillDamage: 410 },
+    growth: { attack: 56, attackSpeed: 0.18, maxHp: 270, defense: 26, skillDamage: 145 }
+  },
+  "2_5_kirin_nyang": {
+    id: "2_5_kirin_nyang",
+    name: "기린냥",
+    role: "Celestial Storm Dragon Cat",
+    description: "청록빛 용의 비늘과 빛나는 뿔을 지닌, 우레와 태풍을 다스리는 천상의 뇌전 룡묘.",
+    skillName: "Kirin Storm Cataclysm",
+    skillCooldown: 1.6,
+    projectileSpeed: 700,
+    moveSpeed: 215,
+    spriteSheet: "assets/monsters/2_5_kirin_nyang/2_5_kirin_nyang.png",
+    isSingleImage: true,
+    colors: { main: "#1de9b6", light: "#ffffff", dark: "#00b0ff", accent: "#00e5ff" },
+    base: { attack: 350, attackSpeed: 2.15, maxHp: 2450, defense: 155, skillDamage: 960 },
+    growth: { attack: 125, attackSpeed: 0.21, maxHp: 620, defense: 58, skillDamage: 375 }
   }
 };
 
@@ -209,11 +302,19 @@ function getMonsterFamilyPrefix(species) {
 }
 
 function getSpeciesForLevel(familyPrefix, level) {
-  if (level >= 15) {
+  if (level >= 40) {
+    if (familyPrefix === "0") return "0_5_abyss_monarch";
+    if (familyPrefix === "1") return "1_5_valkyria_doll";
+    if (familyPrefix === "2") return "2_5_kirin_nyang";
+  } else if (level >= 30) {
+    if (familyPrefix === "0") return "0_4_goliathclops";
+    if (familyPrefix === "1") return "1_4_marionette";
+    if (familyPrefix === "2") return "2_4_unraiju";
+  } else if (level >= 20) {
     if (familyPrefix === "0") return "0_3_hatefulclops";
     if (familyPrefix === "1") return "1_3_candy";
     if (familyPrefix === "2") return "2_3_unrang";
-  } else if (level >= 5) {
+  } else if (level >= 10) {
     if (familyPrefix === "0") return "0_2_cyclopsis";
     if (familyPrefix === "1") return "1_2_cutie";
     if (familyPrefix === "2") return "2_2_unnyangsam";
@@ -228,17 +329,28 @@ function getSpeciesForLevel(familyPrefix, level) {
 function getNextEvolution(species) {
   if (species === "0_1_cyclopse") return "0_2_cyclopsis";
   if (species === "0_2_cyclopsis") return "0_3_hatefulclops";
+  if (species === "0_3_hatefulclops") return "0_4_goliathclops";
+  if (species === "0_4_goliathclops") return "0_5_abyss_monarch";
+  
   if (species === "1_1_lovelydoll") return "1_2_cutie";
   if (species === "1_2_cutie") return "1_3_candy";
+  if (species === "1_3_candy") return "1_4_marionette";
+  if (species === "1_4_marionette") return "1_5_valkyria_doll";
+  
   if (species === "2_1_unnyangi") return "2_2_unnyangsam";
   if (species === "2_2_unnyangsam") return "2_3_unrang";
+  if (species === "2_3_unrang") return "2_4_unraiju";
+  if (species === "2_4_unraiju") return "2_5_kirin_nyang";
   return null;
 }
 
 function getMonsterStage(species) {
   if (["0_1_cyclopse", "1_1_lovelydoll", "2_1_unnyangi"].includes(species)) return 1;
   if (["0_2_cyclopsis", "1_2_cutie", "2_2_unnyangsam"].includes(species)) return 2;
-  return 3;
+  if (["0_3_hatefulclops", "1_3_candy", "2_3_unrang"].includes(species)) return 3;
+  if (["0_4_goliathclops", "1_4_marionette", "2_4_unraiju"].includes(species)) return 4;
+  if (["0_5_abyss_monarch", "1_5_valkyria_doll", "2_5_kirin_nyang"].includes(species)) return 5;
+  return 1;
 }
 
 function getUpgradeAction(monster) {
@@ -274,6 +386,7 @@ function createDefaultAutomationSettings() {
     families: automationFamilies.reduce((settings, family) => {
       settings[family.prefix] = {
         autoBuy: false,
+        autoLevelUp: false,
         targetLevel: 1,
         sellLevel: 0
       };
@@ -294,6 +407,7 @@ function normalizeAutomationSettings(savedSettings = {}) {
   automationFamilies.forEach((family) => {
     const savedFamily = savedSettings?.families?.[family.prefix] || {};
     normalized.families[family.prefix].autoBuy = Boolean(savedFamily.autoBuy);
+    normalized.families[family.prefix].autoLevelUp = Boolean(savedFamily.autoLevelUp);
     normalized.families[family.prefix].targetLevel = clampAutomationLevel(savedFamily.targetLevel, 1);
     normalized.families[family.prefix].sellLevel = clampAutomationLevel(savedFamily.sellLevel, 0, true);
   });
@@ -631,22 +745,50 @@ function resolveMonsterZoneEntry(index, spot) {
 
   if (spot.isTargetingAutoEvolver && doesMonsterEntryOverlapZone(index, "mine-auto-evolver", spot)) {
     const wasAutomationMove = Boolean(spot.isAutomationMove);
-    stopMovingSpotAtCurrentPosition(index, spot);
-    attemptMiningZoneLevelUp(index, {
-      pinAfter: true,
-      showManualToasts: !wasAutomationMove,
-      showAutoSuccessToast: false,
-      renderAfter: true,
-      followUpAutomation: wasAutomationMove
-    });
-    return true;
+    const monster = gameState.monsters[index];
+    if (monster) {
+      const action = getUpgradeAction(monster);
+      if (action.type === "levelUp" && gameState.gold >= action.gold && gameState.crystal >= action.crystal) {
+        stopMovingSpotAtCurrentPosition(index, spot);
+        attemptMiningZoneLevelUp(index, {
+          pinAfter: false,
+          showManualToasts: !wasAutomationMove,
+          showAutoSuccessToast: false,
+          renderAfter: true,
+          followUpAutomation: wasAutomationMove
+        });
+        return true;
+      }
+    }
   }
 
   return false;
 }
 
 function pinMonsterToLevelUpZone(index) {
-  placeMonsterOnZoneCenter(index, "mine-auto-evolver");
+  // No-op to avoid teleporting monster to the center of the level-up zone
+}
+
+function sendMonsterBackToWaiting(index) {
+  const spot = miningState.monsterPositions?.[index];
+  if (!spot) return;
+  const next = getMiningSpawnCenterPosition(index);
+  Object.assign(spot, {
+    targetLeft: next.left,
+    targetTop: next.top,
+    isMoving: true,
+    isTargetingIncinerator: false,
+    isTargetingAutoEvolver: false,
+    isAutomationMove: false
+  });
+  
+  const spotEl = document.getElementById("mining-spot-" + index);
+  if (spotEl) {
+    const sprite = spotEl.querySelector(".monster-sprite");
+    if (sprite) sprite.classList.add("is-walking");
+  }
+
+  startMiningMovementLoop();
 }
 
 let miningMovementRaf = null;
@@ -736,7 +878,7 @@ function startMiningMovementLoop() {
         if (spot.isTargetingAutoEvolver) {
           spot.isTargetingAutoEvolver = false;
           attemptMiningZoneLevelUp(idx, {
-            pinAfter: true,
+            pinAfter: false,
             showManualToasts: !wasAutomationMove,
             showAutoSuccessToast: false,
             renderAfter: true,
@@ -835,12 +977,20 @@ function normalizeMonster(savedMonster) {
   if (spec === "swiftling" || spec === "cyclopse") spec = "0_1_cyclopse";
   else if (spec === "cyclopsis") spec = "0_2_cyclopsis";
   else if (spec === "hatefulclops") spec = "0_3_hatefulclops";
+  else if (spec === "goliathclops") spec = "0_4_goliathclops";
+  else if (spec === "abyss_monarch") spec = "0_5_abyss_monarch";
+  
   else if (spec === "bruterock" || spec === "lovelydoll") spec = "1_1_lovelydoll";
   else if (spec === "cutie") spec = "1_2_cutie";
   else if (spec === "candy") spec = "1_3_candy";
+  else if (spec === "marionette") spec = "1_4_marionette";
+  else if (spec === "valkyria_doll") spec = "1_5_valkyria_doll";
+  
   else if (spec === "balancer" || spec === "unnyangi") spec = "2_1_unnyangi";
   else if (spec === "unnyangeoger" || spec === "unnyangsam") spec = "2_2_unnyangsam";
   else if (spec === "unrang") spec = "2_3_unrang";
+  else if (spec === "unraiju") spec = "2_4_unraiju";
+  else if (spec === "kirin_nyang") spec = "2_5_kirin_nyang";
   
   const species = monsterDefinitions[spec] ? spec : "2_1_unnyangi";
   const maxLvl = getMaxLevel(species);
@@ -970,8 +1120,10 @@ function resetSave() {
 
 function monsterSpriteMarkup(species, level, extraClass = "") {
   const definition = monsterDefinitions[species];
-  const spriteSheetClass = definition?.spriteSheet ? " has-sprite-sheet" : "";
-  const spriteSheetStyle = definition?.spriteSheet
+  if (!definition) return "";
+  const isSingle = definition.isSingleImage || false;
+  const spriteSheetClass = definition.spriteSheet ? (isSingle ? " is-single-image" : " has-sprite-sheet") : "";
+  const spriteSheetStyle = definition.spriteSheet
     ? ` style="--monster-sprite-sheet: url('${definition.spriteSheet}')"`
     : "";
   const stage = getMonsterStage(species);
@@ -1170,6 +1322,36 @@ function updateResourceDisplays() {
   
   updateResourceDisplaysVisual();
   updatePlayerUi();
+  checkStandingMonstersEvolution();
+}
+
+let isCheckingEvolution = false;
+function checkStandingMonstersEvolution() {
+  if (isCheckingEvolution) return;
+  if (uiState.currentScreen !== "mining" || !miningState.monsterPositions) return;
+
+  isCheckingEvolution = true;
+  try {
+    gameState.monsters.forEach((monster, index) => {
+      const spot = miningState.monsterPositions[index];
+      if (!spot || spot.isMoving) return;
+
+      if (doesMonsterEntryOverlapZone(index, "mine-auto-evolver", spot)) {
+        const action = getUpgradeAction(monster);
+        if (action.type === "levelUp" && gameState.gold >= action.gold && gameState.crystal >= action.crystal) {
+          attemptMiningZoneLevelUp(index, {
+            pinAfter: false,
+            showManualToasts: false,
+            showAutoSuccessToast: false,
+            renderAfter: true,
+            followUpAutomation: false
+          });
+        }
+      }
+    });
+  } finally {
+    isCheckingEvolution = false;
+  }
 }
 
 function updateResourceDisplaysVisual() {
@@ -1418,6 +1600,12 @@ function renderMiningAutomationPanel() {
             ${settings.autoBuy ? "ON" : "OFF"}
           </button>
         </div>
+        <div class="automation-field automation-levelup-field">
+          <span>진화</span>
+          <button type="button" class="automation-levelup-toggle ${settings.autoLevelUp ? "active" : ""}" aria-pressed="${settings.autoLevelUp ? "true" : "false"}" data-automation-family="${family.prefix}" data-automation-field="autoLevelUp">
+            ${settings.autoLevelUp ? "ON" : "OFF"}
+          </button>
+        </div>
         <label class="automation-field">
           <span>목표 LV</span>
           <input type="number" min="1" max="50" step="1" value="${settings.targetLevel}" data-automation-family="${family.prefix}" data-automation-field="targetLevel">
@@ -1444,7 +1632,7 @@ function updateAutomationStatus() {
   const status = $("#automation-status");
   if (status) {
     const activeBuyTargets = automationFamilies.filter((family) => getAutomationSettingsForFamily(family.prefix).autoBuy).length;
-    const activeLevelTargets = automationFamilies.filter((family) => getAutomationSettingsForFamily(family.prefix).targetLevel > 1).length;
+    const activeLevelTargets = automationFamilies.filter((family) => getAutomationSettingsForFamily(family.prefix).autoLevelUp).length;
     const activeSaleTargets = automationFamilies.filter((family) => getAutomationSettingsForFamily(family.prefix).sellLevel > 0).length;
     status.innerHTML = `
       <span>자동 구매</span><strong>${activeBuyTargets} 계열</strong>
@@ -1469,6 +1657,19 @@ function updateAutomationSettingFromInput(input, shouldRender = false) {
     saveGame();
     updateAutomationStatus();
     requestMiningAutomationTick({ allowPurchases: nextAutoBuy });
+    return;
+  }
+  if (field === "autoLevelUp") {
+    const nextAutoLevelUp = input.tagName === "BUTTON" ? !settings.autoLevelUp : Boolean(input.checked);
+    settings.autoLevelUp = nextAutoLevelUp;
+    if (input.tagName === "BUTTON") {
+      input.classList.toggle("active", nextAutoLevelUp);
+      input.textContent = nextAutoLevelUp ? "ON" : "OFF";
+      input.setAttribute("aria-pressed", nextAutoLevelUp ? "true" : "false");
+    }
+    saveGame();
+    updateAutomationStatus();
+    requestMiningAutomationTick({ allowPurchases: false });
     return;
   }
   if (input.value === "") return;
@@ -2014,6 +2215,7 @@ function buyMonster(species) {
   }
 
   gameState.gold -= price;
+  if (gameState._cheatInfiniteResources) { gameState.gold = 999999999; gameState.crystal = 999999999; }
   soundManager.play("buy");
   const newMonster = createMonster(species);
   gameState.monsters.push(newMonster);
@@ -2042,6 +2244,7 @@ function buyEvolutionStones(quantity) {
   }
 
   gameState.gold -= price;
+  if (gameState._cheatInfiniteResources) { gameState.gold = 999999999; gameState.crystal = 999999999; }
   soundManager.play("buy");
   spawnResourceParticles("evoStone", amount, document.activeElement || document.body);
   gameState.evoStones += amount;
@@ -2176,6 +2379,7 @@ function attemptEvolution() {
 
   gameState.gold -= action.gold;
   gameState.crystal -= action.crystal;
+  if (gameState._cheatInfiniteResources) { gameState.gold = 999999999; gameState.crystal = 999999999; }
   const succeeded = Math.random() < finalChance;
 
   if (succeeded) {
@@ -2224,7 +2428,7 @@ function triggerLevelUpZoneVisualEffect(monsterIndex, succeeded) {
 
 function attemptMiningZoneLevelUp(index, options = {}) {
   const {
-    pinAfter = true,
+    pinAfter = false,
     showManualToasts = true,
     showAutoSuccessToast = false,
     renderAfter = true,
@@ -2242,6 +2446,8 @@ function attemptMiningZoneLevelUp(index, options = {}) {
       pinMonsterToLevelUpZone(index);
       saveMiningPositions();
     }
+    sendMonsterBackToWaiting(index);
+    saveMiningPositions();
     if (showManualToasts) {
       showToast(`${monster.name}은(는) 이미 최대 레벨입니다.`, "info");
     }
@@ -2251,13 +2457,7 @@ function attemptMiningZoneLevelUp(index, options = {}) {
   }
 
   if (gameState.gold < action.gold || gameState.crystal < action.crystal) {
-    if (pinAfter) {
-      pinMonsterToLevelUpZone(index);
-      saveMiningPositions();
-    }
-    if (showManualToasts) {
-      showToast("레벨업 재료가 부족합니다.", "error");
-    }
+    // Monster stays in place — checkStandingMonstersEvolution will retry when resources arrive
     saveGame();
     if (renderAfter && uiState.currentScreen === "mining") renderMining();
     return { attempted: false, reason: "materials" };
@@ -2265,6 +2465,10 @@ function attemptMiningZoneLevelUp(index, options = {}) {
 
   gameState.gold -= action.gold;
   gameState.crystal -= action.crystal;
+  if (gameState._cheatInfiniteResources) {
+    gameState.gold = 999999999;
+    gameState.crystal = 999999999;
+  }
   
   const finalChance = Math.min(1.0, action.chance + getEvolutionChanceBonus(monster.level));
   const succeeded = Math.random() < finalChance;
@@ -2304,6 +2508,19 @@ function attemptMiningZoneLevelUp(index, options = {}) {
 
   if (pinAfter) {
     pinMonsterToLevelUpZone(index);
+    saveMiningPositions();
+  }
+
+  const nextAction = getUpgradeAction(monster);
+  const prefix = getMonsterFamilyPrefix(monster.species);
+  const settings = getAutomationSettingsForFamily(prefix);
+  const targetLevel = settings.targetLevel;
+  
+  const reachedTarget = monster.level >= targetLevel;
+  const isMax = nextAction.type === "max";
+
+  if (reachedTarget || isMax) {
+    sendMonsterBackToWaiting(index);
     saveMiningPositions();
   }
 
@@ -2380,6 +2597,7 @@ function runAutomationPurchases(maxPurchases = 6) {
       if (price <= 0 || gameState.gold < price) continue;
 
       gameState.gold -= price;
+      if (gameState._cheatInfiniteResources) { gameState.gold = 999999999; gameState.crystal = 999999999; }
       const monster = createMonster(family.species);
       gameState.monsters.push(monster);
       addMiningPositionForMonster(monster, gameState.monsters.length - 1);
@@ -2443,7 +2661,9 @@ function runMiningAutomationTick(options = {}) {
     if (isMonsterBusyForAutomation(index) || shouldAutoSellMonster(monster)) return;
 
     const prefix = getMonsterFamilyPrefix(monster.species);
-    const targetLevel = getAutomationSettingsForFamily(prefix).targetLevel;
+    const settings = getAutomationSettingsForFamily(prefix);
+    if (!settings.autoLevelUp) return;
+    const targetLevel = settings.targetLevel;
     if (monster.level >= targetLevel) return;
 
     const action = getUpgradeAction(monster);
@@ -3338,6 +3558,98 @@ function drawArenaStone(context, x, y) {
   context.fillRect(x + 5, y - 2, 7, 11);
 }
 
+function drawActorSpriteOnly(context, actor, image, renderSize, state, frame, isAfterimage = false, customX = null, customY = null, customFacing = null) {
+  const definition = monsterDefinitions[actor.species];
+  const isSingleImage = !!definition?.isSingleImage;
+  const x = customX !== null ? customX : Math.round(actor.x);
+  const y = customY !== null ? customY : Math.round(actor.y);
+  const facing = customFacing !== null ? customFacing : actor.facing;
+
+  context.save();
+  context.translate(x, y);
+  context.scale(facing < 0 ? -1 : 1, 1);
+
+  if (isSingleImage) {
+    let animState = state;
+    let elapsed = pvpState.elapsed;
+    let animationStarted = actor.animationStarted;
+    let animationDuration = actor.animationDuration;
+    let hp = actor.hp;
+
+    if (isAfterimage) {
+      animState = "walk";
+    }
+
+    let dx = 0;
+    let dy = 0;
+    let rotate = 0;
+    let sx = 1.0;
+    let sy = 1.0;
+    let opacity = 1.0;
+
+    if (hp <= 0 && !isAfterimage) {
+      const faintProgress = Math.min(1.0, (elapsed - animationStarted) / Math.max(1, animationDuration || 400));
+      rotate = -Math.PI / 2 * faintProgress;
+      dy = renderSize * 0.2 * faintProgress;
+      opacity = 1.0 - faintProgress;
+    } else if (animState === "hit" && !isAfterimage) {
+      const hitTime = elapsed - animationStarted;
+      dx = Math.sin(hitTime * 0.08) * (renderSize * 0.12) * Math.max(0, 1 - hitTime / 300);
+    } else if ((animState === "attack" || animState === "skill") && !isAfterimage) {
+      const progress = Math.max(0, Math.min(0.999, (elapsed - animationStarted) / Math.max(1, animationDuration)));
+      const lungeDist = renderSize * 0.45;
+      if (progress < 0.3) {
+        dx = (progress / 0.3) * lungeDist;
+      } else if (progress < 0.7) {
+        dx = lungeDist;
+      } else {
+        dx = ((1.0 - progress) / 0.3) * lungeDist;
+      }
+      sx = 1.15;
+      sy = 0.9;
+    } else if (animState === "walk") {
+      const bob = Math.sin(elapsed * 0.012) * (renderSize * 0.04);
+      dy = bob;
+      rotate = Math.sin(elapsed * 0.012) * 0.06;
+    } else {
+      const breath = Math.sin(elapsed * 0.005) * 0.03;
+      sy = 1 + breath;
+      sx = 1 - breath;
+    }
+
+    const pivotY = renderSize * 0.3;
+    context.translate(dx, dy + pivotY);
+    if (rotate !== 0) context.rotate(rotate);
+    context.scale(sx, sy);
+    context.translate(0, -pivotY);
+
+    if (opacity < 1.0) {
+      context.globalAlpha *= opacity;
+    }
+
+    context.drawImage(
+      image,
+      0, 0, image.naturalWidth, image.naturalHeight,
+      -renderSize / 2, -renderSize * 0.7, renderSize, renderSize
+    );
+  } else {
+    // Sprite sheet
+    const frameSize = 96;
+    context.drawImage(
+      image,
+      frame * frameSize,
+      spriteRows[state] * frameSize,
+      frameSize,
+      frameSize,
+      -renderSize / 2,
+      -renderSize * 0.7,
+      renderSize,
+      renderSize
+    );
+  }
+  context.restore();
+}
+
 function drawActor(context, actor) {
   const definition = monsterDefinitions[actor.species];
   const x = Math.round(actor.x);
@@ -3368,10 +3680,6 @@ function drawActor(context, actor) {
       );
 
       if (spriteImage?.complete && spriteImage.naturalWidth > 0) {
-        context.save();
-        context.translate(imgX, imgY);
-        context.scale(img.facing < 0 ? -1 : 1, 1);
-        
         let state = actor.moving ? "walk" : "idle";
         let frame = Math.floor(pvpState.elapsed / (state === "walk" ? 115 : 190)) % 6;
         if (actor.animationUntil > pvpState.elapsed || actor.hp <= 0) {
@@ -3379,19 +3687,7 @@ function drawActor(context, actor) {
           const progress = Math.max(0, Math.min(0.999, (pvpState.elapsed - actor.animationStarted) / Math.max(1, actor.animationDuration)));
           frame = actor.hp <= 0 && pvpState.elapsed >= actor.animationUntil ? 5 : Math.floor(progress * 6);
         }
-        
-        context.drawImage(
-          spriteImage,
-          frame * 96,
-          spriteRows[state] * 96,
-          96,
-          96,
-          -spriteRenderSize / 2,
-          -spriteRenderSize * 0.7,
-          spriteRenderSize,
-          spriteRenderSize
-        );
-        context.restore();
+        drawActorSpriteOnly(context, actor, spriteImage, spriteRenderSize, state, frame, true, imgX, imgY, img.facing);
       } else {
         drawFallbackActor(context, { ...actor, x: imgX, y: imgY, facing: img.facing }, definition, spriteRenderSize);
       }
@@ -3455,7 +3751,6 @@ function getMonsterSpriteRenderSize(level) {
 }
 
 function drawSpriteSheetActor(context, actor, image, renderSize) {
-  const frameSize = 96;
   let state = actor.moving ? "walk" : "idle";
   let frame = Math.floor(pvpState.elapsed / (state === "walk" ? 115 : 190)) % 6;
 
@@ -3465,21 +3760,7 @@ function drawSpriteSheetActor(context, actor, image, renderSize) {
     frame = actor.hp <= 0 && pvpState.elapsed >= actor.animationUntil ? 5 : Math.floor(progress * 6);
   }
 
-  context.save();
-  context.translate(Math.round(actor.x), Math.round(actor.y));
-  context.scale(actor.facing < 0 ? -1 : 1, 1);
-  context.drawImage(
-    image,
-    frame * frameSize,
-    spriteRows[state] * frameSize,
-    frameSize,
-    frameSize,
-    -renderSize / 2,
-    -renderSize * 0.7,
-    renderSize,
-    renderSize
-  );
-  context.restore();
+  drawActorSpriteOnly(context, actor, image, renderSize, state, frame, false, Math.round(actor.x), Math.round(actor.y), actor.facing);
 }
 
 function drawFallbackActor(context, actor, definition, renderSize) {
@@ -3649,6 +3930,72 @@ function drawPvpProjectile(context, projectile) {
       context.beginPath();
       context.roundRect(-width/2 + 3, -height/3, width - 6, (height * 2)/3, height/3);
       context.fill();
+
+    } else if (species === "0_4_goliathclops") {
+      // Stage 4: Golden plasma orb with orange glow and outer energy ring
+      setGlow("#ffa500", isSkill ? 28 : 16);
+      context.translate(x, y);
+      
+      const r = radius * 1.5;
+      const angleRot = (projectile.life * 12) % (Math.PI * 2);
+      context.rotate(angleRot);
+
+      // Draw background ring
+      context.strokeStyle = "#ff5500";
+      context.lineWidth = 3;
+      context.beginPath();
+      context.ellipse(0, 0, r + 4, (r + 4) * 0.4, 0, 0, Math.PI * 2);
+      context.stroke();
+
+      // Black outline
+      context.beginPath();
+      context.arc(0, 0, r + 2.5, 0, Math.PI * 2);
+      context.fillStyle = "#172033";
+      context.fill();
+
+      // Main golden gradient fill
+      const grad = context.createRadialGradient(-2, -2, 1, 0, 0, r);
+      grad.addColorStop(0, "#ffffff");
+      grad.addColorStop(0.3, "#ffcc00");
+      grad.addColorStop(1, "#d47a00");
+      context.beginPath();
+      context.arc(0, 0, r, 0, Math.PI * 2);
+      context.fillStyle = grad;
+      context.fill();
+
+    } else if (species === "0_5_abyss_monarch") {
+      // Stage 5: Void Black Hole: Intense dark purple corona swirling around a black core
+      setGlow("#aa00ff", isSkill ? 32 : 20);
+      context.translate(x, y);
+      
+      const r = radius * 1.7;
+      const spin = (projectile.life * -15) % (Math.PI * 2);
+      context.rotate(spin);
+
+      // Swirling corona paths (4 arcs)
+      context.strokeStyle = "rgba(170, 0, 255, 0.75)";
+      context.lineWidth = 4;
+      for (let i = 0; i < 4; i++) {
+        context.beginPath();
+        context.arc(0, 0, r - 2, i * Math.PI / 2, (i + 1) * Math.PI / 2 - 0.2);
+        context.stroke();
+      }
+
+      // Outer outline
+      context.beginPath();
+      context.arc(0, 0, r / 1.5 + 2, 0, Math.PI * 2);
+      context.fillStyle = "#172033";
+      context.fill();
+
+      // Black Hole core (Black center with purple rim)
+      const grad = context.createRadialGradient(0, 0, 1, 0, 0, r / 1.5);
+      grad.addColorStop(0, "#000000");
+      grad.addColorStop(0.7, "#1a0033");
+      grad.addColorStop(1, "#7b1fa2");
+      context.beginPath();
+      context.arc(0, 0, r / 1.5, 0, Math.PI * 2);
+      context.fillStyle = grad;
+      context.fill();
     }
 
   // 2. LovelyDoll (1_*) - Tears/Candies
@@ -3763,6 +4110,93 @@ function drawPvpProjectile(context, projectile) {
       context.arc(0, 0, r / 5, 0, Math.PI * 2);
       context.fillStyle = "#ff0066";
       context.fill();
+
+    } else if (species === "1_4_marionette") {
+      // Stage 4: Spinning crystal cross-cutting blades (Cyan / Ghostly Blue)
+      setGlow("#00b0ff", isSkill ? 20 : 12);
+      context.translate(x, y);
+      
+      const spinAngle = (projectile.life * 18) % (Math.PI * 2);
+      context.rotate(spinAngle);
+
+      const r = radius * 1.5;
+
+      const drawBlade = (angleOffset) => {
+        context.save();
+        context.rotate(angleOffset);
+        
+        context.fillStyle = "#172033";
+        context.beginPath();
+        context.arc(0, -r * 0.4, r * 0.6 + 2.5, 0, Math.PI, true);
+        context.closePath();
+        context.fill();
+
+        const grad = context.createLinearGradient(0, -r, 0, 0);
+        grad.addColorStop(0, "#ffffff");
+        grad.addColorStop(0.5, "#80d8ff");
+        grad.addColorStop(1, "#00b0ff");
+        context.fillStyle = grad;
+        context.beginPath();
+        context.arc(0, -r * 0.4, r * 0.6, 0, Math.PI, true);
+        context.closePath();
+        context.fill();
+
+        context.restore();
+      };
+
+      drawBlade(0);
+      drawBlade(Math.PI);
+
+      context.beginPath();
+      context.arc(0, 0, 4.5, 0, Math.PI * 2);
+      context.fillStyle = "#172033";
+      context.fill();
+      context.beginPath();
+      context.arc(0, 0, 2.5, 0, Math.PI * 2);
+      context.fillStyle = "#ff5252";
+      context.fill();
+
+    } else if (species === "1_5_valkyria_doll") {
+      // Stage 5: Holy warhammer spinning with golden wings trails
+      setGlow("#ffeb3b", isSkill ? 30 : 18);
+      context.translate(x, y);
+      
+      const spinAngle = (projectile.life * 15) % (Math.PI * 2);
+      context.rotate(spinAngle);
+
+      const r = radius * 1.6;
+
+      context.fillStyle = "rgba(255, 255, 255, 0.4)";
+      context.beginPath();
+      context.ellipse(-r * 0.4, 0, r * 0.6, r * 0.25, Math.PI / 6, 0, Math.PI * 2);
+      context.fill();
+
+      context.strokeStyle = "#5d4037";
+      context.lineWidth = 4;
+      context.lineCap = "round";
+      context.beginPath();
+      context.moveTo(0, -r * 0.5);
+      context.lineTo(0, r * 0.75);
+      context.stroke();
+
+      context.fillStyle = "#172033";
+      context.beginPath();
+      context.roundRect(-r * 0.7 - 2, -r * 0.4 - 2, r * 1.4 + 4, r * 0.5 + 4, 3);
+      context.fill();
+
+      const grad = context.createLinearGradient(-r * 0.7, 0, r * 0.7, 0);
+      grad.addColorStop(0, "#ffd700");
+      grad.addColorStop(0.5, "#fff2be");
+      grad.addColorStop(1, "#c59f00");
+      context.fillStyle = grad;
+      context.beginPath();
+      context.roundRect(-r * 0.7, -r * 0.4, r * 1.4, r * 0.5, 2);
+      context.fill();
+
+      context.fillStyle = "#00e5ff";
+      context.beginPath();
+      context.arc(0, -r * 0.15, 3.5, 0, Math.PI * 2);
+      context.fill();
     }
 
   // 3. Unnyangi (2_*) - Paws/Lightning
@@ -3861,6 +4295,92 @@ function drawPvpProjectile(context, projectile) {
       context.arc(x, y, r, 0, Math.PI * 2);
       context.fillStyle = grad;
       context.fill();
+
+    } else if (species === "2_4_unraiju") {
+      // Stage 4: Yellow electric lightning spark ball
+      const r = radius * 1.6;
+      
+      resetGlow();
+      context.strokeStyle = "rgba(255, 235, 59, 0.9)";
+      context.lineWidth = 2.0;
+      
+      const sparkCount = isSkill ? 7 : 4;
+      for (let i = 0; i < sparkCount; i++) {
+        const baseAngle = Math.random() * Math.PI * 2;
+        const length = r * (1.2 + Math.random() * 0.7);
+        const midX = x + Math.cos(baseAngle) * (length * 0.45) + (Math.random() - 0.5) * 8;
+        const midY = y + Math.sin(baseAngle) * (length * 0.45) + (Math.random() - 0.5) * 8;
+        const endX = x + Math.cos(baseAngle) * length;
+        const endY = y + Math.sin(baseAngle) * length;
+
+        context.beginPath();
+        context.moveTo(x, y);
+        context.lineTo(midX, midY);
+        context.lineTo(endX, endY);
+        context.stroke();
+      }
+
+      setGlow("#ffff00", isSkill ? 24 : 15);
+      
+      context.beginPath();
+      context.arc(x, y, r + 2.5, 0, Math.PI * 2);
+      context.fillStyle = "#172033";
+      context.fill();
+
+      const grad = context.createRadialGradient(x, y, 1, x, y, r);
+      grad.addColorStop(0, "#ffffff");
+      grad.addColorStop(0.3, "#ffeb3b");
+      grad.addColorStop(1, "#f57f17");
+      
+      context.beginPath();
+      context.arc(x, y, r, 0, Math.PI * 2);
+      context.fillStyle = grad;
+      context.fill();
+
+    } else if (species === "2_5_kirin_nyang") {
+      // Stage 5: Celestial Turquoise Dragon Lightning Sphere
+      const r = radius * 1.8;
+      
+      resetGlow();
+      context.strokeStyle = "rgba(29, 233, 182, 0.95)";
+      context.lineWidth = 2.0;
+      
+      const sparkCount = isSkill ? 9 : 5;
+      for (let i = 0; i < sparkCount; i++) {
+        const baseAngle = Math.random() * Math.PI * 2;
+        const length = r * (1.3 + Math.random() * 0.8);
+        const mid1X = x + Math.cos(baseAngle) * (length * 0.3) + (Math.random() - 0.5) * 6;
+        const mid1Y = y + Math.sin(baseAngle) * (length * 0.3) + (Math.random() - 0.5) * 6;
+        const mid2X = x + Math.cos(baseAngle) * (length * 0.65) + (Math.random() - 0.5) * 6;
+        const mid2Y = y + Math.sin(baseAngle) * (length * 0.65) + (Math.random() - 0.5) * 6;
+        const endX = x + Math.cos(baseAngle) * length;
+        const endY = y + Math.sin(baseAngle) * length;
+
+        context.beginPath();
+        context.moveTo(x, y);
+        context.lineTo(mid1X, mid1Y);
+        context.lineTo(mid2X, mid2Y);
+        context.lineTo(endX, endY);
+        context.stroke();
+      }
+
+      setGlow("#00e5ff", isSkill ? 32 : 20);
+      
+      context.beginPath();
+      context.arc(x, y, r + 3, 0, Math.PI * 2);
+      context.fillStyle = "#172033";
+      context.fill();
+
+      const grad = context.createRadialGradient(x, y, 1, x, y, r);
+      grad.addColorStop(0, "#ffffff");
+      grad.addColorStop(0.3, "#1de9b6");
+      grad.addColorStop(0.7, "#00b0ff");
+      grad.addColorStop(1, "#006064");
+      
+      context.beginPath();
+      context.arc(x, y, r, 0, Math.PI * 2);
+      context.fillStyle = grad;
+      context.fill();
     }
 
   } else {
@@ -3913,7 +4433,7 @@ function bindEvents() {
       soundManager.play("click");
     }
 
-    if (button.dataset.automationFamily && button.dataset.automationField === "autoBuy") {
+    if (button.dataset.automationFamily && (button.dataset.automationField === "autoBuy" || button.dataset.automationField === "autoLevelUp")) {
       updateAutomationSettingFromInput(button, false);
       return;
     }
@@ -3953,6 +4473,32 @@ function bindEvents() {
       if (!isMuted) {
         soundManager.play("click");
       }
+    });
+  }
+
+  // Cheat: infinite gold/crystal toggle on brand-gem click
+  const brandGem = document.querySelector(".brand-gem");
+  if (brandGem) {
+    brandGem.addEventListener("click", (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      if (gameState._cheatInfiniteResources) {
+        gameState._cheatInfiniteResources = false;
+        gameState.gold = 0;
+        gameState.crystal = 0;
+        brandGem.style.background = "";
+        brandGem.style.boxShadow = "";
+      } else {
+        gameState._cheatInfiniteResources = true;
+        gameState.gold = 999999999;
+        gameState.crystal = 999999999;
+        brandGem.style.background = "#ffd700";
+        brandGem.style.boxShadow = "inset 6px 6px 0 #fff8a0, inset -6px -6px 0 #c59f00, 4px 4px 0 var(--paper-dark), 0 0 12px #ffd700";
+      }
+      syncDisplayResources();
+      updateResourceDisplays();
+      saveGame();
+      if (uiState.currentScreen === "mining") renderMining();
     });
   }
 
@@ -4100,11 +4646,7 @@ function randomInt(min, max) {
 }
 
 function showToast(message, type = "") {
-  const toast = document.createElement("div");
-  toast.className = `toast ${type}`;
-  toast.textContent = message;
-  $("#toast-container").appendChild(toast);
-  setTimeout(() => toast.remove(), 3100);
+  // Toast notifications disabled by user request
 }
 
 function init() {

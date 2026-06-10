@@ -641,19 +641,37 @@ button:disabled {
   to { background-position: -576px 0; }
 }
 
+.monster-sprite {
+  --stage-scale: 1.0;
+  --level-scale: 1.0;
+  transform: scale(calc(var(--stage-scale, 1.0) * var(--level-scale, 1.0)));
+  transform-origin: bottom center;
+}
+
 .monster-sprite.stage1 {
-  transform: scale(1.0);
+  --stage-scale: 1.0;
 }
 
 .monster-sprite.stage2 {
-  transform: scale(1.12);
+  --stage-scale: 1.12;
   filter: drop-shadow(6px 7px 0 rgba(23, 32, 51, 0.2)) drop-shadow(0 0 8px rgba(242, 200, 75, 0.7));
 }
 
 .monster-sprite.stage3 {
-  transform: scale(1.25);
+  --stage-scale: 1.25;
   filter: drop-shadow(6px 7px 0 rgba(23, 32, 51, 0.2)) drop-shadow(0 0 10px rgba(102, 216, 229, 0.95));
 }
+
+.monster-sprite.stage4 {
+  --stage-scale: 1.35;
+  filter: drop-shadow(6px 7px 0 rgba(23, 32, 51, 0.2)) drop-shadow(0 0 12px rgba(224, 107, 155, 0.95));
+}
+
+.monster-sprite.stage5 {
+  --stage-scale: 1.45;
+  filter: drop-shadow(6px 7px 0 rgba(23, 32, 51, 0.2)) drop-shadow(0 0 15px rgba(255, 215, 0, 0.95));
+}
+
 
 
 .rock-sprite {
@@ -1139,7 +1157,7 @@ button:disabled {
 }
 
 .mining-automation-panel .automation-family-row {
-  grid-template-columns: minmax(0, 1fr) 54px 56px 56px;
+  grid-template-columns: minmax(0, 1fr) 46px 46px 50px 50px;
   align-items: end;
   gap: 6px;
   padding: 7px;
@@ -1236,11 +1254,13 @@ button:disabled {
   font-weight: bold;
 }
 
-.automation-buy-field {
+.automation-buy-field,
+.automation-levelup-field {
   justify-items: stretch;
 }
 
-.automation-buy-toggle {
+.automation-buy-toggle,
+.automation-levelup-toggle {
   min-width: 0;
   width: 100%;
   padding: 5px 3px;
@@ -1261,7 +1281,14 @@ button:disabled {
   box-shadow: inset 2px 2px 0 rgba(255, 255, 255, 0.35), 2px 2px 0 var(--shadow);
 }
 
-.automation-buy-toggle:active {
+.automation-levelup-toggle.active {
+  background: var(--green);
+  color: var(--ink);
+  box-shadow: inset 2px 2px 0 rgba(255, 255, 255, 0.35), 2px 2px 0 var(--shadow);
+}
+
+.automation-buy-toggle:active,
+.automation-levelup-toggle:active {
   transform: translate(1px, 1px);
   box-shadow: 1px 1px 0 var(--shadow);
 }
@@ -1782,15 +1809,7 @@ button:disabled {
 }
 
 .evolution-chamber .monster-sprite {
-  transform: scale(1.6);
-}
-
-.evolution-chamber .monster-sprite.lv2 {
-  transform: scale(1.75);
-}
-
-.evolution-chamber .monster-sprite.lv3 {
-  transform: scale(1.9);
+  transform: scale(calc(1.6 * var(--stage-scale, 1.0) * var(--level-scale, 1.0)));
 }
 
 .evolution-details {
@@ -2680,3 +2699,204 @@ kbd {
   user-select: none;
   text-shadow: 0 0 4px rgba(255, 255, 255, 0.4);
 }
+
+/* --- LEVEL SCALING (lv1 ~ lv50) --- */
+.monster-sprite.lv1 { --level-scale: 1.00; }
+.monster-sprite.lv2 { --level-scale: 1.003; }
+.monster-sprite.lv3 { --level-scale: 1.006; }
+.monster-sprite.lv4 { --level-scale: 1.009; }
+.monster-sprite.lv5 { --level-scale: 1.012; }
+.monster-sprite.lv6 { --level-scale: 1.015; }
+.monster-sprite.lv7 { --level-scale: 1.018; }
+.monster-sprite.lv8 { --level-scale: 1.021; }
+.monster-sprite.lv9 { --level-scale: 1.024; }
+.monster-sprite.lv10 { --level-scale: 1.03; }
+.monster-sprite.lv11 { --level-scale: 1.033; }
+.monster-sprite.lv12 { --level-scale: 1.036; }
+.monster-sprite.lv13 { --level-scale: 1.039; }
+.monster-sprite.lv14 { --level-scale: 1.042; }
+.monster-sprite.lv15 { --level-scale: 1.045; }
+.monster-sprite.lv16 { --level-scale: 1.048; }
+.monster-sprite.lv17 { --level-scale: 1.051; }
+.monster-sprite.lv18 { --level-scale: 1.054; }
+.monster-sprite.lv19 { --level-scale: 1.057; }
+.monster-sprite.lv20 { --level-scale: 1.065; }
+.monster-sprite.lv21 { --level-scale: 1.068; }
+.monster-sprite.lv22 { --level-scale: 1.071; }
+.monster-sprite.lv23 { --level-scale: 1.074; }
+.monster-sprite.lv24 { --level-scale: 1.077; }
+.monster-sprite.lv25 { --level-scale: 1.08; }
+.monster-sprite.lv26 { --level-scale: 1.083; }
+.monster-sprite.lv27 { --level-scale: 1.086; }
+.monster-sprite.lv28 { --level-scale: 1.089; }
+.monster-sprite.lv29 { --level-scale: 1.092; }
+.monster-sprite.lv30 { --level-scale: 1.10; }
+.monster-sprite.lv31 { --level-scale: 1.103; }
+.monster-sprite.lv32 { --level-scale: 1.106; }
+.monster-sprite.lv33 { --level-scale: 1.109; }
+.monster-sprite.lv34 { --level-scale: 1.112; }
+.monster-sprite.lv35 { --level-scale: 1.115; }
+.monster-sprite.lv36 { --level-scale: 1.118; }
+.monster-sprite.lv37 { --level-scale: 1.121; }
+.monster-sprite.lv38 { --level-scale: 1.124; }
+.monster-sprite.lv39 { --level-scale: 1.127; }
+.monster-sprite.lv40 { --level-scale: 1.135; }
+.monster-sprite.lv41 { --level-scale: 1.138; }
+.monster-sprite.lv42 { --level-scale: 1.141; }
+.monster-sprite.lv43 { --level-scale: 1.144; }
+.monster-sprite.lv44 { --level-scale: 1.147; }
+.monster-sprite.lv45 { --level-scale: 1.15; }
+.monster-sprite.lv46 { --level-scale: 1.15; }
+.monster-sprite.lv47 { --level-scale: 1.15; }
+.monster-sprite.lv48 { --level-scale: 1.15; }
+.monster-sprite.lv49 { --level-scale: 1.15; }
+.monster-sprite.lv50 { --level-scale: 1.15; }
+
+/* --- SINGLE IMAGE ANIMATIONS --- */
+.monster-sprite.is-single-image {
+  width: 96px;
+  height: 96px;
+  background-image: var(--monster-sprite-sheet);
+  background-repeat: no-repeat;
+  background-position: center bottom;
+  background-size: contain;
+  image-rendering: pixelated;
+  /* Breathing idle */
+  animation: monster-breathing 1.5s ease-in-out infinite;
+}
+
+.monster-sprite.is-single-image::before,
+.monster-sprite.is-single-image::after {
+  display: none;
+}
+
+@keyframes monster-breathing {
+  0%, 100% {
+    transform: scale(calc(var(--stage-scale, 1.0) * var(--level-scale, 1.0))) translateY(0);
+  }
+  50% {
+    transform: scale(calc(var(--stage-scale, 1.0) * var(--level-scale, 1.0) * 1.03)) translateY(-2px);
+  }
+}
+
+/* Walking */
+.monster-sprite.is-single-image.is-walking {
+  animation: monster-walk-single 0.6s ease-in-out infinite;
+}
+@keyframes monster-walk-single {
+  0%, 100% {
+    transform: scale(calc(var(--stage-scale, 1.0) * var(--level-scale, 1.0))) rotate(0deg);
+  }
+  25% {
+    transform: scale(calc(var(--stage-scale, 1.0) * var(--level-scale, 1.0))) translateY(-4px) rotate(-3deg);
+  }
+  75% {
+    transform: scale(calc(var(--stage-scale, 1.0) * var(--level-scale, 1.0))) translateY(-4px) rotate(3deg);
+  }
+}
+
+/* Attacking */
+.monster-sprite.is-single-image.is-attacking {
+  animation: monster-attack-single 0.4s ease-out;
+}
+@keyframes monster-attack-single {
+  0% {
+    transform: scale(calc(var(--stage-scale, 1.0) * var(--level-scale, 1.0))) translateX(0);
+  }
+  30% {
+    transform: scale(calc(var(--stage-scale, 1.0) * var(--level-scale, 1.0) * 1.08)) translateX(12px);
+  }
+  100% {
+    transform: scale(calc(var(--stage-scale, 1.0) * var(--level-scale, 1.0))) translateX(0);
+  }
+}
+
+/* Hit */
+.monster-sprite.is-single-image.is-hit {
+  animation: monster-hit-single 0.2s linear infinite;
+  filter: brightness(1.6) drop-shadow(0 0 8px red);
+}
+@keyframes monster-hit-single {
+  0%, 100% { transform: scale(calc(var(--stage-scale, 1.0) * var(--level-scale, 1.0))) translateX(0); }
+  25% { transform: scale(calc(var(--stage-scale, 1.0) * var(--level-scale, 1.0))) translateX(-3px) rotate(-4deg); }
+  75% { transform: scale(calc(var(--stage-scale, 1.0) * var(--level-scale, 1.0))) translateX(3px) rotate(4deg); }
+}
+
+/* Faint */
+.mining-monster-spot.is-fainted .monster-sprite.is-single-image {
+  animation: monster-faint-single 1s ease-in forwards;
+}
+@keyframes monster-faint-single {
+  0% {
+    opacity: 1;
+    transform: scale(calc(var(--stage-scale, 1.0) * var(--level-scale, 1.0))) rotate(0deg);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(calc(var(--stage-scale, 1.0) * var(--level-scale, 1.0) * 0.5)) rotate(90deg) translateY(30px);
+    filter: grayscale(1) brightness(0.2);
+  }
+}
+
+/* --- STAGE 4 & 5 PROJECTILE STYLING --- */
+.mine-projectile-3d.species-0_4_goliathclops {
+  width: 32px;
+  height: 14px;
+  border-radius: 7px;
+  border: 3px solid #ffbb00;
+  background: #ffffff;
+  box-shadow: 0 0 16px #ffbb00, 0 0 6px #ff5500;
+}
+
+.mine-projectile-3d.species-0_5_abyss_monarch {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 3px solid #7b1fa2;
+  background: #000000;
+  box-shadow: 0 0 20px #aa00ff, 0 0 8px #7b1fa2, inset 0 0 6px #aa00ff;
+  animation: abyss-pulse-anim 0.2s ease-in-out infinite alternate;
+}
+@keyframes abyss-pulse-anim {
+  0% { transform: translate(-50%, -50%) scale(0.95); }
+  100% { transform: translate(-50%, -50%) scale(1.15); }
+}
+
+.mine-projectile-3d.species-1_4_marionette {
+  width: 30px;
+  height: 30px;
+  border: none;
+  background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23b3e5fc" stroke="%2337474f" stroke-width="2"><path d="M6 4c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-2.2 0-4-1.8-4-4s1.8-4 4-4 4 1.8 4 4c0 1.25-.57 2.37-1.47 3.12L12 12l5.47-2.88C16.57 8.37 16 7.25 16 6c0-2.2 1.8-4 4-4s4 1.8 4 4-1.8 4-4 4L12 14.5 6 10zm14-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>') no-repeat center;
+  background-size: contain;
+  animation: spin-candy 0.25s linear infinite;
+}
+
+.mine-projectile-3d.species-1_5_valkyria_doll {
+  width: 34px;
+  height: 34px;
+  border: none;
+  background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23ffd700" stroke="%237b431b" stroke-width="2"><path d="M12 2L2 22h20L12 2zm0 4l6.5 13h-13L12 6z"/></svg>') no-repeat center;
+  background-size: contain;
+  filter: drop-shadow(0 0 8px #ffd700);
+  animation: spin-candy 0.15s linear infinite;
+}
+
+.mine-projectile-3d.species-2_4_unraiju {
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23ffeb3b"><path d="M11 21h-1l1.5-6.5h-4.5l6.5-11.5v1l-1.5 6.5h4.5z"/></svg>') no-repeat center;
+  background-size: contain;
+  filter: drop-shadow(0 0 6px #ffeb3b);
+}
+
+.mine-projectile-3d.species-2_5_kirin_nyang {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 3px solid #172033;
+  background: radial-gradient(circle, #ffffff 0%, #1de9b6 60%, #00b0ff 100%);
+  box-shadow: 0 0 16px #1de9b6, 0 0 8px #00b0ff;
+  animation: electric-pulse 0.12s ease-in-out infinite alternate;
+}
+
