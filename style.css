@@ -609,7 +609,7 @@ button:disabled {
   background-position: 0 0;
   background-size: 576px 576px;
   image-rendering: pixelated;
-  animation: monster-sprite-idle 1.2s steps(6) infinite;
+  animation: monster-sprite-idle 1.2s infinite;
 }
 
 .monster-sprite.has-sprite-sheet::before,
@@ -618,8 +618,12 @@ button:disabled {
 }
 
 @keyframes monster-sprite-idle {
-  from { background-position: 0 0; }
-  to { background-position: -576px 0; }
+  0%, 16.666% { background-position: 0 0; }
+  16.667%, 33.333% { background-position: -96px 0; }
+  33.334%, 50% { background-position: -192px 0; }
+  50.001%, 66.666% { background-position: -288px 0; }
+  66.667%, 83.333% { background-position: -384px 0; }
+  83.334%, 100% { background-position: -480px 0; }
 }
 
 .monster-sprite {
@@ -933,28 +937,36 @@ button:disabled {
 }
 
 .mining-monster-spot .monster-sprite.has-sprite-sheet.is-attacking {
-  animation: monster-sprite-attack 420ms steps(6) 1;
+  animation: monster-sprite-attack 420ms 1;
 }
 
 .mining-monster-spot .monster-sprite.has-sprite-sheet.is-walking {
-  animation: monster-sprite-walk 0.8s steps(6) infinite;
+  animation: monster-sprite-walk 0.8s infinite;
 }
 
 @keyframes monster-sprite-walk {
-  from { background-position: 0 -96px; }
-  to { background-position: -576px -96px; }
+  0%, 16.666% { background-position: 0 -96px; }
+  16.667%, 33.333% { background-position: -96px -96px; }
+  33.334%, 50% { background-position: -192px -96px; }
+  50.001%, 66.666% { background-position: -288px -96px; }
+  66.667%, 83.333% { background-position: -384px -96px; }
+  83.334%, 100% { background-position: -480px -96px; }
 }
 
 .mining-monster-spot.is-fainted {
   pointer-events: none;
 }
 .mining-monster-spot.is-fainted .monster-sprite {
-  animation: monster-sprite-faint 1s steps(6) forwards, monster-fade-out 1s linear forwards;
+  animation: monster-sprite-faint 1s forwards, monster-fade-out 1s linear forwards;
 }
 
 @keyframes monster-sprite-faint {
-  from { background-position: 0 -480px; }
-  to { background-position: -576px -480px; }
+  0%, 16.666% { background-position: 0 -480px; }
+  16.667%, 33.333% { background-position: -96px -480px; }
+  33.334%, 50% { background-position: -192px -480px; }
+  50.001%, 66.666% { background-position: -288px -480px; }
+  66.667%, 83.333% { background-position: -384px -480px; }
+  83.334%, 100% { background-position: -480px -480px; }
 }
 
 @keyframes monster-fade-out {
@@ -986,8 +998,12 @@ button:disabled {
 }
 
 @keyframes monster-sprite-attack {
-  from { background-position: 0 -192px; }
-  to { background-position: -576px -192px; }
+  0%, 16.666% { background-position: 0 -192px; }
+  16.667%, 33.333% { background-position: -96px -192px; }
+  33.334%, 50% { background-position: -192px -192px; }
+  50.001%, 66.666% { background-position: -288px -192px; }
+  66.667%, 83.333% { background-position: -384px -192px; }
+  83.334%, 100% { background-position: -480px -192px; }
 }
 
 .rock-unit.is-hit .rock-sprite {
@@ -3581,6 +3597,14 @@ kbd {
 
 .codex-sprite-box .monster-sprite {
   scale: 0.72;
+}
+
+.codex-cell .monster-sprite.has-sprite-sheet.is-attacking {
+  animation: monster-sprite-attack 420ms 1;
+}
+
+.codex-cell.found.active .monster-sprite.has-sprite-sheet {
+  animation: monster-sprite-attack 420ms infinite;
 }
 
 .codex-cell-name {

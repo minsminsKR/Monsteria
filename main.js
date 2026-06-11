@@ -8,6 +8,9 @@
 
 const SAVE_KEY = "monsteria-save-v1";
 const EVO_STONE_PRICE = 120;
+const SPRITE_ASSET_VERSION = "20260611-centered-sprites-v4";
+const MAX_MINING_DEBRIS_PARTICLES = 72;
+const MAX_RESOURCE_PARTICLES = 48;
 
 const monsterDefinitions = {
   "0_1_cyclopse": {
@@ -795,6 +798,11 @@ function commandMonsterToStageZone(index, zoneId, flags = {}) {
   const spot = miningState.monsterPositions?.[index];
   if (!spot || spot.isMoving) return false;
 
+  const monster = gameState.monsters[index];
+  if (flags.levelUp && flags.automation && monster && !shouldRunAutomatedLevelUp(monster)) {
+    return false;
+  }
+
   const center = getStageElementCenterPosition(zoneId);
   if (!center) return false;
 
@@ -805,7 +813,6 @@ function commandMonsterToStageZone(index, zoneId, flags = {}) {
   spot.isTargetingAutoEvolver = Boolean(flags.levelUp);
   spot.isAutomationMove = Boolean(flags.automation);
 
-  const monster = gameState.monsters[index];
   if (monster) {
     monster.isAutoEvolving = false;
   }
@@ -929,6 +936,13 @@ function resolveMonsterZoneEntry(index, spot) {
     const wasAutomationMove = Boolean(spot.isAutomationMove);
     const monster = gameState.monsters[index];
     if (monster) {
+      if (wasAutomationMove && !shouldRunAutomatedLevelUp(monster)) {
+        stopMovingSpotAtCurrentPosition(index, spot);
+        saveMiningPositions();
+        updateEvolverZoneStatus();
+        return true;
+      }
+
       const action = getUpgradeAction(monster);
       if (action.type === "levelUp" && gameState.gold >= action.gold && gameState.crystal >= action.crystal) {
         stopMovingSpotAtCurrentPosition(index, spot);
@@ -1013,6 +1027,7 @@ function playTeleportVisuals(index, fromPosition) {
 }
 
 // Level-up loop: attempt -> teleport to waiting -> walk back to the zone -> repeat
+const AUTOMATED_LEVEL_UP_MOVE_MULTIPLIER = 2.5;
 const levelUpLoopTimers = new Map(); // monsterId -> timeout id
 
 function cancelLevelUpLoop(monsterId) {
@@ -1021,6 +1036,34 @@ function cancelLevelUpLoop(monsterId) {
     clearTimeout(timer);
     levelUpLoopTimers.delete(monsterId);
   }
+}
+
+function shouldRunAutomatedLevelUp(monster) {
+  if (!monster) return false;
+  const settings = getAutomationSettingsForFamily(getMonsterFamilyPrefix(monster.species));
+  return Boolean(settings.autoLevelUp && monster.level < settings.targetLevel);
+}
+
+function cancelAutomatedLevelUpForFamily(familyPrefix) {
+  let stoppedAnyMove = false;
+
+  gameState.monsters.forEach((monster, index) => {
+    if (getMonsterFamilyPrefix(monster.species) !== familyPrefix) return;
+
+    monster.isAutoEvolving = false;
+    cancelLevelUpLoop(monster.id);
+
+    const spot = miningState.monsterPositions?.[index];
+    if (spot?.isTargetingAutoEvolver && spot.isAutomationMove) {
+      stopMovingSpotAtCurrentPosition(index, spot);
+      stoppedAnyMove = true;
+    }
+  });
+
+  if (stoppedAnyMove) {
+    saveMiningPositions();
+  }
+  updateEvolverZoneStatus();
 }
 
 function scheduleLevelUpLoopReturn(monsterId, automation) {
@@ -1044,6 +1087,10 @@ function scheduleLevelUpLoopReturn(monsterId, automation) {
     const monster = gameState.monsters[index];
     const settings = getAutomationSettingsForFamily(getMonsterFamilyPrefix(monster.species));
     const action = getUpgradeAction(monster);
+    if (automation && !settings.autoLevelUp) {
+      updateEvolverZoneStatus();
+      return;
+    }
     if (action.type === "max" || monster.level >= settings.targetLevel) {
       updateEvolverZoneStatus();
       return;
@@ -1135,7 +1182,10 @@ function startMiningMovementLoop() {
       const dy = tarYpx - curYpx;
       const dist = Math.sqrt(dx * dx + dy * dy);
       
-      const speed = monsterDefinitions[monster.species].moveSpeed || 150;
+      const baseSpeed = monsterDefinitions[monster.species].moveSpeed || 150;
+      const speed = spot.isAutomationMove && spot.isTargetingAutoEvolver
+        ? baseSpeed * AUTOMATED_LEVEL_UP_MOVE_MULTIPLIER
+        : baseSpeed;
       const moveDist = speed * dt;
       
       if (dist <= moveDist) {
@@ -1172,6 +1222,10 @@ function startMiningMovementLoop() {
         
         if (spot.isTargetingAutoEvolver) {
           spot.isTargetingAutoEvolver = false;
+          if (wasAutomationMove && !shouldRunAutomatedLevelUp(monster)) {
+            updateEvolverZoneStatus();
+            return;
+          }
           attemptMiningZoneLevelUp(idx, {
             pinAfter: false,
             showManualToasts: !wasAutomationMove,
@@ -1349,6 +1403,62 @@ function saveGame() {
   localStorage.setItem(SAVE_KEY, JSON.stringify(saveData));
 }
 
+function createSpriteTestMonster(species, level, index) {
+  return {
+    id: `sprite_test_${index + 1}_${species}`,
+    species,
+    name: monsterDefinitions[species].name,
+    level,
+    stats: getMonsterStats(species, level)
+  };
+}
+
+function applySpriteTestRosterFromQuery() {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get("spriteTest") !== "1") return false;
+
+  const existingSave = localStorage.getItem(SAVE_KEY);
+  const backupKey = `${SAVE_KEY}-backup-before-sprite-test`;
+  if (existingSave && !localStorage.getItem(backupKey)) {
+    localStorage.setItem(backupKey, existingSave);
+  }
+
+  const testRows = [
+    ["0_1_cyclopse", 1], ["1_1_lovelydoll", 1], ["2_1_unnyangi", 1],
+    ["0_2_cyclopsis", 10], ["1_2_cutie", 10], ["2_2_unnyangsam", 10],
+    ["0_3_hatefulclops", 20], ["1_3_candy", 20], ["2_3_unrang", 20],
+    ["0_4_goliathclops", 30], ["1_4_marionette", 30], ["2_4_unraiju", 30],
+    ["0_5_abyss_monarch", 40], ["1_5_valkyria_doll", 40], ["2_5_kirin_nyang", 40],
+    ["0_6_cosmic_overlord", 50], ["1_6_seraph_valkyria", 50], ["2_6_divine_kirin", 50]
+  ];
+  const monsters = testRows.map(([species, level], index) => createSpriteTestMonster(species, level, index));
+
+  gameState = {
+    ...createDefaultGameState(),
+    started: true,
+    gold: 999999999,
+    crystal: 999999999,
+    evoStones: 9999,
+    monsters,
+    miningMonsterId: monsters[0].id,
+    pvpMonsterId: monsters[0].id,
+    selectedRock: "stone",
+    playerLevel: 60,
+    collection: testRows.map(([species]) => species),
+    lastSeen: Date.now()
+  };
+  uiState.selectedEvolutionMonsterId = monsters[0].id;
+  miningState.monsterPositions = null;
+  localStorage.removeItem("monsteria-mining-positions");
+  saveGame();
+
+  params.delete("spriteTest");
+  const nextSearch = params.toString();
+  const nextUrl = `${window.location.pathname}${nextSearch ? `?${nextSearch}` : ""}${window.location.hash}`;
+  window.history.replaceState({}, "", nextUrl);
+  return true;
+}
+
 function loadGame() {
   const rawSave = localStorage.getItem(SAVE_KEY);
   if (!rawSave) {
@@ -1448,11 +1558,17 @@ function monsterSpriteMarkup(species, level, extraClass = "") {
   if (!definition) return "";
   const spriteSheetClass = definition.spriteSheet ? " has-sprite-sheet" : "";
   const spriteSheetStyle = definition.spriteSheet
-    ? ` style="--monster-sprite-sheet: url('${definition.spriteSheet}')"`
+    ? ` style="--monster-sprite-sheet: url('${getVersionedSpriteSheetUrl(definition)}')"`
     : "";
   const stage = getMonsterStage(species);
 
   return `<div class="monster-sprite ${species} stage${stage} lv${level}${spriteSheetClass} ${extraClass}"${spriteSheetStyle} aria-hidden="true"></div>`;
+}
+
+function getVersionedSpriteSheetUrl(definition) {
+  if (!definition?.spriteSheet) return "";
+  const separator = definition.spriteSheet.includes("?") ? "&" : "?";
+  return `${definition.spriteSheet}${separator}v=${SPRITE_ASSET_VERSION}`;
 }
 
 function preloadMonsterSpriteImages() {
@@ -1461,7 +1577,7 @@ function preloadMonsterSpriteImages() {
       return;
     }
     const image = new Image();
-    image.src = definition.spriteSheet;
+    image.src = getVersionedSpriteSheetUrl(definition);
     monsterSpriteImages[definition.id] = image;
   });
 }
@@ -1985,6 +2101,9 @@ function updateAutomationSettingFromInput(input, shouldRender = false) {
   if (field === "autoBuy") {
     const nextAutoBuy = input.tagName === "BUTTON" ? !settings.autoBuy : Boolean(input.checked);
     settings.autoBuy = nextAutoBuy;
+    if (!nextAutoBuy) {
+      cancelAutomationPurchaseRequests();
+    }
     if (input.tagName === "BUTTON") {
       input.classList.toggle("active", nextAutoBuy);
       input.textContent = nextAutoBuy ? "ON" : "OFF";
@@ -1998,6 +2117,9 @@ function updateAutomationSettingFromInput(input, shouldRender = false) {
   if (field === "autoLevelUp") {
     const nextAutoLevelUp = input.tagName === "BUTTON" ? !settings.autoLevelUp : Boolean(input.checked);
     settings.autoLevelUp = nextAutoLevelUp;
+    if (!nextAutoLevelUp) {
+      cancelAutomatedLevelUpForFamily(family);
+    }
     if (input.tagName === "BUTTON") {
       input.classList.toggle("active", nextAutoLevelUp);
       input.textContent = nextAutoLevelUp ? "ON" : "OFF";
@@ -2194,7 +2316,7 @@ function runMonsterAttackLoop(monsterId) {
 }
 
 function shootMiningProjectile(spotElement, spot, species) {
-  if (document.hidden) return;
+  if (shouldSuppressTransientEffects()) return;
   if (uiState.currentScreen !== "mining") return;
   const projectileLayer = $("#projectile-layer");
   if (!projectileLayer || !spotElement || !spot) return;
@@ -2262,7 +2384,7 @@ function applyMiningDamage(damage) {
 }
 
 function spawnDamageNumber(damage, isCrit) {
-  if (document.hidden) return;
+  if (shouldSuppressTransientEffects()) return;
   const number = document.createElement("span");
   number.className = isCrit ? "damage-number critical" : "damage-number";
   number.textContent = isCrit ? `-${damage}!` : `-${damage}`;
@@ -2947,7 +3069,7 @@ function attemptMiningZoneLevelUp(index, options = {}) {
   
   const reachedTarget = monster.level >= targetLevel;
   const isMax = nextAction.type === "max";
-  const willContinue = !reachedTarget && !isMax;
+  const willContinue = !reachedTarget && !isMax && (!followUpAutomation || shouldRunAutomatedLevelUp(monster));
 
   // Success or fail, the monster always teleports back to the waiting area
   const fromPosition = teleportMonsterToWaiting(index);
@@ -2979,7 +3101,7 @@ function attemptMiningZoneLevelUp(index, options = {}) {
     triggerLevelUpZoneVisualEffect(index, effectSucceeded);
     flashLevelUpZone(effectSucceeded, monster);
   }
-  if (followUpAutomation) {
+  if (followUpAutomation && shouldRunAutomatedLevelUp(monster)) {
     requestMiningAutomationTick({ allowPurchases: false });
   }
   return { attempted: true, succeeded, monsterId: monster.id, level: monster.level };
@@ -3019,6 +3141,15 @@ function isMonsterPendingSale(index) {
 
 let miningAutomationRequestTimer = null;
 let miningAutomationRequestAllowsPurchases = false;
+
+function hasAutoBuyEnabled() {
+  return automationFamilies.some((family) => getAutomationSettingsForFamily(family.prefix).autoBuy);
+}
+
+function cancelAutomationPurchaseRequests() {
+  miningAutomationRequestAllowsPurchases = false;
+}
+
 function requestMiningAutomationTick(options = {}) {
   miningAutomationRequestAllowsPurchases = miningAutomationRequestAllowsPurchases || Boolean(options.allowPurchases);
   if (miningAutomationRequestTimer) return;
@@ -3033,14 +3164,16 @@ function requestMiningAutomationTick(options = {}) {
 
 function runAutomationPurchases(maxPurchases = 6) {
   let purchased = 0;
-  const enabledFamilies = automationFamilies.filter((family) => getAutomationSettingsForFamily(family.prefix).autoBuy);
-  if (enabledFamilies.length === 0) return 0;
+  if (!hasAutoBuyEnabled()) return 0;
 
   while (purchased < maxPurchases) {
     let boughtThisPass = false;
+    const enabledFamilies = automationFamilies.filter((family) => getAutomationSettingsForFamily(family.prefix).autoBuy);
+    if (enabledFamilies.length === 0) break;
 
     for (const family of enabledFamilies) {
       if (purchased >= maxPurchases) break;
+      if (!getAutomationSettingsForFamily(family.prefix).autoBuy) continue;
 
       const price = getMonsterPurchasePrice(family.species);
       if (price <= 0 || gameState.gold < price) continue;
@@ -3078,7 +3211,7 @@ function runMiningAutomationTick(options = {}) {
   if (!gameState.started || uiState.currentScreen !== "mining") return;
   if (!miningState.monsterPositions || gameState.monsters.length === 0) return;
 
-  if (allowPurchases) {
+  if (allowPurchases && hasAutoBuyEnabled()) {
     runAutomationPurchases(6);
   }
 
@@ -5363,7 +5496,8 @@ function bindEvents() {
     if (button.dataset.toggleId) togglePvpTeamMember(button.dataset.toggleId);
     if (button.dataset.removeId) togglePvpTeamMember(button.dataset.removeId);
     if (button.dataset.codexSpecies) {
-      uiState.selectedCodexSpecies = button.dataset.codexSpecies;
+      const species = button.dataset.codexSpecies;
+      uiState.selectedCodexSpecies = species;
       renderCodex();
     }
     if (button.dataset.stepField) {
@@ -5569,7 +5703,21 @@ function bindEvents() {
     }
   });
 
-  window.addEventListener("blur", () => {});
+  window.addEventListener("blur", () => {
+    removeTransientMiningEffects();
+  });
+  window.addEventListener("focus", () => {
+    lastMiningMoveTime = performance.now();
+    if (pvpState.active) pvpState.lastTime = performance.now();
+  });
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) {
+      removeTransientMiningEffects();
+    } else {
+      lastMiningMoveTime = performance.now();
+      if (pvpState.active) pvpState.lastTime = performance.now();
+    }
+  });
   window.addEventListener("resize", () => {
     if (uiState.currentScreen === "mining") {
       updateRockHpGaugePosition();
@@ -5580,6 +5728,42 @@ function bindEvents() {
 
 function randomInt(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function shouldSuppressTransientEffects() {
+  return document.hidden || (typeof document.hasFocus === "function" && !document.hasFocus());
+}
+
+function removeTransientMiningEffects() {
+  document
+    .querySelectorAll(".mining-debris, .resource-particle, .damage-number, .mine-projectile-3d, .resource-gain-popup")
+    .forEach((element) => element.remove());
+
+  document.querySelectorAll(".is-hit, .shake-effect").forEach((element) => {
+    element.classList.remove("is-hit", "shake-effect");
+  });
+  document.querySelectorAll(".monster-sprite.is-attacking").forEach((element) => {
+    element.classList.remove("is-attacking");
+  });
+
+  syncDisplayResources();
+  updateResourceDisplaysVisual();
+}
+
+function syncDisplayResourcesSoon() {
+  queueMicrotask(() => {
+    syncDisplayResources();
+    updateResourceDisplaysVisual();
+  });
+}
+
+function getParticleCapacity(selector, maxCount, requestedCount) {
+  const existing = document.querySelectorAll(selector);
+  const overflow = existing.length + requestedCount - maxCount;
+  for (let index = 0; index < overflow; index += 1) {
+    existing[index]?.remove();
+  }
+  return Math.max(0, maxCount - Math.max(0, existing.length - Math.max(0, overflow)));
 }
 
 function showToast(message, type = "") {
@@ -5604,6 +5788,7 @@ function init() {
   renderStarterOptions();
   bindEvents();
   loadGame();
+  const createdSpriteTestRoster = applySpriteTestRosterFromQuery();
   syncDisplayResources();
   startResourceRollingLoop();
   startMiningAutomationLoop();
@@ -5612,6 +5797,9 @@ function init() {
     uiState.selectedEvolutionMonsterId = gameState.monsters[0]?.id || null;
     showGameUi();
     showScreen("mining");
+    if (createdSpriteTestRoster) {
+      showToast("스프라이트 테스트용 몬스터 18종을 생성했습니다.", "success");
+    }
     maybeShowOfflineRewards();
     checkAchievements();
   } else {
@@ -5632,7 +5820,7 @@ function playLootSoundDebounced() {
 }
 
 function spawnResourceGainPopup(targetEl, amount, type) {
-  if (!targetEl || amount <= 0 || document.hidden) return;
+  if (!targetEl || amount <= 0 || shouldSuppressTransientEffects()) return;
 
   const rect = targetEl.getBoundingClientRect();
   const popup = document.createElement("span");
@@ -5647,8 +5835,8 @@ function spawnResourceGainPopup(targetEl, amount, type) {
 function spawnResourceParticles(type, totalReward, startEl) {
   const targetKey = type === "evoStone" ? "evoStones" : type;
   
-  if (document.hidden) {
-    rollingTargetState[targetKey] = gameState[targetKey];
+  if (shouldSuppressTransientEffects()) {
+    syncDisplayResourcesSoon();
     return;
   }
   if (!startEl) return;
@@ -5658,10 +5846,6 @@ function spawnResourceParticles(type, totalReward, startEl) {
   if (type === "gold") {
     particlesCount = Math.min(12, Math.max(3, Math.floor(totalReward / 3)));
   }
-  
-  // Calculate value split per particle
-  const baseValue = Math.floor(totalReward / particlesCount);
-  const remainder = totalReward % particlesCount;
   
   const startRect = startEl.getBoundingClientRect();
   const startX = startRect.left + startRect.width / 2;
@@ -5683,6 +5867,19 @@ function spawnResourceParticles(type, totalReward, startEl) {
   let landedParticles = 0;
   let landedTotal = 0;
   
+  particlesCount = Math.min(
+    particlesCount,
+    getParticleCapacity(".resource-particle", MAX_RESOURCE_PARTICLES, particlesCount)
+  );
+  if (particlesCount <= 0) {
+    syncDisplayResourcesSoon();
+    return;
+  }
+
+  // Calculate value split per particle after capacity trimming.
+  const baseValue = Math.floor(totalReward / particlesCount);
+  const remainder = totalReward % particlesCount;
+
   for (let i = 0; i < particlesCount; i++) {
     const particleValue = (i === particlesCount - 1) ? (baseValue + remainder) : baseValue;
     const particle = document.createElement("div");
@@ -5706,6 +5903,11 @@ function spawnResourceParticles(type, totalReward, startEl) {
     
     const tick = (now) => {
       if (!particle.parentNode) return;
+      if (shouldSuppressTransientEffects()) {
+        particle.remove();
+        syncDisplayResourcesSoon();
+        return;
+      }
       const dt = 0.016;
       elapsed += dt;
       
@@ -5758,7 +5960,7 @@ function spawnResourceParticles(type, totalReward, startEl) {
 }
 
 function spawnMiningDebris(startEl, rockType) {
-  if (document.hidden) return;
+  if (shouldSuppressTransientEffects()) return;
   if (!startEl) return;
   const rect = startEl.getBoundingClientRect();
   const container = $("#mine-stage");
@@ -5775,7 +5977,12 @@ function spawnMiningDebris(startEl, rockType) {
     colors = ["#5eb9ce", "#a874d0", "#bcf5e7", "#35618c"];
   }
   
-  const debrisCount = 4 + Math.floor(Math.random() * 4);
+  let debrisCount = 4 + Math.floor(Math.random() * 4);
+  debrisCount = Math.min(
+    debrisCount,
+    getParticleCapacity(".mining-debris", MAX_MINING_DEBRIS_PARTICLES, debrisCount)
+  );
+  if (debrisCount <= 0) return;
   
   for (let i = 0; i < debrisCount; i++) {
     const deb = document.createElement("span");
@@ -5804,6 +6011,10 @@ function spawnMiningDebris(startEl, rockType) {
     
     const tick = (now) => {
       if (!deb.parentNode) return;
+      if (shouldSuppressTransientEffects()) {
+        deb.remove();
+        return;
+      }
       const dt = 0.016;
       elapsed += dt;
       
