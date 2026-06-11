@@ -8,7 +8,7 @@
 
 const SAVE_KEY = "monsteria-save-v1";
 const EVO_STONE_PRICE = 120;
-const SPRITE_ASSET_VERSION = "20260611-centered-sprites-v4";
+const SPRITE_ASSET_VERSION = "20260611-goliath-row3-align";
 const MAX_MINING_DEBRIS_PARTICLES = 72;
 const MAX_RESOURCE_PARTICLES = 48;
 
@@ -1457,6 +1457,59 @@ function applySpriteTestRosterFromQuery() {
   const nextUrl = `${window.location.pathname}${nextSearch ? `?${nextSearch}` : ""}${window.location.hash}`;
   window.history.replaceState({}, "", nextUrl);
   return true;
+}
+
+function appendMissingSpriteTestMonstersFromQuery() {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get("appendSpriteTest") !== "1") return 0;
+
+  const testRows = [
+    ["0_1_cyclopse", 1], ["1_1_lovelydoll", 1], ["2_1_unnyangi", 1],
+    ["0_2_cyclopsis", 10], ["1_2_cutie", 10], ["2_2_unnyangsam", 10],
+    ["0_3_hatefulclops", 20], ["1_3_candy", 20], ["2_3_unrang", 20],
+    ["0_4_goliathclops", 30], ["1_4_marionette", 30], ["2_4_unraiju", 30],
+    ["0_5_abyss_monarch", 40], ["1_5_valkyria_doll", 40], ["2_5_kirin_nyang", 40],
+    ["0_6_cosmic_overlord", 50], ["1_6_seraph_valkyria", 50], ["2_6_divine_kirin", 50]
+  ];
+
+  if (!gameState.started) {
+    gameState = {
+      ...createDefaultGameState(),
+      started: true,
+      gold: 999999999,
+      crystal: 999999999,
+      evoStones: 9999,
+      selectedRock: "stone",
+      playerLevel: 60,
+      lastSeen: Date.now()
+    };
+  }
+
+  const existingSpecies = new Set(gameState.monsters.map((monster) => monster.species));
+  const addedMonsters = [];
+  testRows.forEach(([species, level], index) => {
+    if (existingSpecies.has(species)) return;
+    const monster = createSpriteTestMonster(species, level, gameState.monsters.length + index);
+    gameState.monsters.push(monster);
+    addedMonsters.push(monster);
+    existingSpecies.add(species);
+  });
+
+  if (gameState.monsters.length > 0) {
+    gameState.miningMonsterId = gameState.miningMonsterId || gameState.monsters[0].id;
+    gameState.pvpMonsterId = gameState.pvpMonsterId || gameState.monsters[0].id;
+  }
+  gameState.collection = Array.from(new Set([...(gameState.collection || []), ...testRows.map(([species]) => species)]));
+  uiState.selectedEvolutionMonsterId = uiState.selectedEvolutionMonsterId || gameState.monsters[0]?.id || null;
+  miningState.monsterPositions = null;
+  localStorage.removeItem("monsteria-mining-positions");
+  saveGame();
+
+  params.delete("appendSpriteTest");
+  const nextSearch = params.toString();
+  const nextUrl = `${window.location.pathname}${nextSearch ? `?${nextSearch}` : ""}${window.location.hash}`;
+  window.history.replaceState({}, "", nextUrl);
+  return addedMonsters.length;
 }
 
 function loadGame() {
@@ -5789,6 +5842,7 @@ function init() {
   bindEvents();
   loadGame();
   const createdSpriteTestRoster = applySpriteTestRosterFromQuery();
+  const appendedSpriteTestCount = appendMissingSpriteTestMonstersFromQuery();
   syncDisplayResources();
   startResourceRollingLoop();
   startMiningAutomationLoop();
@@ -5799,6 +5853,8 @@ function init() {
     showScreen("mining");
     if (createdSpriteTestRoster) {
       showToast("스프라이트 테스트용 몬스터 18종을 생성했습니다.", "success");
+    } else if (appendedSpriteTestCount > 0) {
+      showToast(`테스트용 몬스터 ${appendedSpriteTestCount}종을 추가했습니다.`, "success");
     }
     maybeShowOfflineRewards();
     checkAchievements();
