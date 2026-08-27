@@ -195,11 +195,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--capture-margin",
         type=unit_float,
-        default=0.5,
+        default=0.18,
         metavar="0..1",
         help=(
             "extra source-cell fraction searched for sprites crossing a source "
-            "boundary (default: 0.5)"
+            "boundary (default: 0.18)"
         ),
     )
     parser.add_argument(
@@ -239,7 +239,51 @@ def build_parser() -> argparse.ArgumentParser:
             "source cell and scale every cell with the same source-grid transform"
         ),
     )
+    parser.add_argument(
+        "--shared-scale",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help=(
+            "use one shared scale for every pose so energetic frames never "
+            "shrink relative to quiet frames (default: enabled)"
+        ),
+    )
+    parser.add_argument(
+        "--scale-rows",
+        type=str,
+        default="0-2",
+        metavar="SPEC",
+        help=(
+            "rows used to compute the shared body scale; idle/walk/attack by "
+            "default. Skill/FX rows are placed at that scale and clipped "
+            "instead of shrinking the whole sheet (default: 0-2)"
+        ),
+    )
     return parser
+
+
+def parse_row_spec(value: str) -> set[int]:
+    rows: set[int] = set()
+    for part in value.split(","):
+        token = part.strip()
+        if not token:
+            continue
+        if "-" in token:
+            start_text, end_text = token.split("-", 1)
+            start = int(start_text)
+            end = int(end_text)
+            if start > end:
+                start, end = end, start
+            rows.update(range(start, end + 1))
+        else:
+            rows.add(int(token))
+    if not rows:
+        raise argparse.ArgumentTypeError("expected at least one row in --scale-rows")
+    if any(row < 0 or row >= OUTPUT_ROWS for row in rows):
+        raise argparse.ArgumentTypeError(
+            f"--scale-rows values must be between 0 and {OUTPUT_ROWS - 1}"
+        )
+    return rows
 
 
 def resolve_grid(
@@ -405,50 +449,114 @@ def resize_premultiplied(image: Image.Image, size: tuple[int, int]) -> Image.Ima
     return resized
 
 
+def place_sprite(
+    sprite: Image.Image,
+    padding: int,
+    *,
+    bottom_align: bool = True,
+    clip_overflow: bool = True,
+) -> Image.Image:
+    output = Image.new("RGBA", (CELL_SIZE, CELL_SIZE), (0, 0, 0, 0))
+    x = (CELL_SIZE - sprite.width) // 2
+    if bottom_align:
+        y = CELL_SIZE - padding - sprite.height
+    else:
+        y = (CELL_SIZE - sprite.height) // 2
+
+    if not clip_overflow:
+        output.alpha_composite(sprite, (max(0, x), max(0, y)))
+        return output
+
+    # Keep body scale; clip FX / outstretched limbs that exceed the safe cell.
+    src_x0 = max(0, -x)
+    src_y0 = max(0, -y)
+    dst_x0 = max(0, x)
+    dst_y0 = max(0, y)
+    src_x1 = min(sprite.width, CELL_SIZE - x)
+    src_y1 = min(sprite.height, CELL_SIZE - y)
+    if src_x1 <= src_x0 or src_y1 <= src_y0:
+        return output
+    cropped = sprite.crop((src_x0, src_y0, src_x1, src_y1))
+    output.alpha_composite(cropped, (dst_x0, dst_y0))
+    return output
+
+
 def normalize_cell(
     keyed_cell: Image.Image,
     base_scale: float,
     padding: int,
     trim_alpha: int,
     no_trim: bool = False,
+    shared_scale: float | None = None,
 ) -> Image.Image:
     if no_trim:
         inner_size = CELL_SIZE - 2 * padding
-        scale = min(inner_size / keyed_cell.width, inner_size / keyed_cell.height)
+        scale = shared_scale
+        if scale is None:
+            scale = min(inner_size / keyed_cell.width, inner_size / keyed_cell.height)
         resized_size = (
             max(1, round(keyed_cell.width * scale)),
             max(1, round(keyed_cell.height * scale)),
         )
         sprite = resize_premultiplied(keyed_cell, resized_size)
-        
-        output = Image.new("RGBA", (CELL_SIZE, CELL_SIZE), (0, 0, 0, 0))
-        x = (CELL_SIZE - sprite.width) // 2
-        y = (CELL_SIZE - sprite.height) // 2
-        output.alpha_composite(sprite, (x, y))
-        return output
+        return place_sprite(sprite, padding, bottom_align=False)
 
-    output = Image.new("RGBA", (CELL_SIZE, CELL_SIZE), (0, 0, 0, 0))
     bounds = alpha_bbox(keyed_cell, trim_alpha)
     if bounds is None:
-        return output
+        return Image.new("RGBA", (CELL_SIZE, CELL_SIZE), (0, 0, 0, 0))
 
     sprite = keyed_cell.crop(bounds)
     inner_size = CELL_SIZE - 2 * padding
-    scale = min(
-        base_scale,
-        inner_size / sprite.width,
-        inner_size / sprite.height,
-    )
+    if shared_scale is None:
+        scale = min(
+            base_scale,
+            inner_size / sprite.width,
+            inner_size / sprite.height,
+        )
+    else:
+        scale = shared_scale
     resized_size = (
         max(1, round(sprite.width * scale)),
         max(1, round(sprite.height * scale)),
     )
     sprite = resize_premultiplied(sprite, resized_size)
+    return place_sprite(sprite, padding, bottom_align=True)
 
-    x = (CELL_SIZE - sprite.width) // 2
-    y = CELL_SIZE - padding - sprite.height
-    output.alpha_composite(sprite, (x, y))
-    return output
+
+def compute_shared_scale(
+    sprites: Sequence[Image.Image | None],
+    base_scale: float,
+    padding: int,
+) -> float:
+    """Shared scale from typical poses; ignore giant double-body outliers."""
+
+    inner_size = CELL_SIZE - 2 * padding
+    extents = [
+        max(sprite.width, sprite.height)
+        for sprite in sprites
+        if sprite is not None and sprite.width > 0 and sprite.height > 0
+    ]
+    if not extents:
+        return max(base_scale, 1e-6)
+
+    extents.sort()
+    median = extents[len(extents) // 2]
+    limit = max(median * 1.55, median + 24)
+    usable = [extent for extent in extents if extent <= limit] or extents
+
+    scale = base_scale
+    for sprite in sprites:
+        if sprite is None:
+            continue
+        extent = max(sprite.width, sprite.height)
+        if extent > limit and len(usable) < len(extents):
+            continue
+        scale = min(
+            scale,
+            inner_size / sprite.width,
+            inner_size / sprite.height,
+        )
+    return max(scale, 1e-6)
 
 
 def cell_bounds(
@@ -470,7 +578,7 @@ def extract_cell_subject(
     trim_alpha: int,
     min_component_area: int,
 ) -> Image.Image:
-    """Select components centered in one source cell, including crossed edges."""
+    """Select exactly one subject for a cell (nearest large body to cell center)."""
 
     x0, y0, x1, y1 = nominal_bounds
     margin_x = round((x1 - x0) * capture_margin)
@@ -488,13 +596,11 @@ def extract_cell_subject(
     foreground = hard_alpha.tobytes()
     width, height = region.size
     visited = bytearray(len(foreground))
-    selected = bytearray(len(foreground))
-    selected_any = False
-    fallback_pixels: list[int] = []
-    fallback_distance = float("inf")
+    candidates: list[tuple[float, int, list[int]]] = []
     nominal_center_x = (x0 + x1) / 2
     nominal_center_y = (y0 + y1) / 2
     region_x0, region_y0 = region_bounds[:2]
+    cell_half_diag = ((x1 - x0) ** 2 + (y1 - y0) ** 2) ** 0.5 * 0.55
 
     for start, value in enumerate(foreground):
         if value == 0 or visited[start]:
@@ -529,25 +635,54 @@ def extract_cell_subject(
 
         center_x = region_x0 + sum_x / area
         center_y = region_y0 + sum_y / area
+        distance = (
+            (center_x - nominal_center_x) ** 2 + (center_y - nominal_center_y) ** 2
+        ) ** 0.5
         belongs_to_cell = x0 <= center_x < x1 and y0 <= center_y < y1
-        if belongs_to_cell:
-            selected_any = True
-            for index in component:
-                selected[index] = 255
+        # Prefer in-cell bodies; allow nearby bleed for oversized poses.
+        if not belongs_to_cell and distance > cell_half_diag * 1.35:
+            continue
+        # Rank by body size first so sparks/FX never beat the character.
+        # Distance is only a tie-breaker / soft penalty.
+        in_cell_rank = 0 if belongs_to_cell else 1
+        score = (-area, in_cell_rank, distance)
+        candidates.append((score, component))
 
-        distance = (center_x - nominal_center_x) ** 2 + (
-            center_y - nominal_center_y
-        ) ** 2
-        if distance < fallback_distance:
-            fallback_distance = distance
-            fallback_pixels = component
-
-    if not selected_any:
-        for index in fallback_pixels:
+    selected = bytearray(len(foreground))
+    if candidates:
+        candidates.sort(key=lambda item: item[0])
+        for index in candidates[0][1]:
+            selected[index] = 255
+    else:
+        # Absolute fallback: largest component anywhere in the search region.
+        largest: list[int] = []
+        visited = bytearray(len(foreground))
+        for start, value in enumerate(foreground):
+            if value == 0 or visited[start]:
+                continue
+            stack = [start]
+            visited[start] = 1
+            component = []
+            while stack:
+                index = stack.pop()
+                component.append(index)
+                local_y, local_x = divmod(index, width)
+                for neighbor_y in range(max(0, local_y - 1), min(height, local_y + 2)):
+                    row_offset = neighbor_y * width
+                    for neighbor_x in range(
+                        max(0, local_x - 1), min(width, local_x + 2)
+                    ):
+                        neighbor = row_offset + neighbor_x
+                        if foreground[neighbor] and not visited[neighbor]:
+                            visited[neighbor] = 1
+                            stack.append(neighbor)
+            if len(component) > len(largest):
+                largest = component
+        for index in largest:
             selected[index] = 255
 
     selected_mask = Image.frombytes("L", region.size, bytes(selected))
-    selected_mask = selected_mask.filter(ImageFilter.MaxFilter(5))
+    selected_mask = selected_mask.filter(ImageFilter.MaxFilter(3))
     selected_alpha = ImageChops.multiply(region.getchannel("A"), selected_mask)
     region.putalpha(selected_alpha)
     return region
@@ -566,7 +701,9 @@ def process_sheet(
     capture_margin: float,
     min_component_area: int,
     no_trim: bool = False,
-) -> Image.Image:
+    use_shared_scale: bool = True,
+    scale_rows: set[int] | None = None,
+) -> tuple[Image.Image, float]:
     output = Image.new("RGBA", SHEET_SIZE, (0, 0, 0, 0))
     source_cell_width = image.width / source_cols
     source_cell_height = image.height / source_rows
@@ -581,8 +718,13 @@ def process_sheet(
         softness,
         despill_strength,
     )
+    scale_row_set = scale_rows or set(range(OUTPUT_ROWS))
+
+    extracted: list[list[Image.Image]] = []
+    scale_sprites: list[Image.Image | None] = []
 
     for row in range(OUTPUT_ROWS):
+        row_cells: list[Image.Image] = []
         for col in range(OUTPUT_COLS):
             bounds = cell_bounds(image.size, source_cols, source_rows, col, row)
             if no_trim:
@@ -595,16 +737,34 @@ def process_sheet(
                     trim_alpha,
                     min_component_area,
                 )
+            row_cells.append(keyed_cell)
+            if use_shared_scale and row in scale_row_set:
+                if no_trim:
+                    scale_sprites.append(keyed_cell)
+                else:
+                    bounds = alpha_bbox(keyed_cell, trim_alpha)
+                    scale_sprites.append(
+                        keyed_cell.crop(bounds) if bounds is not None else None
+                    )
+        extracted.append(row_cells)
+
+    shared_scale = None
+    if use_shared_scale:
+        shared_scale = compute_shared_scale(scale_sprites, base_scale, padding)
+
+    for row in range(OUTPUT_ROWS):
+        for col in range(OUTPUT_COLS):
             output_cell = normalize_cell(
-                keyed_cell,
+                extracted[row][col],
                 base_scale,
                 padding,
                 trim_alpha,
                 no_trim,
+                shared_scale,
             )
             output.alpha_composite(output_cell, (col * CELL_SIZE, row * CELL_SIZE))
 
-    return output
+    return output, shared_scale if shared_scale is not None else base_scale
 
 
 def make_checker_preview(image: Image.Image, checker_size: int) -> Image.Image:
@@ -675,7 +835,12 @@ def run(args: argparse.Namespace) -> None:
         args.take_cols,
     )
     key_color = args.key_color or estimate_key_color(image)
-    sheet = process_sheet(
+    try:
+        scale_rows = parse_row_spec(args.scale_rows)
+    except (TypeError, ValueError) as exc:
+        raise ProcessingError(f"invalid --scale-rows value: {args.scale_rows}") from exc
+
+    sheet, shared_scale = process_sheet(
         image,
         source_cols,
         source_rows,
@@ -688,6 +853,8 @@ def run(args: argparse.Namespace) -> None:
         args.capture_margin,
         args.min_component_area,
         args.no_trim,
+        args.shared_scale,
+        scale_rows,
     )
 
     paths = [args.output]
@@ -707,6 +874,10 @@ def run(args: argparse.Namespace) -> None:
         f"resolved grid {source_cols}x{source_rows}, taking first {OUTPUT_COLS} columns)"
     )
     print(f"key color: {key_color}")
+    print(
+        f"shared scale: {shared_scale:.6f} "
+        f"(enabled={args.shared_scale}, rows={sorted(scale_rows)})"
+    )
     print(f"output: {args.output} ({sheet.width}x{sheet.height}, {sheet.mode})")
     if checker_path is not None:
         print(f"preview: {checker_path}")

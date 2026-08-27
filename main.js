@@ -8,7 +8,7 @@
 
 const SAVE_KEY = "monsteria-save-v1";
 const EVO_STONE_PRICE = 120;
-const SPRITE_ASSET_VERSION = "20260611-goliath-row3-align";
+const SPRITE_ASSET_VERSION = "20260720-sprite-steps-v4";
 const MAX_MINING_DEBRIS_PARTICLES = 72;
 const MAX_RESOURCE_PARTICLES = 48;
 
@@ -426,6 +426,15 @@ const spriteRows = {
   faint: 5
 };
 
+const spriteTestRows = [
+  ["0_1_cyclopse", 1], ["1_1_lovelydoll", 1], ["2_1_unnyangi", 1],
+  ["0_2_cyclopsis", 10], ["1_2_cutie", 10], ["2_2_unnyangsam", 10],
+  ["0_3_hatefulclops", 20], ["1_3_candy", 20], ["2_3_unrang", 20],
+  ["0_4_goliathclops", 30], ["1_4_marionette", 30], ["2_4_unraiju", 30],
+  ["0_5_abyss_monarch", 40], ["1_5_valkyria_doll", 40], ["2_5_kirin_nyang", 40],
+  ["0_6_cosmic_overlord", 50], ["1_6_seraph_valkyria", 50], ["2_6_divine_kirin", 50]
+];
+
 // ---------------------------------------------------------------------------
 // Achievements
 // ---------------------------------------------------------------------------
@@ -443,7 +452,13 @@ const achievementDefinitions = [
   { id: "gold_1m", name: "골드 재벌", description: "누적 1,000,000 골드 획득", reward: 600, check: (s) => (s.stats?.goldEarned || 0) >= 1000000 },
   { id: "incinerate_10", name: "소각 기술자", description: "몬스터 10마리 소각", reward: 100, check: (s) => (s.stats?.incinerated || 0) >= 10 },
   { id: "incinerate_100", name: "불꽃의 거장", description: "몬스터 100마리 소각", reward: 500, check: (s) => (s.stats?.incinerated || 0) >= 100 },
+  { id: "combo_10", name: "콤보 텐션 업", description: "콤보 10 달성", reward: 90, check: (s) => (s.stats?.maxCombo || 0) >= 10 },
+  { id: "combo_30", name: "콤보 폭주", description: "콤보 30 달성", reward: 300, check: (s) => (s.stats?.maxCombo || 0) >= 30 },
+  { id: "streak_10", name: "연쇄 파괴자", description: "연속 파괴 10 달성", reward: 180, check: (s) => (s.stats?.bestStreak || 0) >= 10 },
+  { id: "crit_100", name: "치명타 장인", description: "크리티컬 100회 기록", reward: 220, check: (s) => (s.stats?.crits || 0) >= 100 },
+  { id: "rocks_100", name: "막 손에 힘이 붙었다", description: "바위 100개 파괴", reward: 80, check: (s) => (s.stats?.rocksBroken || 0) >= 100 },
   { id: "rocks_500", name: "광부의 길", description: "바위 500개 파괴", reward: 200, check: (s) => (s.stats?.rocksBroken || 0) >= 500 },
+  { id: "rocks_1000", name: "전설의 광부", description: "바위 1,000개 파괴", reward: 450, check: (s) => (s.stats?.rocksBroken || 0) >= 1000 },
   { id: "max_level", name: "한계 돌파", description: "몬스터를 LV60까지 성장시키기", reward: 2000, check: (s) => s.monsters.some((monster) => monster.level >= 60) }
 ];
 
@@ -484,7 +499,7 @@ function recordSpeciesDiscovery(species) {
 
 function trackStat(key, amount = 1) {
   if (!gameState.stats) {
-    gameState.stats = { goldEarned: 0, incinerated: 0, evolutions: 0, rocksBroken: 0 };
+    gameState.stats = { goldEarned: 0, incinerated: 0, evolutions: 0, rocksBroken: 0, maxCombo: 0, crits: 0, rareDrops: 0, bestStreak: 0 };
   }
   gameState.stats[key] = (gameState.stats[key] || 0) + amount;
 }
@@ -620,7 +635,7 @@ function createDefaultGameState() {
     tower: { highestFloor: 0 },
     collection: [],
     achievements: [],
-    stats: { goldEarned: 0, incinerated: 0, evolutions: 0, rocksBroken: 0 },
+    stats: { goldEarned: 0, incinerated: 0, evolutions: 0, rocksBroken: 0, maxCombo: 0, crits: 0, rareDrops: 0, bestStreak: 0 },
     lastSeen: 0
   };
 }
@@ -654,6 +669,13 @@ const miningState = {
   generation: 0,
   timers: {},
   respawnTimer: null,
+  respawnRemainingMs: 0,
+  attackCooldowns: {},
+  combo: 0,
+  comboTimer: null,
+  comboDecayRemainingMs: null,
+  bestCombo: 0,
+  breakStreak: 0,
   selectedMonsterIndex: null,
   monsterPositions: null
 };
@@ -661,6 +683,265 @@ const miningState = {
 function clearMiningTimers() {
   Object.values(miningState.timers).forEach(clearTimeout);
   miningState.timers = {};
+  miningState.attackCooldowns = {};
+}
+
+// ---------------------------------------------------------------------------
+// Background-safe simulation clock (keeps mining/automation running while hidden)
+// ---------------------------------------------------------------------------
+
+const GAME_SIM_TICK_MS = 50;
+const GAME_SIM_MAX_CATCHUP_MS = 30 * 60 * 1000;
+const GAME_SIM_SLICE_MS = 250;
+const GAME_SIM_SAVE_EVERY_MS = 15000;
+
+const gameSimClock = {
+  running: false,
+  lastNow: 0,
+  worker: null,
+  workerUrl: null,
+  fallbackTimer: null,
+  automationAccrualMs: 0,
+  saveAccrualMs: 0,
+  visibleRafId: null
+};
+
+function isGameSimBackground() {
+  return Boolean(document.hidden);
+}
+
+function startGameSimClock() {
+  if (gameSimClock.running) return;
+  gameSimClock.running = true;
+  gameSimClock.lastNow = Date.now();
+  gameSimClock.automationAccrualMs = 0;
+  gameSimClock.saveAccrualMs = 0;
+
+  try {
+    const source = `
+      let timer = setInterval(() => { postMessage({ type: "tick" }); }, ${GAME_SIM_TICK_MS});
+      onmessage = (event) => {
+        if (event.data === "stop") {
+          clearInterval(timer);
+          close();
+        }
+      };
+    `;
+    gameSimClock.workerUrl = URL.createObjectURL(new Blob([source], { type: "application/javascript" }));
+    gameSimClock.worker = new Worker(gameSimClock.workerUrl);
+    gameSimClock.worker.onmessage = () => {
+      advanceGameSimulation();
+    };
+  } catch (error) {
+    console.warn("Background worker unavailable, using interval fallback.", error);
+    gameSimClock.fallbackTimer = setInterval(() => advanceGameSimulation(), GAME_SIM_TICK_MS);
+  }
+
+  // Foreground: also tick via rAF for smoother movement when visible.
+  const visibleTick = () => {
+    if (!gameSimClock.running) {
+      gameSimClock.visibleRafId = null;
+      return;
+    }
+    if (!document.hidden) {
+      advanceGameSimulation();
+    }
+    gameSimClock.visibleRafId = requestAnimationFrame(visibleTick);
+  };
+  gameSimClock.visibleRafId = requestAnimationFrame(visibleTick);
+}
+
+function stopGameSimClock() {
+  gameSimClock.running = false;
+  if (gameSimClock.worker) {
+    try {
+      gameSimClock.worker.postMessage("stop");
+    } catch (_) {
+      /* ignore */
+    }
+    gameSimClock.worker.terminate();
+    gameSimClock.worker = null;
+  }
+  if (gameSimClock.workerUrl) {
+    URL.revokeObjectURL(gameSimClock.workerUrl);
+    gameSimClock.workerUrl = null;
+  }
+  if (gameSimClock.fallbackTimer) {
+    clearInterval(gameSimClock.fallbackTimer);
+    gameSimClock.fallbackTimer = null;
+  }
+  if (gameSimClock.visibleRafId) {
+    cancelAnimationFrame(gameSimClock.visibleRafId);
+    gameSimClock.visibleRafId = null;
+  }
+}
+
+function advanceGameSimulation() {
+  if (!gameSimClock.running || !gameState.started) return;
+
+  const now = Date.now();
+  let behind = now - gameSimClock.lastNow;
+  if (behind < 1) return;
+
+  // Process in real elapsed time. Cap each wake burst so the UI never freezes;
+  // leftover lag is consumed on later ticks (lastNow advances only by processed ms).
+  const processNow = Math.min(behind, 2000, GAME_SIM_MAX_CATCHUP_MS);
+  let remaining = processNow;
+  gameSimClock.lastNow += processNow;
+
+  while (remaining > 0) {
+    const slice = Math.min(GAME_SIM_SLICE_MS, remaining);
+    remaining -= slice;
+    advanceMiningSimulation(slice);
+    advanceMiningMovement(slice / 1000);
+    advanceMiningComboDecay(slice);
+    if (pvpState.active) {
+      advancePvpSimulation(slice / 1000);
+    }
+    gameSimClock.automationAccrualMs += slice;
+    if (gameSimClock.automationAccrualMs >= 1000) {
+      gameSimClock.automationAccrualMs -= 1000;
+      // Keep factory automation alive even while the tab is hidden.
+      if (uiState.currentScreen === "mining" || (miningState.active && isGameSimBackground())) {
+        runMiningAutomationTick({ allowPurchases: true });
+      }
+    }
+  }
+
+  // Periodic save while hidden so offline rewards don't double-count bg runtime.
+  if (isGameSimBackground()) {
+    gameSimClock.saveAccrualMs += processNow;
+    if (gameSimClock.saveAccrualMs >= GAME_SIM_SAVE_EVERY_MS) {
+      gameSimClock.saveAccrualMs = 0;
+      saveGame();
+    }
+  }
+}
+
+function advanceMiningComboDecay(dtMs) {
+  if (miningState.comboDecayRemainingMs == null) return;
+  miningState.comboDecayRemainingMs -= dtMs;
+  if (miningState.comboDecayRemainingMs > 0) return;
+  miningState.comboDecayRemainingMs = null;
+  miningState.combo = 0;
+  updateMiningComboHud();
+  if (uiState.currentScreen === "mining" && !isGameSimBackground()) {
+    updateMiningUi("콤보가 끊겼습니다. 다시 텐션을 올려 보세요!");
+  }
+}
+
+function advancePvpSimulation(dtSec) {
+  if (!pvpState.active) return;
+  // Foreground PVP keeps using requestAnimationFrame for render+update.
+  if (!isGameSimBackground()) return;
+  let left = Math.min(dtSec, 1.0);
+  while (left > 0) {
+    const step = Math.min(0.05, left);
+    left -= step;
+    pvpState.elapsed += step * 1000;
+    updatePvp(step);
+  }
+}
+
+const MINING_COMBO_DECAY_MS = 1600;
+const MINING_COMBO_MILESTONES = new Set([5, 10, 20, 30]);
+
+function clearMiningComboTimer() {
+  clearTimeout(miningState.comboTimer);
+  miningState.comboTimer = null;
+}
+
+function updateMiningComboHud() {
+  if (uiState.currentScreen !== "mining") {
+    return;
+  }
+
+  const hud = $("#mining-combo-hud");
+  const comboValue = $("#mining-combo-value");
+  const streakValue = $("#mining-streak-value");
+  if (!hud || !comboValue || !streakValue) {
+    return;
+  }
+
+  const combo = miningState.combo || 0;
+  const streak = miningState.breakStreak || 0;
+  comboValue.textContent = combo.toLocaleString();
+  streakValue.textContent = `STREAK ${streak.toLocaleString()}`;
+
+  hud.classList.toggle("is-idle", combo <= 0 && streak <= 0);
+  hud.classList.toggle("is-heated", combo >= 5 || streak >= 3);
+  hud.classList.toggle("is-blazing", combo >= 20 || streak >= 8);
+}
+
+function resetMiningMomentum(options = {}) {
+  const { keepBest = true } = options;
+  clearMiningComboTimer();
+  miningState.comboDecayRemainingMs = null;
+  miningState.combo = 0;
+  miningState.breakStreak = 0;
+  if (!keepBest) {
+    miningState.bestCombo = 0;
+  }
+  updateMiningComboHud();
+}
+
+function queueMiningComboDecay() {
+  clearMiningComboTimer();
+  if ((miningState.combo || 0) <= 0) {
+    miningState.comboDecayRemainingMs = null;
+    return;
+  }
+  // Time-based decay so background tabs still break combos correctly.
+  miningState.comboDecayRemainingMs = MINING_COMBO_DECAY_MS;
+}
+
+function updateMiningRecords() {
+  miningState.bestCombo = Math.max(miningState.bestCombo || 0, miningState.combo || 0);
+  gameState.stats.maxCombo = Math.max(gameState.stats?.maxCombo || 0, miningState.bestCombo || 0);
+  gameState.stats.bestStreak = Math.max(gameState.stats?.bestStreak || 0, miningState.breakStreak || 0);
+}
+
+function getMiningComboDamage(damage, combo) {
+  const comboBonus = Math.min(0.4, Math.max(0, combo - 1) * 0.02);
+  return Math.max(1, Math.round(damage * (1 + comboBonus)));
+}
+
+function celebrateMiningCombo(combo) {
+  if (!MINING_COMBO_MILESTONES.has(combo)) {
+    return;
+  }
+
+  const messages = {
+    5: "콤보 5! 채굴 텐션이 오른다!",
+    10: "콤보 10! 광맥이 들썩인다!",
+    20: "콤보 20! 손맛이 폭주한다!",
+    30: "콤보 30! 전설의 광부 모드!"
+  };
+  const sound = combo >= 20 ? "achievement" : "upgrade";
+  soundManager.play(sound);
+  showToast(messages[combo], combo >= 20 ? "legendary" : "success");
+}
+
+function getMiningRockXp(type) {
+  if (type === "iron") return 5;
+  if (type === "crystal") return 8;
+  return 3;
+}
+
+function getEvolutionAttemptChance(monster) {
+  const failCount = Math.max(0, Number(monster?.failCount) || 0);
+  const baseChance = Math.min(1.0, getUpgradeAction(monster).chance + getEvolutionChanceBonus(monster.level));
+  const effectiveChance = Math.min(0.95, baseChance + failCount * 0.015);
+  return { baseChance, effectiveChance, failCount };
+}
+
+function getPityFailToast(effectiveChance, failCount, roll) {
+  const nearMiss = roll - effectiveChance <= 0.08;
+  if (!nearMiss && failCount < 3) {
+    return "";
+  }
+  const pityPercent = Math.round(Math.min(0.95 - effectiveChance, 0.015) * 100);
+  return `아깝다! 다음 성공률 상승${pityPercent > 0 ? ` (+${pityPercent}%)` : ""}`;
 }
 
 function saveMiningPositions() {
@@ -1135,141 +1416,134 @@ function sendMonsterBackToWaiting(index) {
 
 let miningMovementRaf = null;
 let lastMiningMoveTime = 0;
+let miningMovementNeedsStep = false;
 
 function startMiningMovementLoop() {
-  if (uiState.currentScreen !== "mining") {
-    miningMovementRaf = null;
-    return;
-  }
-  if (miningMovementRaf) return;
-  
+  // Movement is advanced by the background-safe game sim clock.
+  miningMovementNeedsStep = true;
   lastMiningMoveTime = performance.now();
-  
-  const tick = (now) => {
-    if (uiState.currentScreen !== "mining") {
-      miningMovementRaf = null;
-      return;
-    }
-    let anyMoving = false;
-    const mineStage = $("#mine-stage");
-    if (!mineStage) {
-      miningMovementRaf = null;
-      return;
-    }
-    const rect = mineStage.getBoundingClientRect();
-    let dt = (now - lastMiningMoveTime) / 1000;
-    lastMiningMoveTime = now;
-    
-    if (dt > 0.1) dt = 0.1;
+}
 
-    gameState.monsters.forEach((monster, idx) => {
-      const spot = miningState.monsterPositions && miningState.monsterPositions[idx];
-      if (!spot || !spot.isMoving) return;
-      
-      anyMoving = true;
-      
-      const curX = parseFloat(spot.left);
-      const curY = parseFloat(spot.top);
-      const tarX = parseFloat(spot.targetLeft);
-      const tarY = parseFloat(spot.targetTop);
-      
-      const curXpx = (curX / 100) * rect.width;
-      const curYpx = (curY / 100) * rect.height;
-      const tarXpx = (tarX / 100) * rect.width;
-      const tarYpx = (tarY / 100) * rect.height;
-      
-      const dx = tarXpx - curXpx;
-      const dy = tarYpx - curYpx;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-      
-      const baseSpeed = monsterDefinitions[monster.species].moveSpeed || 150;
-      const speed = spot.isAutomationMove && spot.isTargetingAutoEvolver
-        ? baseSpeed * AUTOMATED_LEVEL_UP_MOVE_MULTIPLIER
-        : baseSpeed;
-      const moveDist = speed * dt;
-      
-      if (dist <= moveDist) {
-        spot.left = spot.targetLeft;
-        spot.top = spot.targetTop;
-        spot.isMoving = false;
-        spot.facing = tarX < curX ? -1 : 1;
-        spot.zIndex = Math.round(tarY);
-        
-        const spotEl = document.getElementById("mining-spot-" + idx);
-        if (spotEl) {
-          const sprite = spotEl.querySelector(".monster-sprite");
-          if (sprite) sprite.classList.remove("is-walking");
-          
-          spotEl.style.left = spot.left;
-          spotEl.style.top = spot.top;
-          spotEl.style.zIndex = spot.zIndex;
-          const wrapper = spotEl.querySelector(".monster-sprite-wrapper");
-          if (wrapper) {
-            wrapper.style.transform = spot.facing < 0 ? "scaleX(-1)" : "";
-          }
-        }
-        saveMiningPositions();
-        
-        const wasAutomationMove = Boolean(spot.isAutomationMove);
-        spot.isAutomationMove = false;
+function advanceMiningMovement(dtSec) {
+  if (uiState.currentScreen !== "mining") return;
+  if (!miningState.monsterPositions) return;
+  if (!(dtSec > 0)) return;
 
-        if (spot.isTargetingIncinerator) {
-          spot.isTargetingIncinerator = false;
-          setTimeout(() => {
-            incinerateMonster(idx, { auto: wasAutomationMove });
-          }, 50);
-        }
-        
-        if (spot.isTargetingAutoEvolver) {
-          spot.isTargetingAutoEvolver = false;
-          if (wasAutomationMove && !shouldRunAutomatedLevelUp(monster)) {
-            updateEvolverZoneStatus();
-            return;
-          }
-          attemptMiningZoneLevelUp(idx, {
-            pinAfter: false,
-            showManualToasts: !wasAutomationMove,
-            showAutoSuccessToast: false,
-            renderAfter: true,
-            followUpAutomation: wasAutomationMove
-          });
-        }
-      } else {
-        const nxPx = curXpx + (dx / dist) * moveDist;
-        const nyPx = curYpx + (dy / dist) * moveDist;
-        
-        spot.left = ((nxPx / rect.width) * 100).toFixed(2) + "%";
-        spot.top = ((nyPx / rect.height) * 100).toFixed(2) + "%";
-        spot.facing = tarX < curX ? -1 : 1;
-        spot.zIndex = Math.round(parseFloat(spot.top));
-        
-        const spotEl = document.getElementById("mining-spot-" + idx);
-        if (spotEl) {
-          spotEl.style.left = spot.left;
-          spotEl.style.top = spot.top;
-          spotEl.style.zIndex = spot.zIndex;
-          const wrapper = spotEl.querySelector(".monster-sprite-wrapper");
-          if (wrapper) {
-            wrapper.style.transform = spot.facing < 0 ? "scaleX(-1)" : "";
-          }
-          const sprite = spotEl.querySelector(".monster-sprite");
-          if (sprite && !sprite.classList.contains("is-walking")) {
-            sprite.classList.add("is-walking");
-          }
-        }
+  let left = dtSec;
+  while (left > 0) {
+    const step = Math.min(0.2, left);
+    left -= step;
+    stepMiningMovement(step);
+  }
+}
 
-        if (resolveMonsterZoneEntry(idx, spot)) return;
+function stepMiningMovement(dt) {
+  const mineStage = $("#mine-stage");
+  if (!mineStage) return;
+
+  // When hidden, getBoundingClientRect can be 0 — use last known / fallback size.
+  const rect = mineStage.getBoundingClientRect();
+  const stageWidth = rect.width || mineStage.clientWidth || 640;
+  const stageHeight = rect.height || mineStage.clientHeight || 360;
+  if (stageWidth <= 0 || stageHeight <= 0) return;
+
+  gameState.monsters.forEach((monster, idx) => {
+    const spot = miningState.monsterPositions && miningState.monsterPositions[idx];
+    if (!spot || !spot.isMoving) return;
+
+    const curX = parseFloat(spot.left);
+    const curY = parseFloat(spot.top);
+    const tarX = parseFloat(spot.targetLeft);
+    const tarY = parseFloat(spot.targetTop);
+
+    const curXpx = (curX / 100) * stageWidth;
+    const curYpx = (curY / 100) * stageHeight;
+    const tarXpx = (tarX / 100) * stageWidth;
+    const tarYpx = (tarY / 100) * stageHeight;
+
+    const dx = tarXpx - curXpx;
+    const dy = tarYpx - curYpx;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+
+    const baseSpeed = monsterDefinitions[monster.species].moveSpeed || 150;
+    const speed = spot.isAutomationMove && spot.isTargetingAutoEvolver
+      ? baseSpeed * AUTOMATED_LEVEL_UP_MOVE_MULTIPLIER
+      : baseSpeed;
+    const moveDist = speed * dt;
+
+    if (dist <= moveDist) {
+      spot.left = spot.targetLeft;
+      spot.top = spot.targetTop;
+      spot.isMoving = false;
+      spot.facing = tarX < curX ? -1 : 1;
+      spot.zIndex = Math.round(tarY);
+
+      const spotEl = document.getElementById("mining-spot-" + idx);
+      if (spotEl) {
+        const sprite = spotEl.querySelector(".monster-sprite");
+        if (sprite) sprite.classList.remove("is-walking");
+
+        spotEl.style.left = spot.left;
+        spotEl.style.top = spot.top;
+        spotEl.style.zIndex = spot.zIndex;
+        const wrapper = spotEl.querySelector(".monster-sprite-wrapper");
+        if (wrapper) {
+          wrapper.style.transform = spot.facing < 0 ? "scaleX(-1)" : "";
+        }
       }
-    });
-    
-    if (anyMoving) {
-      miningMovementRaf = requestAnimationFrame(tick);
+      saveMiningPositions();
+
+      const wasAutomationMove = Boolean(spot.isAutomationMove);
+      spot.isAutomationMove = false;
+
+      if (spot.isTargetingIncinerator) {
+        spot.isTargetingIncinerator = false;
+        setTimeout(() => {
+          incinerateMonster(idx, { auto: wasAutomationMove });
+        }, 50);
+      }
+
+      if (spot.isTargetingAutoEvolver) {
+        spot.isTargetingAutoEvolver = false;
+        if (wasAutomationMove && !shouldRunAutomatedLevelUp(monster)) {
+          updateEvolverZoneStatus();
+          return;
+        }
+        attemptMiningZoneLevelUp(idx, {
+          pinAfter: false,
+          showManualToasts: !wasAutomationMove && !isGameSimBackground(),
+          showAutoSuccessToast: false,
+          renderAfter: !isGameSimBackground(),
+          followUpAutomation: wasAutomationMove
+        });
+      }
     } else {
-      miningMovementRaf = null;
+      const nxPx = curXpx + (dx / dist) * moveDist;
+      const nyPx = curYpx + (dy / dist) * moveDist;
+
+      spot.left = ((nxPx / stageWidth) * 100).toFixed(2) + "%";
+      spot.top = ((nyPx / stageHeight) * 100).toFixed(2) + "%";
+      spot.facing = tarX < curX ? -1 : 1;
+      spot.zIndex = Math.round(parseFloat(spot.top));
+
+      const spotEl = document.getElementById("mining-spot-" + idx);
+      if (spotEl && !isGameSimBackground()) {
+        spotEl.style.left = spot.left;
+        spotEl.style.top = spot.top;
+        spotEl.style.zIndex = spot.zIndex;
+        const wrapper = spotEl.querySelector(".monster-sprite-wrapper");
+        if (wrapper) {
+          wrapper.style.transform = spot.facing < 0 ? "scaleX(-1)" : "";
+        }
+        const sprite = spotEl.querySelector(".monster-sprite");
+        if (sprite && !sprite.classList.contains("is-walking")) {
+          sprite.classList.add("is-walking");
+        }
+      }
+
+      if (resolveMonsterZoneEntry(idx, spot)) return;
     }
-  };
-  
-  miningMovementRaf = requestAnimationFrame(tick);
+  });
 }
 
 const pvpState = {
@@ -1317,7 +1591,8 @@ function createMonster(species) {
     species,
     name: monsterDefinitions[species].name,
     level: 1,
-    stats: getMonsterStats(species, 1)
+    stats: getMonsterStats(species, 1),
+    failCount: 0
   };
 }
 
@@ -1353,7 +1628,8 @@ function normalizeMonster(savedMonster) {
     species,
     name: savedMonster.name || monsterDefinitions[species].name,
     level,
-    stats: { ...getMonsterStats(species, level), ...savedStats }
+    stats: { ...getMonsterStats(species, level), ...savedStats },
+    failCount: Math.max(0, Number(savedMonster.failCount) || 0)
   };
 }
 
@@ -1395,7 +1671,11 @@ function saveGame() {
       goldEarned: Math.max(0, Number(gameState.stats?.goldEarned) || 0),
       incinerated: Math.max(0, Number(gameState.stats?.incinerated) || 0),
       evolutions: Math.max(0, Number(gameState.stats?.evolutions) || 0),
-      rocksBroken: Math.max(0, Number(gameState.stats?.rocksBroken) || 0)
+      rocksBroken: Math.max(0, Number(gameState.stats?.rocksBroken) || 0),
+      maxCombo: Math.max(0, Number(gameState.stats?.maxCombo) || 0),
+      crits: Math.max(0, Number(gameState.stats?.crits) || 0),
+      rareDrops: Math.max(0, Number(gameState.stats?.rareDrops) || 0),
+      bestStreak: Math.max(0, Number(gameState.stats?.bestStreak) || 0)
     },
     lastSeen: Date.now()
   };
@@ -1409,8 +1689,34 @@ function createSpriteTestMonster(species, level, index) {
     species,
     name: monsterDefinitions[species].name,
     level,
-    stats: getMonsterStats(species, level)
+    stats: getMonsterStats(species, level),
+    failCount: 0
   };
+}
+
+function createSpriteTestMiningPositions(monsters) {
+  const familyLeftByPrefix = { "0": 20, "1": 50, "2": 80 };
+  return monsters.map((monster) => {
+    const stage = getMonsterStage(monster.species);
+    const leftValue = familyLeftByPrefix[getMonsterFamilyPrefix(monster.species)] || 50;
+    const topValue = 18 + (stage - 1) * 9.5;
+    const left = `${leftValue.toFixed(2)}%`;
+    const top = `${topValue.toFixed(2)}%`;
+    return {
+      left,
+      top,
+      targetLeft: left,
+      targetTop: top,
+      scale: 1.0,
+      zIndex: Math.round(topValue),
+      facing: leftValue < 50 ? 1 : -1,
+      lunge: "",
+      isMoving: false,
+      isTargetingIncinerator: false,
+      isTargetingAutoEvolver: false,
+      isAutomationMove: false
+    };
+  });
 }
 
 function applySpriteTestRosterFromQuery() {
@@ -1423,15 +1729,7 @@ function applySpriteTestRosterFromQuery() {
     localStorage.setItem(backupKey, existingSave);
   }
 
-  const testRows = [
-    ["0_1_cyclopse", 1], ["1_1_lovelydoll", 1], ["2_1_unnyangi", 1],
-    ["0_2_cyclopsis", 10], ["1_2_cutie", 10], ["2_2_unnyangsam", 10],
-    ["0_3_hatefulclops", 20], ["1_3_candy", 20], ["2_3_unrang", 20],
-    ["0_4_goliathclops", 30], ["1_4_marionette", 30], ["2_4_unraiju", 30],
-    ["0_5_abyss_monarch", 40], ["1_5_valkyria_doll", 40], ["2_5_kirin_nyang", 40],
-    ["0_6_cosmic_overlord", 50], ["1_6_seraph_valkyria", 50], ["2_6_divine_kirin", 50]
-  ];
-  const monsters = testRows.map(([species, level], index) => createSpriteTestMonster(species, level, index));
+  const monsters = spriteTestRows.map(([species, level], index) => createSpriteTestMonster(species, level, index));
 
   gameState = {
     ...createDefaultGameState(),
@@ -1444,13 +1742,13 @@ function applySpriteTestRosterFromQuery() {
     pvpMonsterId: monsters[0].id,
     selectedRock: "stone",
     playerLevel: 60,
-    collection: testRows.map(([species]) => species),
+    collection: spriteTestRows.map(([species]) => species),
     lastSeen: Date.now()
   };
   uiState.selectedEvolutionMonsterId = monsters[0].id;
-  miningState.monsterPositions = null;
-  localStorage.removeItem("monsteria-mining-positions");
+  miningState.monsterPositions = createSpriteTestMiningPositions(monsters);
   saveGame();
+  saveMiningPositions();
 
   params.delete("spriteTest");
   const nextSearch = params.toString();
@@ -1462,15 +1760,6 @@ function applySpriteTestRosterFromQuery() {
 function appendMissingSpriteTestMonstersFromQuery() {
   const params = new URLSearchParams(window.location.search);
   if (params.get("appendSpriteTest") !== "1") return 0;
-
-  const testRows = [
-    ["0_1_cyclopse", 1], ["1_1_lovelydoll", 1], ["2_1_unnyangi", 1],
-    ["0_2_cyclopsis", 10], ["1_2_cutie", 10], ["2_2_unnyangsam", 10],
-    ["0_3_hatefulclops", 20], ["1_3_candy", 20], ["2_3_unrang", 20],
-    ["0_4_goliathclops", 30], ["1_4_marionette", 30], ["2_4_unraiju", 30],
-    ["0_5_abyss_monarch", 40], ["1_5_valkyria_doll", 40], ["2_5_kirin_nyang", 40],
-    ["0_6_cosmic_overlord", 50], ["1_6_seraph_valkyria", 50], ["2_6_divine_kirin", 50]
-  ];
 
   if (!gameState.started) {
     gameState = {
@@ -1487,7 +1776,7 @@ function appendMissingSpriteTestMonstersFromQuery() {
 
   const existingSpecies = new Set(gameState.monsters.map((monster) => monster.species));
   const addedMonsters = [];
-  testRows.forEach(([species, level], index) => {
+  spriteTestRows.forEach(([species, level], index) => {
     if (existingSpecies.has(species)) return;
     const monster = createSpriteTestMonster(species, level, gameState.monsters.length + index);
     gameState.monsters.push(monster);
@@ -1499,11 +1788,11 @@ function appendMissingSpriteTestMonstersFromQuery() {
     gameState.miningMonsterId = gameState.miningMonsterId || gameState.monsters[0].id;
     gameState.pvpMonsterId = gameState.pvpMonsterId || gameState.monsters[0].id;
   }
-  gameState.collection = Array.from(new Set([...(gameState.collection || []), ...testRows.map(([species]) => species)]));
+  gameState.collection = Array.from(new Set([...(gameState.collection || []), ...spriteTestRows.map(([species]) => species)]));
   uiState.selectedEvolutionMonsterId = uiState.selectedEvolutionMonsterId || gameState.monsters[0]?.id || null;
-  miningState.monsterPositions = null;
-  localStorage.removeItem("monsteria-mining-positions");
+  miningState.monsterPositions = createSpriteTestMiningPositions(gameState.monsters);
   saveGame();
+  saveMiningPositions();
 
   params.delete("appendSpriteTest");
   const nextSearch = params.toString();
@@ -1560,7 +1849,11 @@ function loadGame() {
         goldEarned: Math.max(0, Number(saved.stats?.goldEarned) || 0),
         incinerated: Math.max(0, Number(saved.stats?.incinerated) || 0),
         evolutions: Math.max(0, Number(saved.stats?.evolutions) || 0),
-        rocksBroken: Math.max(0, Number(saved.stats?.rocksBroken) || 0)
+        rocksBroken: Math.max(0, Number(saved.stats?.rocksBroken) || 0),
+        maxCombo: Math.max(0, Number(saved.stats?.maxCombo) || 0),
+        crits: Math.max(0, Number(saved.stats?.crits) || 0),
+        rareDrops: Math.max(0, Number(saved.stats?.rareDrops) || 0),
+        bestStreak: Math.max(0, Number(saved.stats?.bestStreak) || 0)
       },
       lastSeen: Math.max(0, Number(saved.lastSeen) || 0)
     };
@@ -1571,6 +1864,7 @@ function loadGame() {
         gameState.collection.push(monster.species);
       }
     });
+    miningState.bestCombo = gameState.stats.maxCombo || 0;
     syncDisplayResources();
     updatePlayerUi();
   } catch (error) {
@@ -1592,6 +1886,8 @@ function resetSave() {
   }
   localStorage.removeItem(SAVE_KEY);
   gameState = createDefaultGameState();
+  miningState.bestCombo = 0;
+  resetMiningMomentum({ keepBest: false });
   uiState.currentScreen = "starter";
   uiState.selectedEvolutionMonsterId = null;
   uiState.evolutionResult = "";
@@ -1981,6 +2277,7 @@ function resetMiningRock(type = gameState.selectedRock) {
   const rock = rockDefinitions[type] || rockDefinitions.stone;
   clearTimeout(miningState.respawnTimer);
   miningState.respawnTimer = null;
+  miningState.respawnRemainingMs = 0;
   miningState.type = rock.id;
   miningState.hp = rock.maxHp;
   miningState.maxHp = rock.maxHp;
@@ -2051,7 +2348,7 @@ function renderMining() {
       const isFainted = monster.isIncinerating ? " is-fainted" : "";
       const isWalkingClass = spot.isMoving && !monster.isIncinerating ? " is-walking" : "";
       const facingStyle = spot.facing < 0 ? "transform: scaleX(-1);" : "";
-      const transformStyle = `transform: translate(-50%, -72px) scale(${spot.scale});`;
+      const transformStyle = `transform: translate(-50%, -84px) scale(${spot.scale});`;
       const combinedStyle = `left: ${spot.left}; top: ${spot.top}; z-index: ${spot.zIndex}; ${transformStyle}`;
       return `
         <div id="mining-spot-${index}" class="mining-monster-spot${isSelected}${isFainted}" style="${combinedStyle}">
@@ -2070,6 +2367,7 @@ function renderMining() {
   $("#mining-monster-summary").textContent = `OWNED PARTNERS: ${gameState.monsters.length} / ACTIVE MINERS WORK TOGETHER`;
 
   renderMiningAutomationPanel();
+  updateMiningComboHud();
   updateMiningUi();
   updateEvolverZoneStatus();
 }
@@ -2244,6 +2542,7 @@ function updateMiningUi(message) {
   if (message) {
     $("#mine-message").textContent = message;
   }
+  updateMiningComboHud();
 }
 
 function selectRockTier(type) {
@@ -2280,7 +2579,7 @@ function startMining() {
 
   miningState.active = true;
   updateMiningUi("자동 채굴이 시작되었습니다.");
-  
+
   gameState.monsters.forEach((monster) => {
     scheduleMonsterAttack(monster);
   });
@@ -2289,56 +2588,37 @@ function startMining() {
 function stopMining(message) {
   miningState.active = false;
   clearMiningTimers();
+  miningState.respawnRemainingMs = 0;
+  resetMiningMomentum();
   updateMiningUi(message);
 }
 
 function scheduleMonsterAttack(monster) {
   if (!miningState.active || miningState.respawning) return;
-  if (miningState.timers[monster.id]) return;
-
-  const initialDelay = Math.random() * 200;
-
-  miningState.timers[monster.id] = setTimeout(() => {
-    runMonsterAttackLoop(monster.id);
-  }, initialDelay);
+  if (miningState.attackCooldowns[monster.id] != null) return;
+  // Stagger first swing; subsequent attacks are driven by the sim clock.
+  miningState.attackCooldowns[monster.id] = Math.random() * 200;
 }
 
-function runMonsterAttackLoop(monsterId) {
-  if (!miningState.active || miningState.respawning) {
-    delete miningState.timers[monsterId];
-    return;
-  }
+function isMonsterWaitingToMine(index) {
+  const spot = (miningState.monsterPositions && miningState.monsterPositions[index]) || miningSpots[index % miningSpots.length];
+  if (!spot) return true;
+  const topPct = parseFloat(spot.top);
+  return (!isNaN(topPct) && topPct >= 70) || spot.isTargetingIncinerator || spot.isTargetingAutoEvolver;
+}
 
-  const currentMonster = getMonsterById(monsterId);
-  if (!currentMonster) {
-    delete miningState.timers[monsterId];
-    return;
-  }
-
-  const index = gameState.monsters.findIndex(m => m.id === monsterId);
-  if (index === -1) {
-    delete miningState.timers[monsterId];
-    return;
-  }
-
+function fireMiningAttack(monster, index, options = {}) {
+  const { skipVfx = false } = options;
   const spot = (miningState.monsterPositions && miningState.monsterPositions[index]) || miningSpots[index % miningSpots.length];
   const spotElement = $(`#mining-spot-${index}`);
 
-  const topPct = parseFloat(spot.top);
-  const isWaiting = (!isNaN(topPct) && topPct >= 70) || spot.isTargetingIncinerator || spot.isTargetingAutoEvolver;
-
-  if (uiState.currentScreen === "mining" && spotElement && !isWaiting) {
-    // Face the central rock (placed at 50% left)
+  if (!skipVfx && uiState.currentScreen === "mining" && spotElement) {
     const xPct = parseFloat(spot.left);
     if (!isNaN(xPct)) {
-      if (xPct < 48) {
-        spot.facing = 1;
-      } else if (xPct > 52) {
-        spot.facing = -1;
-      }
+      if (xPct < 48) spot.facing = 1;
+      else if (xPct > 52) spot.facing = -1;
     }
 
-    // Apply facing direction to the DOM wrapper immediately
     const wrapper = spotElement.querySelector(".monster-sprite-wrapper");
     if (wrapper) {
       wrapper.style.transform = spot.facing < 0 ? "scaleX(-1)" : "";
@@ -2349,23 +2629,72 @@ function runMonsterAttackLoop(monsterId) {
       sprite.classList.add("is-attacking");
       setTimeout(() => sprite.classList.remove("is-attacking"), 420);
     }
-    shootMiningProjectile(spotElement, spot, currentMonster.species);
+    shootMiningProjectile(spotElement, spot, monster.species);
   }
 
-  const currentGeneration = miningState.generation;
-  setTimeout(() => {
-    if (miningState.active && !miningState.respawning && currentGeneration === miningState.generation) {
-      const verifiedMonster = getMonsterById(monsterId);
-      if (verifiedMonster && !isWaiting) {
-        applyMiningDamage(verifiedMonster.stats.attack);
-      }
-    }
-  }, 220);
+  applyMiningDamage(monster.stats.attack);
+}
 
-  const attackInterval = Math.round(1000 / currentMonster.stats.attackSpeed);
-  miningState.timers[monsterId] = setTimeout(() => {
-    runMonsterAttackLoop(monsterId);
-  }, attackInterval);
+function advanceMiningSimulation(dtMs) {
+  if (!miningState.active) return;
+
+  if (miningState.respawning) {
+    miningState.respawnRemainingMs -= dtMs;
+    if (miningState.respawnRemainingMs <= 0) {
+      completeMiningRockRespawn();
+    }
+    return;
+  }
+
+  const skipVfx = isGameSimBackground() || uiState.currentScreen !== "mining";
+
+  gameState.monsters.forEach((monster, index) => {
+    if (!miningState.active || miningState.respawning) return;
+    if (isMonsterWaitingToMine(index)) return;
+
+    let cooldown = miningState.attackCooldowns[monster.id];
+    if (cooldown == null) {
+      cooldown = Math.random() * 200;
+    }
+    cooldown -= dtMs;
+
+    const interval = Math.max(80, Math.round(1000 / Math.max(0.05, monster.stats.attackSpeed)));
+    let guard = 0;
+    while (cooldown <= 0 && miningState.active && !miningState.respawning && guard < 40) {
+      fireMiningAttack(monster, index, { skipVfx });
+      cooldown += interval;
+      guard += 1;
+      if (miningState.respawning) break;
+    }
+    miningState.attackCooldowns[monster.id] = cooldown;
+  });
+}
+
+function completeMiningRockRespawn() {
+  const rock = rockDefinitions[miningState.type];
+  if (!rock) return;
+
+  miningState.respawnRemainingMs = 0;
+  miningState.hp = rock.maxHp;
+  miningState.maxHp = rock.maxHp;
+  miningState.respawning = false;
+  if (uiState.currentScreen === "mining") {
+    $("#rock-target")?.classList.remove("is-breaking");
+  }
+  if (!isGameSimBackground()) {
+    updateMiningUi(`${rock.name}이 다시 생성되었습니다.`);
+  }
+  if (miningState.active) {
+    gameState.monsters.forEach((monster) => {
+      scheduleMonsterAttack(monster);
+    });
+  }
+}
+
+// Legacy name kept for any lingering callers; sim clock owns the loop now.
+function runMonsterAttackLoop(monsterId) {
+  const monster = getMonsterById(monsterId);
+  if (monster) scheduleMonsterAttack(monster);
 }
 
 function shootMiningProjectile(spotElement, spot, species) {
@@ -2378,8 +2707,8 @@ function shootMiningProjectile(spotElement, spot, species) {
   proj.className = `mine-projectile-3d ${species ? 'species-' + species : ""}`;
 
   // Calculate center of the monster sprite relative to the top-left of the spot
-  const dx = Math.round(48 * spot.scale);
-  const dy = Math.round(48 * spot.scale);
+  const dx = Math.round(56 * spot.scale);
+  const dy = Math.round(56 * spot.scale);
 
   proj.style.left = `calc(${spot.left} + ${dx}px)`;
   proj.style.top = `calc(${spot.top} + ${dy}px)`;
@@ -2397,8 +2726,18 @@ function shootMiningProjectile(spotElement, spot, species) {
 }
 
 function applyMiningDamage(damage) {
+  const remainingHpBeforeHit = miningState.hp;
   const isCrit = Math.random() < 0.10;
-  const finalDamage = isCrit ? Math.round(damage * 1.5) : damage;
+  const critDamage = isCrit ? Math.round(damage * 1.5) : damage;
+  miningState.combo += 1;
+  updateMiningRecords();
+  queueMiningComboDecay();
+  celebrateMiningCombo(miningState.combo);
+  const finalDamage = getMiningComboDamage(critDamage, miningState.combo);
+
+  if (isCrit) {
+    trackStat("crits");
+  }
 
   if (uiState.currentScreen === "mining") {
     if (isCrit) {
@@ -2430,9 +2769,12 @@ function applyMiningDamage(damage) {
     setTimeout(() => rockUnit.classList.remove("is-hit"), 220);
   }
 
-  updateMiningUi(`${rockDefinitions[miningState.type].name}에 ${finalDamage}${isCrit ? ' 크리티컬!' : ''} 피해!`);
+  if (miningState.combo >= 10 || isCrit) {
+    checkAchievements();
+  }
+  updateMiningUi(`${rockDefinitions[miningState.type].name}에 ${finalDamage}${isCrit ? " 크리티컬" : ""} 피해! 콤보 x${miningState.combo}`);
   if (miningState.hp <= 0) {
-    breakMiningRock();
+    breakMiningRock(finalDamage, remainingHpBeforeHit);
   }
 }
 
@@ -2447,7 +2789,7 @@ function spawnDamageNumber(damage, isCrit) {
   setTimeout(() => number.remove(), 800);
 }
 
-function breakMiningRock() {
+function breakMiningRock(finalDamage = 0, remainingHpBeforeHit = 0) {
   if (uiState.currentScreen === "mining") {
     soundManager.play("break");
     setTimeout(() => {
@@ -2458,12 +2800,33 @@ function breakMiningRock() {
   }
 
   const rock = rockDefinitions[miningState.type];
-  const goldReward = randomInt(rock.gold[0], rock.gold[1]);
-  const crystalReward = randomInt(rock.crystal[0], rock.crystal[1]);
-  const generation = miningState.generation;
-
+  const baseGoldReward = randomInt(rock.gold[0], rock.gold[1]);
+  const baseCrystalReward = randomInt(rock.crystal[0], rock.crystal[1]);
+  miningState.breakStreak += 1;
+  updateMiningRecords();
+  const streakBonusRatio = Math.min(0.5, Math.max(0, miningState.breakStreak - 1) * 0.05);
+  const streakMultiplier = 1 + streakBonusRatio;
+  let goldReward = Math.max(1, Math.floor(baseGoldReward * streakMultiplier));
+  let crystalReward = Math.max(0, Math.floor(baseCrystalReward * streakMultiplier));
+  let rareCrystalBonus = 0;
+  const rareDropChance = Math.min(0.25, 0.08 + miningState.breakStreak * 0.01);
+  if (Math.random() < rareDropChance) {
+    rareCrystalBonus = Math.max(1, Math.floor(crystalReward * 0.5)) + randomInt(1, 3);
+    crystalReward += rareCrystalBonus;
+    trackStat("rareDrops");
+    showToast(`레어 드롭! +${rareCrystalBonus} Crystal`, "legendary");
+    soundManager.play("achievement");
+  }
+  let comboGoldBonus = 0;
+  if (miningState.combo >= 10) {
+    comboGoldBonus = Math.floor(miningState.combo * 2);
+    goldReward += comboGoldBonus;
+    showToast(`콤보 보너스! +${comboGoldBonus} Gold`, "success");
+  }
   miningState.respawning = true;
   clearMiningTimers();
+  miningState.respawnRemainingMs = 850;
+  queueMiningComboDecay();
 
   if (goldReward > 0) {
     spawnResourceParticles("gold", goldReward, $("#rock-target"));
@@ -2476,6 +2839,7 @@ function breakMiningRock() {
   gameState.crystal += crystalReward;
   trackStat("goldEarned", goldReward);
   trackStat("rocksBroken");
+  addPlayerXp(getMiningRockXp(miningState.type), { showToastMessages: false });
   saveGame();
   updateResourceDisplays();
   checkAchievements();
@@ -2483,26 +2847,15 @@ function breakMiningRock() {
   if (uiState.currentScreen === "mining") {
     $("#rock-target").classList.add("is-breaking");
   }
-  updateMiningUi(`${rock.name} 파괴! +${goldReward} Gold, +${crystalReward} Crystal`);
+  const rewardNotes = [];
+  if (streakBonusRatio > 0) rewardNotes.push(`연속 보너스 +${Math.round(streakBonusRatio * 100)}%`);
+  if (rareCrystalBonus > 0) rewardNotes.push("레어 드롭!");
+  if (comboGoldBonus > 0 && finalDamage > remainingHpBeforeHit) rewardNotes.push("콤보 마무리!");
+  updateMiningUi(`${rock.name} 파괴! +${goldReward} Gold, +${crystalReward} Crystal · STREAK ${miningState.breakStreak}${rewardNotes.length ? ` (${rewardNotes.join(" / ")})` : ""}`);
 
+  // Respawn is completed by advanceMiningSimulation (background-safe).
   clearTimeout(miningState.respawnTimer);
-  miningState.respawnTimer = setTimeout(() => {
-    if (generation !== miningState.generation) {
-      return;
-    }
-    miningState.hp = rock.maxHp;
-    miningState.maxHp = rock.maxHp;
-    miningState.respawning = false;
-    if (uiState.currentScreen === "mining") {
-      $("#rock-target").classList.remove("is-breaking");
-    }
-    updateMiningUi(`${rock.name}이 다시 생성되었습니다.`);
-    if (miningState.active) {
-      gameState.monsters.forEach((monster) => {
-        scheduleMonsterAttack(monster);
-      });
-    }
-  }, 850);
+  miningState.respawnTimer = null;
 }
 
 function getMonsterRefundValue(species) {
@@ -2797,7 +3150,8 @@ function renderEvolution() {
     const action = getUpgradeAction(monster);
     let label = "";
     if (action.type === "levelUp") {
-      label = `LV Up (${Math.round(Math.min(1.0, action.chance + getEvolutionChanceBonus(monster.level)) * 100)}%)`;
+      const { effectiveChance, failCount } = getEvolutionAttemptChance(monster);
+      label = `LV Up (${Math.round(effectiveChance * 100)}%)${failCount > 0 ? ` · 피티 ${failCount}` : ""}`;
     } else {
       label = "MAX";
     }
@@ -2825,6 +3179,7 @@ function renderEvolution() {
     const nextLevel = monster.level + 1;
     const prefix = getMonsterFamilyPrefix(monster.species);
     const nextSpecies = getSpeciesForLevel(prefix, nextLevel);
+    const { baseChance, effectiveChance, failCount } = getEvolutionAttemptChance(monster);
     
     let evolutionNotice = "";
     let nextStats;
@@ -2840,10 +3195,11 @@ function renderEvolution() {
     $("#evolution-details").innerHTML = `
       <h2>${monster.name} / LV${monster.level} → LV${nextLevel}</h2>
       <div class="evolution-costs">
-        <div>SUCCESS<strong>${Math.round(Math.min(1.0, action.chance + getEvolutionChanceBonus(monster.level)) * 100)}%${gameState.investedTalents > 0 ? ` <span style="font-size:11px; color:#52c41a; font-weight:normal;">(+${Math.round(getEvolutionChanceBonus(monster.level) * 100)}%)</span>` : ''}</strong></div>
+        <div>SUCCESS<strong>${Math.round(effectiveChance * 100)}%${gameState.investedTalents > 0 ? ` <span style="font-size:11px; color:#52c41a; font-weight:normal;">(+${Math.round(getEvolutionChanceBonus(monster.level) * 100)}%)</span>` : ""}${failCount > 0 ? ` <span style="font-size:11px; color:#d97706; font-weight:normal;">(피티 +${Math.round((effectiveChance - baseChance) * 100)}%)</span>` : ""}</strong></div>
         <div>GOLD<strong>${action.gold.toLocaleString()} required</strong></div>
         <div>CRYSTAL<strong>${action.crystal} required</strong></div>
       </div>
+      ${failCount > 0 ? `<p style="color:#a66a24; font-size:12px;">연속 실패 ${failCount}회 누적. 이번 시도는 피티 보정이 적용됩니다.</p>` : ""}
       ${evolutionNotice}
       <p>성공 시 ATK ${monster.stats.attack} → ${nextStats.attack}, HP ${monster.stats.maxHp} → ${nextStats.maxHp}, SKILL ${monster.stats.skillDamage} → ${nextStats.skillDamage}</p>
     `;
@@ -2887,7 +3243,7 @@ function attemptEvolution() {
     return;
   }
 
-  const finalChance = Math.min(1.0, action.chance + getEvolutionChanceBonus(monster.level));
+  const { effectiveChance } = getEvolutionAttemptChance(monster);
 
   if (gameState.gold < action.gold || gameState.crystal < action.crystal) {
     uiState.evolutionResult = `재료 부족: Gold ${action.gold.toLocaleString()}개와 Crystal ${action.crystal.toLocaleString()}개가 필요합니다.`;
@@ -2900,9 +3256,13 @@ function attemptEvolution() {
   gameState.gold -= action.gold;
   gameState.crystal -= action.crystal;
   if (gameState._cheatInfiniteResources) { gameState.gold = 999999999; gameState.crystal = 999999999; }
-  const succeeded = Math.random() < finalChance;
+  const roll = Math.random();
+  const succeeded = roll < effectiveChance;
+  let toastMessage = "";
+  let toastType = "success";
 
   if (succeeded) {
+    monster.failCount = 0;
     monster.level += 1;
     const prefix = getMonsterFamilyPrefix(monster.species);
     const nextSpecies = getSpeciesForLevel(prefix, monster.level);
@@ -2917,23 +3277,28 @@ function attemptEvolution() {
     monster.stats = getMonsterStats(monster.species, monster.level);
     
     if (evolved) {
-      uiState.evolutionResult = `SUCCESS! ${monster.name}(으)로 진화하면서 LV${monster.level}이 되었습니다!`;
+      uiState.evolutionResult = `성공! ${monster.name}(으)로 진화하면서 LV${monster.level}이 되었습니다!`;
       trackStat("evolutions");
-      if (recordSpeciesDiscovery(monster.species)) {
-        playEvolutionCutscene(monster);
-      }
+      playEvolutionCutscene(monster);
+      recordSpeciesDiscovery(monster.species);
+      toastMessage = `${monster.name} 진화 성공! LV${monster.level}`;
     } else {
-      uiState.evolutionResult = `SUCCESS! ${monster.name}이 LV${monster.level}(으)로 레벨업했습니다.`;
+      uiState.evolutionResult = `성공! ${monster.name}이 LV${monster.level}(으)로 레벨업했습니다.`;
+      toastMessage = uiState.evolutionResult;
     }
+    toastType = "success";
   } else {
-    uiState.evolutionResult = `FAILED. ${monster.name}의 레벨업에 실패했습니다.`;
+    monster.failCount = (monster.failCount || 0) + 1;
+    uiState.evolutionResult = `실패... ${monster.name}의 레벨업에 실패했습니다.`;
+    toastMessage = getPityFailToast(effectiveChance, monster.failCount, roll) || uiState.evolutionResult;
+    toastType = toastMessage === uiState.evolutionResult ? "error" : "info";
   }
 
   saveGame();
   updateResourceDisplays();
   renderEvolution();
   animateEvolutionResult(succeeded);
-  showToast(uiState.evolutionResult, succeeded ? "success" : "error");
+  showToast(toastMessage || uiState.evolutionResult, toastType);
   checkAchievements();
 }
 
@@ -3001,15 +3366,18 @@ function updateEvolverZoneStatus() {
     if (infoEl) infoEl.textContent = `LV${monster.level} · MAX`;
     if (costEl) costEl.textContent = "";
   } else {
-    const chance = Math.min(1, action.chance + getEvolutionChanceBonus(monster.level));
-    if (infoEl) infoEl.textContent = `LV${monster.level} → ${targetLevel} · 성공률 ${(chance * 100).toFixed(0)}%`;
+    const { baseChance, effectiveChance, failCount } = getEvolutionAttemptChance(monster);
+    if (infoEl) {
+      infoEl.textContent = `LV${monster.level} → ${targetLevel} · 성공률 ${(effectiveChance * 100).toFixed(0)}%${failCount > 0 ? ` · 피티 ${failCount}` : ""}`;
+    }
     if (costEl) {
       const goldShort = gameState.gold < action.gold;
       const crystalShort = gameState.crystal < action.crystal;
       costEl.innerHTML =
         `<span class="${goldShort ? "cost-short" : ""}">G ${action.gold.toLocaleString()}</span>` +
         `<span class="${crystalShort ? "cost-short" : ""}">C ${action.crystal.toLocaleString()}</span>` +
-        `${goldShort || crystalShort ? '<em>재화 대기</em>' : ""}`;
+        `${failCount > 0 ? `<em>피티 +${Math.round((effectiveChance - baseChance) * 100)}%</em>` : ""}` +
+        `${goldShort || crystalShort ? "<em>재화 대기</em>" : ""}`;
     }
   }
 
@@ -3076,13 +3444,15 @@ function attemptMiningZoneLevelUp(index, options = {}) {
     gameState.crystal = 999999999;
   }
   
-  const finalChance = Math.min(1.0, action.chance + getEvolutionChanceBonus(monster.level));
-  const succeeded = Math.random() < finalChance;
+  const { effectiveChance } = getEvolutionAttemptChance(monster);
+  const roll = Math.random();
+  const succeeded = roll < effectiveChance;
   shouldShowEffect = true;
   effectSucceeded = succeeded;
   let deferredToast = null;
 
   if (succeeded) {
+    monster.failCount = 0;
     monster.level += 1;
     const prefix = getMonsterFamilyPrefix(monster.species);
     const nextSpecies = getSpeciesForLevel(prefix, monster.level);
@@ -3099,19 +3469,20 @@ function attemptMiningZoneLevelUp(index, options = {}) {
     
     if (evolved) {
       trackStat("evolutions");
-      if (recordSpeciesDiscovery(monster.species)) {
-        playEvolutionCutscene(monster);
-      }
+      playEvolutionCutscene(monster);
+      recordSpeciesDiscovery(monster.species);
       if (showManualToasts || showAutoSuccessToast) {
-        showToast(`${showManualToasts ? "성공" : "자동"}! ${monster.name}(으)로 진화하며 LV${monster.level}이 되었습니다!`, "success");
+        showToast(`${showManualToasts ? "성공" : "자동"}! ${monster.name}(으)로 진화하며 LV${monster.level}이 되었습니다!`, "legendary");
       }
     } else if (showManualToasts || showAutoSuccessToast) {
       deferredToast = { message: `성공! ${monster.name} LV${monster.level} 레벨업!`, type: "success" };
     }
   } else {
+    monster.failCount = (monster.failCount || 0) + 1;
     soundManager.play("break");
     if (showManualToasts) {
-      deferredToast = { message: `${monster.name} 레벨업 실패!`, type: "error" };
+      const pityToast = getPityFailToast(effectiveChance, monster.failCount, roll);
+      deferredToast = { message: pityToast || `${monster.name} 레벨업 실패!`, type: pityToast ? "info" : "error" };
     }
   }
 
@@ -3261,7 +3632,9 @@ function runAutomationPurchases(maxPurchases = 6) {
 
 function runMiningAutomationTick(options = {}) {
   const { allowPurchases = true } = options;
-  if (!gameState.started || uiState.currentScreen !== "mining") return;
+  if (!gameState.started) return;
+  // Allow background automation while mining stays active off-screen/hidden.
+  if (uiState.currentScreen !== "mining" && !(miningState.active && isGameSimBackground())) return;
   if (!miningState.monsterPositions || gameState.monsters.length === 0) return;
 
   if (allowPurchases && hasAutoBuyEnabled()) {
@@ -3319,8 +3692,11 @@ function runMiningAutomationTick(options = {}) {
 
 let miningAutomationInterval = null;
 function startMiningAutomationLoop() {
-  if (miningAutomationInterval) return;
-  miningAutomationInterval = setInterval(runMiningAutomationTick, 1000);
+  // Automation ticks are driven by the background-safe game sim clock.
+  if (miningAutomationInterval) {
+    clearInterval(miningAutomationInterval);
+    miningAutomationInterval = null;
+  }
 }
 
 function animateEvolutionResult(succeeded) {
@@ -3932,6 +4308,13 @@ function pvpFrame(timestamp) {
     return;
   }
 
+  // While hidden, the worker/sim clock advances battle time.
+  if (document.hidden) {
+    pvpState.lastTime = timestamp;
+    pvpState.rafId = requestAnimationFrame(pvpFrame);
+    return;
+  }
+
   const dt = Math.min(0.035, (timestamp - pvpState.lastTime) / 1000 || 0);
   pvpState.lastTime = timestamp;
   pvpState.elapsed += dt * 1000;
@@ -4413,9 +4796,17 @@ function endBattle(victory) {
     }
     $("#battle-return-button").textContent = "탑으로 돌아가기";
   } else {
+    if (victory) {
+      const rewardGold = 20 + Math.floor((gameState.playerLevel || 1) * 3);
+      gameState.gold += rewardGold;
+      trackStat("goldEarned", rewardGold);
+      saveGame();
+      updateResourceDisplays();
+      showToast(`PVP 연습 승리! +${rewardGold.toLocaleString()} Gold`, "success");
+    }
     $("#battle-result-title").textContent = victory ? "VICTORY" : "DEFEAT";
     $("#battle-result-copy").textContent = victory
-      ? "적군 AI 팀을 모두 쓰러뜨렸습니다!"
+      ? `적군 AI 팀을 모두 쓰러뜨렸습니다! +${(20 + Math.floor((gameState.playerLevel || 1) * 3)).toLocaleString()} Gold`
       : "아군 팀이 모두 쓰러졌습니다. 다시 도전해 보세요.";
     $("#battle-return-button").textContent = "Return to Mining";
   }
@@ -4464,6 +4855,7 @@ function drawPvp() {
   context.scale(dpr, dpr);
 
   context.imageSmoothingEnabled = true;
+  context.imageSmoothingQuality = "high";
   context.webkitImageSmoothingEnabled = true;
   context.mozImageSmoothingEnabled = true;
   context.msImageSmoothingEnabled = true;
@@ -4571,6 +4963,11 @@ function drawActorSpriteOnly(context, actor, image, renderSize, state, frame, is
   context.save();
   context.translate(x, y);
   context.scale(facing < 0 ? -1 : 1, 1);
+  // Nearest-neighbor: high-quality bilinear samples across 96px cell seams.
+  context.imageSmoothingEnabled = false;
+  context.webkitImageSmoothingEnabled = false;
+  context.mozImageSmoothingEnabled = false;
+  context.msImageSmoothingEnabled = false;
 
   context.drawImage(
     image,
@@ -4687,7 +5084,7 @@ function getMonsterSpriteRenderSize(level) {
   else if (level >= 30) scale = 1.84;
   else if (level >= 20) scale = 1.78;
   else if (level >= 10) scale = 1.70;
-  return 64 * scale;
+  return 96 * scale;
 }
 
 function drawSpriteSheetActor(context, actor, image, renderSize) {
@@ -5760,15 +6157,26 @@ function bindEvents() {
     removeTransientMiningEffects();
   });
   window.addEventListener("focus", () => {
-    lastMiningMoveTime = performance.now();
-    if (pvpState.active) pvpState.lastTime = performance.now();
+    // Do not reset sim clocks — catch up real elapsed time instead.
+    advanceGameSimulation();
+    if (uiState.currentScreen === "mining") {
+      renderMining();
+    }
   });
   document.addEventListener("visibilitychange", () => {
     if (document.hidden) {
       removeTransientMiningEffects();
+      saveGame();
     } else {
-      lastMiningMoveTime = performance.now();
-      if (pvpState.active) pvpState.lastTime = performance.now();
+      advanceGameSimulation();
+      if (pvpState.active) {
+        pvpState.lastTime = performance.now();
+        drawPvp();
+        updateBattleHud();
+      }
+      if (uiState.currentScreen === "mining") {
+        renderMining();
+      }
     }
   });
   window.addEventListener("resize", () => {
@@ -5846,6 +6254,7 @@ function init() {
   syncDisplayResources();
   startResourceRollingLoop();
   startMiningAutomationLoop();
+  startGameSimClock();
   if (gameState.started) {
     resetMiningRock(gameState.selectedRock);
     uiState.selectedEvolutionMonsterId = gameState.monsters[0]?.id || null;
