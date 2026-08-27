@@ -1,0 +1,2 @@
+# Sprite processing tools under tools/
+Pillow==12.2.0
