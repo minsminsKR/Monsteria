@@ -4019,50 +4019,27 @@ function drawPvpProjectile(context, projectile) {
   const isSkill = projectile.isSkill;
   
   const vfxDef = projectile.vfxDef;
-  if (vfxDef && vfxDef.placeholder) {
-    context.save();
-    const ph = vfxDef.placeholder;
+  if (vfxDef && vfxDef.spriteSheet) {
+    const img = new Image();
+    img.src = vfxDef.spriteSheet;
     
-    if (vfxDef.spriteSheet) {
-      context.fillStyle = "#ff00ff";
-      context.fillRect(x - 8, y - 8, 16, 16);
-    } else {
-      context.fillStyle = ph.color;
-      
-      if (ph.shape === "circle") {
-        context.beginPath();
-        context.arc(x, y, ph.radius, 0, Math.PI * 2);
-        context.fill();
-        context.shadowColor = ph.color;
-        context.shadowBlur = 8;
-        context.fill();
-      } else if (ph.shape === "rect") {
-        const angle = Math.atan2(projectile.vy, projectile.vx);
-        context.translate(x, y);
-        context.rotate(angle);
-        context.fillRect(-ph.width / 2, -ph.height / 2, ph.width, ph.height);
-        context.shadowColor = ph.color;
-        context.shadowBlur = 6;
-        context.fillRect(-ph.width / 2, -ph.height / 2, ph.width, ph.height);
-      } else if (ph.shape === "star") {
-        const points = 5;
-        const outerRadius = ph.size * 2;
-        const innerRadius = ph.size;
-        context.beginPath();
-        for (let i = 0; i < points * 2; i++) {
-          const radius = i % 2 === 0 ? outerRadius : innerRadius;
-          const angle = (i * Math.PI) / points;
-          const px = x + Math.cos(angle) * radius;
-          const py = y + Math.sin(angle) * radius;
-          if (i === 0) context.moveTo(px, py);
-          else context.lineTo(px, py);
-        }
-        context.closePath();
-        context.fill();
-        context.shadowColor = ph.color;
-        context.shadowBlur = 6;
-        context.fill();
-      }
+    context.save();
+    
+    const angle = Math.atan2(projectile.vy, projectile.vx);
+    context.translate(x, y);
+    context.rotate(angle);
+    
+    const width = vfxDef.width || 100;
+    const height = vfxDef.height || 50;
+    const scale = 0.3;
+    const scaledWidth = width * scale;
+    const scaledHeight = height * scale;
+    
+    try {
+      context.drawImage(img, -scaledWidth / 2, -scaledHeight / 2, scaledWidth, scaledHeight);
+    } catch (e) {
+      context.fillStyle = projectile.color || "#ff00ff";
+      context.fillRect(-10, -10, 20, 20);
     }
     
     context.restore();
