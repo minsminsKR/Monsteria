@@ -2199,6 +2199,39 @@ function selectPvpMonster(monsterId) {
   showToast(`${monster.name}을 PVP 파트너로 선택했습니다.`, "success");
 }
 
+// Shop chrome background with magenta chroma-key removed
+let shopChromeBgUrl = null;
+
+function applyChromaKey(imageSrc, chromaKeyColor = [255, 0, 255]) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+      
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const data = imageData.data;
+      
+      for (let i = 0; i < data.length; i += 4) {
+        const r = data[i];
+        const g = data[i + 1];
+        const b = data[i + 2];
+        
+        if (r === chromaKeyColor[0] && g === chromaKeyColor[1] && b === chromaKeyColor[2]) {
+          data[i + 3] = 0;
+        }
+      }
+      
+      ctx.putImageData(imageData, 0, 0);
+      resolve(canvas.toDataURL());
+    };
+    img.src = imageSrc;
+  });
+}
+
 function renderShop() {
   updateResourceDisplays();
 
@@ -2212,8 +2245,17 @@ function renderShop() {
     { species: "1_1_lovelydoll", price: 300, name: "러블리돌" }
   ];
 
+  if (!shopChromeBgUrl) {
+    applyChromaKey('assets/ui/shop-raise-sell.png').then((dataUrl) => {
+      shopChromeBgUrl = dataUrl;
+      renderShop();
+    });
+    grid.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--ink);">Loading shop...</div>';
+    return;
+  }
+
   let html = `
-    <div class="shop-chrome-container" style="background-image: url('assets/ui/shop-raise-sell.png');">
+    <div class="shop-chrome-container" style="background-image: url('${shopChromeBgUrl}');">
       <div class="shop-interactive-overlay">
         <div class="shop-section shop-buy-section">
   `;
