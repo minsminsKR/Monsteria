@@ -10,45 +10,59 @@ const SAVE_KEY = "monsteria-save-v1";
 const EVO_STONE_PRICE = 120;
 
 // Projectile VFX definitions for each character line
-// These are placeholder visuals until artist provides sprite sheets
-// To swap in real assets: set spriteSheet to the asset path
+// Artist assets with magenta (#FF00FF) chroma-key
+// Sprites are 1536×1024 canvases - CSS will handle cropping and scaling
 const projectileVfxDefinitions = {
   "0": {
     basic: {
       type: "beam",
-      placeholder: { shape: "rect", color: "#ff00ff", width: 8, height: 3 },
-      spriteSheet: null
+      spriteSheet: "assets/fx/cyclops-beam.png",
+      width: 400,
+      height: 100
     },
     skill: {
       type: "beam",
-      placeholder: { shape: "circle", color: "#ff00ff", radius: 10 },
-      spriteSheet: null
+      spriteSheet: "assets/fx/cyclops-beam.png",
+      width: 400,
+      height: 100
     }
   },
   "1": {
     basic: {
       type: "water",
-      placeholder: { shape: "circle", color: "#ff00ff", radius: 6 },
-      spriteSheet: null
+      spriteSheet: "assets/fx/lovelydoll-water.png",
+      width: 350,
+      height: 120
     },
     skill: {
       type: "water_wave",
-      placeholder: { shape: "rect", color: "#ff00ff", width: 12, height: 8 },
-      spriteSheet: null
+      spriteSheet: "assets/fx/lovelydoll-water.png",
+      width: 350,
+      height: 120
     }
   },
   "2": {
     basic: {
       type: "claw",
-      placeholder: { shape: "star", color: "#ff00ff", size: 5 },
-      spriteSheet: null
+      spriteSheet: "assets/fx/unnyangi-scratch.png",
+      width: 200,
+      height: 150
     },
     skill: {
       type: "energy_ball",
-      placeholder: { shape: "circle", color: "#ff00ff", radius: 10 },
-      spriteSheet: null
+      spriteSheet: "assets/fx/unnyangi-scratch.png",
+      width: 200,
+      height: 150
     }
   }
+};
+
+// Special projectile for cutie (doll evolution)
+const cutieStarVfx = {
+  type: "star",
+  spriteSheet: "assets/fx/cutie-star.png",
+  width: 250,
+  height: 100
 };
 
 const monsterDefinitions = {
@@ -481,7 +495,11 @@ function createDefaultGameState() {
     talentPoints: 0,
     investedTalents: 0,
     automation: createDefaultAutomationSettings(),
-    shopTraining: null
+    upgrades: {
+      "0": { attack: 0, defense: 0 },
+      "1": { attack: 0, defense: 0 },
+      "2": { attack: 0, defense: 0 }
+    }
   };
 }
 
@@ -994,16 +1012,26 @@ function getMonsterStats(species, level) {
   const definition = monsterDefinitions[species];
   const steps = Math.max(0, level - 1);
   
+  const family = getMonsterFamilyPrefix(species);
+  const attackBonus = 1 + getUpgradeBonus(family, "attack");
+  const defenseBonus = 1 + getUpgradeBonus(family, "defense");
+  
   return {
-    attack: definition.base.attack + definition.growth.attack * steps,
+    attack: Math.round((definition.base.attack + definition.growth.attack * steps) * attackBonus),
     attackSpeed: Number((definition.base.attackSpeed + definition.growth.attackSpeed * steps).toFixed(2)),
     maxHp: definition.base.maxHp + definition.growth.maxHp * steps,
-    defense: definition.base.defense + definition.growth.defense * steps,
+    defense: Math.round((definition.base.defense + definition.growth.defense * steps) * defenseBonus),
     skillName: definition.skillName,
-    skillDamage: definition.base.skillDamage + definition.growth.skillDamage * steps,
+    skillDamage: Math.round((definition.base.skillDamage + definition.growth.skillDamage * steps) * attackBonus),
     skillCooldown: definition.skillCooldown,
     projectileSpeed: definition.projectileSpeed
   };
+}
+
+function getUpgradeBonus(family, type) {
+  if (!gameState.upgrades || !gameState.upgrades[family]) return 0;
+  const level = gameState.upgrades[family][type] || 0;
+  return level * 0.10;
 }
 
 function createMonster(species) {
@@ -2191,215 +2219,143 @@ function renderShop() {
   const grid = $("#shop-products-grid");
   if (!grid) return;
 
-  const trainingMonster = gameState.shopTraining;
-  const buyOptions = [
-    { species: "0_1_cyclopse", price: 320, name: "사이클롭스" },
-    { species: "2_1_unnyangi", price: 280, name: "운냥이" },
-    { species: "1_1_lovelydoll", price: 300, name: "러블리돌" }
-  ];
+  const factionNames = {
+    "0": "사이클롭스 라인",
+    "1": "러블리돌 라인",
+    "2": "운냥이 라인"
+  };
 
   let html = `
-    <div class="gothic-shop-layout">
-      <div class="gothic-shop-panel gothic-buy-panel">
-        <h2 class="gothic-panel-title">매입</h2>
-        <div class="caged-monsters">
+    <div class="upgrade-panel-layout">
   `;
 
-  buyOptions.forEach((opt) => {
-    const canAfford = gameState.gold >= opt.price;
-    const disabled = trainingMonster ? "disabled" : "";
+  ["0", "1", "2"].forEach((family) => {
+    const name = factionNames[family];
+    const upgrades = gameState.upgrades[family] || { attack: 0, defense: 0 };
+    
     html += `
-      <div class="caged-monster">
-        <div class="cage-sprite">
-          ${monsterSpriteMarkup(opt.species, 1)}
+      <div class="upgrade-faction-section">
+        <h2 class="faction-title">${name}</h2>
+        
+        <div class="upgrade-columns">
+          <div class="upgrade-column attack-column">
+            <h3 class="column-title">
+              <span class="upgrade-icon">⚔️</span>
+              공격력
+            </h3>
+            ${[1, 2, 3].map(tier => {
+              const current = upgrades.attack;
+              const isActive = current >= tier;
+              const canBuy = current === tier - 1 && gameState.gold >= 150;
+              const isBought = current >= tier;
+              
+              return `
+                <div class="upgrade-tier ${isActive ? 'active' : ''} ${isBought ? 'bought' : ''}">
+                  <div class="tier-badge">+${tier}</div>
+                  <div class="tier-label">공격력 +${tier}</div>
+                  <div class="tier-icons">
+                    ${Array(tier).fill('<span class="tier-gem">💎</span>').join('')}
+                  </div>
+                  ${!isBought ? `
+                    <div class="tier-cost">
+                      <span class="cost-icon">💰</span>
+                      <strong>150</strong>
+                    </div>
+                    <button class="upgrade-buy-btn ${canBuy ? '' : 'disabled'}"
+                            data-upgrade-buy="${family}:attack:${tier}"
+                            ${!canBuy ? 'disabled' : ''}>
+                      BUY
+                    </button>
+                  ` : '<div class="bought-badge">보유중</div>'}
+                </div>
+              `;
+            }).join('')}
+          </div>
+
+          <div class="upgrade-column defense-column">
+            <h3 class="column-title">
+              <span class="upgrade-icon">🛡️</span>
+              방어력
+            </h3>
+            ${[1, 2, 3].map(tier => {
+              const current = upgrades.defense;
+              const isActive = current >= tier;
+              const canBuy = current === tier - 1 && gameState.gold >= 150;
+              const isBought = current >= tier;
+              
+              return `
+                <div class="upgrade-tier ${isActive ? 'active' : ''} ${isBought ? 'bought' : ''}">
+                  <div class="tier-badge">+${tier}</div>
+                  <div class="tier-label">방어력 +${tier}</div>
+                  <div class="tier-icons">
+                    ${Array(tier).fill('<span class="tier-shield">🛡</span>').join('')}
+                  </div>
+                  ${!isBought ? `
+                    <div class="tier-cost">
+                      <span class="cost-icon">💰</span>
+                      <strong>150</strong>
+                    </div>
+                    <button class="upgrade-buy-btn ${canBuy ? '' : 'disabled'}"
+                            data-upgrade-buy="${family}:defense:${tier}"
+                            ${!canBuy ? 'disabled' : ''}>
+                      BUY
+                    </button>
+                  ` : '<div class="bought-badge">보유중</div>'}
+                </div>
+              `;
+            }).join('')}
+          </div>
         </div>
-        <div class="cage-price">
-          <span class="gold-icon">💰</span>
-          <strong>${opt.price}</strong>
-        </div>
-        <button class="gothic-button buy-button ${!canAfford || trainingMonster ? 'disabled' : ''}" 
-                data-shop-buy="${opt.species}"
-                ${!canAfford || trainingMonster ? 'disabled' : ''}>
-          구입
-        </button>
       </div>
     `;
   });
 
   html += `
-        </div>
-      </div>
-
-      <div class="gothic-shop-panel gothic-train-panel">
-        <h2 class="gothic-panel-title">육성</h2>
-  `;
-
-  if (trainingMonster) {
-    const maxExp = 100;
-    const expPercent = (trainingMonster.exp / maxExp) * 100;
-    const feedCost = 50;
-    const canFeed = gameState.gold >= feedCost;
-    const sellReady = trainingMonster.level >= 5;
-
-    html += `
-      <div class="training-monster-display">
-        <div class="training-sprite">
-          ${monsterSpriteMarkup(trainingMonster.species, trainingMonster.level)}
-        </div>
-        <div class="training-info">
-          <div class="training-level">LV ${trainingMonster.level}</div>
-          <div class="exp-bar-container">
-            <span class="exp-label">EXP</span>
-            <div class="exp-bar">
-              <div class="exp-fill" style="width: ${expPercent}%"></div>
-            </div>
-          </div>
-          <div class="food-bowl">🍖</div>
-        </div>
-      </div>
-      <button class="gothic-button feed-button ${!canFeed ? 'disabled' : ''}" 
-              data-shop-feed="true"
-              ${!canFeed ? 'disabled' : ''}>
-        먹이주기 (${feedCost}G)
-      </button>
-      ${sellReady ? '<div class="ready-badge">판매 준비 완료!</div>' : ''}
-    `;
-  } else {
-    html += `
-      <div class="empty-training">
-        <div class="empty-icon">🏺</div>
-        <p>육성 중인 몬스터가 없습니다</p>
-        <p class="muted">왼쪽에서 몬스터를 구입하세요</p>
-      </div>
-    `;
-  }
-
-  html += `
-      </div>
-
-      <div class="gothic-shop-panel gothic-sell-panel">
-        <h2 class="gothic-panel-title">매각</h2>
-  `;
-
-  if (trainingMonster) {
-    const sellValue = getMonsterSellValue(trainingMonster);
-    html += `
-      <div class="sell-monster-display">
-        <div class="sell-sprite">
-          ${monsterSpriteMarkup(trainingMonster.species, trainingMonster.level)}
-        </div>
-        <div class="sell-value">
-          <span class="gold-icon">💰</span>
-          <strong>${sellValue}</strong>
-        </div>
-      </div>
-      <button class="gothic-button sell-button" data-shop-sell="true">
-        판매
-      </button>
-    `;
-  } else {
-    html += `
-      <div class="empty-sell">
-        <div class="empty-icon">📦</div>
-        <p>판매할 몬스터가 없습니다</p>
-      </div>
-    `;
-  }
-
-  html += `
-      </div>
     </div>
-    
-    <div class="shop-guide">
-      <p><strong>💡 경제 루프:</strong> 저렴한 몬스터 구입 → 먹이로 레벨업 → 높은 가격에 판매 → 반복</p>
+    <div class="shop-footer">
+      <p><strong>💡 TIP:</strong> 강해지고 싶어? 잘 왔어! 업그레이드하고 더 깊은 곳으로 가자구!</p>
     </div>
   `;
 
   grid.innerHTML = html;
 }
 
-function shopBuyMonster(species) {
-  if (gameState.shopTraining) {
-    showToast("이미 육성 중인 몬스터가 있습니다!", "error");
+function buyUpgrade(family, type, tier) {
+  if (!gameState.upgrades) {
+    gameState.upgrades = {
+      "0": { attack: 0, defense: 0 },
+      "1": { attack: 0, defense: 0 },
+      "2": { attack: 0, defense: 0 }
+    };
+  }
+
+  const current = gameState.upgrades[family][type];
+  if (current !== tier - 1) {
+    showToast("이전 단계를 먼저 구매해야 합니다!", "error");
     return;
   }
 
-  const prices = {
-    "0_1_cyclopse": 320,
-    "2_1_unnyangi": 280,
-    "1_1_lovelydoll": 300
-  };
-  
-  const price = prices[species];
-  if (!price) return;
-
-  if (gameState.gold < price) {
-    showToast(`Gold가 부족합니다. ${price} Gold가 필요합니다.`, "error");
+  const cost = 150;
+  if (gameState.gold < cost) {
+    showToast(`Gold가 부족합니다. ${cost} Gold가 필요합니다.`, "error");
     return;
   }
 
-  gameState.gold -= price;
-  gameState.shopTraining = {
-    species: species,
-    level: 1,
-    exp: 0
-  };
+  gameState.gold -= cost;
+  gameState.upgrades[family][type] = tier;
 
   soundManager.play("buy");
-  showToast(`몬스터를 구입했습니다! 먹이를 주어 레벨업하세요.`, "success");
-  saveGame();
-  renderShop();
-}
-
-function shopFeedMonster() {
-  if (!gameState.shopTraining) return;
-
-  const feedCost = 50;
-  if (gameState.gold < feedCost) {
-    showToast(`Gold가 부족합니다. ${feedCost} Gold가 필요합니다.`, "error");
-    return;
-  }
-
-  gameState.gold -= feedCost;
-  gameState.shopTraining.exp += 30;
-
-  const maxExp = 100;
-  while (gameState.shopTraining.exp >= maxExp) {
-    gameState.shopTraining.exp -= maxExp;
-    gameState.shopTraining.level++;
-    soundManager.play("skill");
-    showToast(`레벨 업! (LV ${gameState.shopTraining.level})`, "success");
-  }
-
-  soundManager.play("click");
-  saveGame();
-  renderShop();
-}
-
-function shopSellMonster() {
-  if (!gameState.shopTraining) return;
-
-  const sellValue = getMonsterSellValue(gameState.shopTraining);
-  gameState.gold += sellValue;
-
-  soundManager.play("buy");
-  showToast(`몬스터를 ${sellValue} Gold에 판매했습니다!`, "success");
+  soundManager.play("skill");
   
-  gameState.shopTraining = null;
+  const typeName = type === "attack" ? "공격력" : "방어력";
+  showToast(`${typeName} +${tier} 업그레이드 완료! ⭐`, "success");
+
   saveGame();
   renderShop();
-}
-
-function getMonsterSellValue(monster) {
-  const basePrices = {
-    "0_1_cyclopse": 320,
-    "2_1_unnyangi": 280,
-    "1_1_lovelydoll": 300
-  };
   
-  const basePrice = basePrices[monster.species] || 300;
-  const levelBonus = (monster.level - 1) * 50;
-  return Math.floor(basePrice * 1.5 + levelBonus);
+  if (uiState.currentScreen === "monsters") {
+    renderMonsters();
+  }
 }
 
 function addMiningPositionForMonster(monster, index = gameState.monsters.length - 1) {
@@ -4719,9 +4675,10 @@ function bindEvents() {
     if (button.dataset.selectPvp) selectPvpMonster(button.dataset.selectPvp);
     if (button.dataset.selectEvolution) selectEvolutionMonster(button.dataset.selectEvolution);
     if (button.dataset.buyMonster) buyMonster(button.dataset.buyMonster);
-    if (button.dataset.shopBuy) shopBuyMonster(button.dataset.shopBuy);
-    if (button.dataset.shopFeed) shopFeedMonster();
-    if (button.dataset.shopSell) shopSellMonster();
+    if (button.dataset.upgradeBuy) {
+      const [family, type, tier] = button.dataset.upgradeBuy.split(':');
+      buyUpgrade(family, type, parseInt(tier));
+    }
     if (button.dataset.toggleId) togglePvpTeamMember(button.dataset.toggleId);
     if (button.dataset.removeId) togglePvpTeamMember(button.dataset.removeId);
   });

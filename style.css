@@ -2900,74 +2900,124 @@ kbd {
   animation: electric-pulse 0.12s ease-in-out infinite alternate;
 }
 
-/* Gothic Shop Train-Sell System */
-.gothic-shop-layout {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
-  margin-bottom: 20px;
-}
-
-.gothic-shop-panel {
-  background: linear-gradient(135deg, #3d2f5a 0%, #2a1f3d 100%);
-  border: 3px solid #5a4570;
-  border-radius: 8px;
-  padding: 16px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
-}
-
-.gothic-panel-title {
-  text-align: center;
-  color: #d4af37;
-  font-size: 18px;
-  font-weight: bold;
-  margin: 0 0 16px 0;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
-  border-bottom: 2px solid #5a4570;
-  padding-bottom: 8px;
-}
-
-.caged-monsters {
+/* Upgrade Panel Styling (StarCraft-like) */
+.upgrade-panel-layout {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 24px;
 }
 
-.caged-monster {
+.upgrade-faction-section {
+  background: linear-gradient(135deg, #2d1f3d 0%, #1a1326 100%);
+  border: 3px solid #5a4570;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.6);
+}
+
+.faction-title {
+  text-align: center;
+  color: #d4af37;
+  font-size: 20px;
+  font-weight: bold;
+  margin: 0 0 20px 0;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+  border-bottom: 2px solid #5a4570;
+  padding-bottom: 12px;
+}
+
+.upgrade-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.upgrade-column {
   background: rgba(0, 0, 0, 0.3);
   border: 2px solid #4a3860;
   border-radius: 6px;
-  padding: 10px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
+  padding: 16px;
 }
 
-.cage-sprite {
-  width: 64px;
-  height: 64px;
+.column-title {
+  text-align: center;
+  color: #ffd700;
+  font-size: 16px;
+  font-weight: bold;
+  margin: 0 0 16px 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  filter: brightness(0.9);
+  gap: 8px;
 }
 
-.cage-price {
+.upgrade-icon {
+  font-size: 20px;
+}
+
+.upgrade-tier {
+  background: rgba(255, 255, 255, 0.05);
+  border: 2px solid #3d2f5a;
+  border-radius: 6px;
+  padding: 12px;
+  margin-bottom: 12px;
   display: flex;
-  align-items: center;
-  gap: 4px;
+  flex-direction: column;
+  gap: 8px;
+  transition: all 0.3s;
+}
+
+.upgrade-tier.active {
+  border-color: #ffd700;
+  background: rgba(255, 215, 0, 0.1);
+}
+
+.upgrade-tier.bought {
+  background: rgba(82, 196, 26, 0.15);
+  border-color: #52c41a;
+}
+
+.tier-badge {
+  background: linear-gradient(135deg, #5a4570 0%, #3d2f5a 100%);
   color: #ffd700;
+  font-weight: bold;
+  font-size: 18px;
+  text-align: center;
+  padding: 6px;
+  border-radius: 4px;
+  border: 2px solid #6a5580;
+}
+
+.tier-label {
+  text-align: center;
+  color: #d4af37;
+  font-size: 14px;
   font-weight: bold;
 }
 
-.gold-icon {
-  font-size: 16px;
+.tier-icons {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  font-size: 18px;
 }
 
-.gothic-button {
-  width: 100%;
-  padding: 8px 16px;
+.tier-cost {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: #ffd700;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.cost-icon {
+  font-size: 18px;
+}
+
+.upgrade-buy-btn {
+  padding: 10px 20px;
   background: linear-gradient(135deg, #8b6f47 0%, #654321 100%);
   border: 2px solid #a0826d;
   border-radius: 4px;
@@ -2979,153 +3029,39 @@ kbd {
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
 }
 
-.gothic-button:hover:not(.disabled) {
+.upgrade-buy-btn:hover:not(.disabled) {
   background: linear-gradient(135deg, #a0826d 0%, #7a5c3f 100%);
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
 }
 
-.gothic-button.disabled {
+.upgrade-buy-btn.disabled {
   opacity: 0.4;
   cursor: not-allowed;
 }
 
-.training-monster-display,
-.sell-monster-display {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 16px;
-}
-
-.training-sprite,
-.sell-sprite {
-  width: 96px;
-  height: 96px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.training-info {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-}
-
-.training-level {
-  color: #ffd700;
-  font-weight: bold;
-  font-size: 16px;
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
-}
-
-.exp-bar-container {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.exp-label {
-  color: #d4af37;
-  font-size: 12px;
-  font-weight: bold;
-}
-
-.exp-bar {
-  flex: 1;
-  height: 12px;
-  background: rgba(0, 0, 0, 0.5);
-  border: 2px solid #5a4570;
-  border-radius: 6px;
-  overflow: hidden;
-}
-
-.exp-fill {
-  height: 100%;
-  background: linear-gradient(90deg, #52c41a 0%, #73d13d 100%);
-  transition: width 0.3s ease;
-  box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.3);
-}
-
-.food-bowl {
-  font-size: 32px;
-  animation: float-bowl 2s ease-in-out infinite;
-}
-
-@keyframes float-bowl {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-8px); }
-}
-
-.ready-badge {
+.bought-badge {
+  text-align: center;
+  padding: 8px;
   background: #52c41a;
   color: white;
-  padding: 4px 12px;
-  border-radius: 4px;
-  font-size: 11px;
   font-weight: bold;
-  text-align: center;
-  animation: pulse-badge 1s infinite;
-}
-
-@keyframes pulse-badge {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.7; }
-}
-
-.sell-value {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: #ffd700;
-  font-size: 24px;
-  font-weight: bold;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
-}
-
-.empty-training,
-.empty-sell {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 32px 16px;
-  color: #8b7ba8;
-  text-align: center;
-}
-
-.empty-icon {
-  font-size: 48px;
-  opacity: 0.5;
-  margin-bottom: 12px;
-}
-
-.empty-training p,
-.empty-sell p {
-  margin: 4px 0;
-  font-size: 13px;
-}
-
-.shop-guide {
-  background: rgba(82, 196, 26, 0.1);
-  border: 2px solid #52c41a;
+  font-size: 12px;
   border-radius: 4px;
-  padding: 12px;
+}
+
+.shop-footer {
   text-align: center;
   color: var(--ink);
+  padding: 16px;
+  background: rgba(82, 196, 26, 0.1);
+  border: 2px solid #52c41a;
+  border-radius: 6px;
+  margin-top: 20px;
 }
 
-.shop-guide strong {
-  color: #52c41a;
-}
-
-@media (max-width: 900px) {
-  .gothic-shop-layout {
+@media (max-width: 768px) {
+  .upgrade-columns {
     grid-template-columns: 1fr;
   }
 }
