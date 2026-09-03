@@ -3111,3 +3111,47 @@ kbd {
   }
 }
 
+
+
+/* Shop / combat FX bursts (chroma-keyed PNGs) */
+.shop-chrome-container {
+  overflow: hidden;
+}
+
+.shop-fx-burst {
+  position: absolute;
+  left: 50%;
+  top: 48%;
+  width: 240px;
+  height: 160px;
+  margin-left: -120px;
+  margin-top: -80px;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  pointer-events: none;
+  opacity: 0;
+  transform: scale(0.72);
+  transition: opacity 0.12s ease-out, transform 0.18s ease-out;
+  z-index: 8;
+}
+
+.shop-fx-burst.is-on {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.shop-fx-buy {
+  left: 18%;
+  top: 55%;
+}
+
+.shop-fx-feed {
+  left: 50%;
+  top: 45%;
+}
+
+.shop-fx-sell {
+  left: 82%;
+  top: 55%;
+}

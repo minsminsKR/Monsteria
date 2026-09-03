@@ -2232,6 +2232,54 @@ function applyChromaKey(imageSrc, chromaKeyColor = [255, 0, 255]) {
   });
 }
 
+
+const fxImageCache = {};
+const fxImgElCache = {};
+
+function getChromaFxUrl(src) {
+  if (fxImageCache[src]) {
+    return Promise.resolve(fxImageCache[src]);
+  }
+  return applyChromaKey(src).then((dataUrl) => {
+    fxImageCache[src] = dataUrl;
+    return dataUrl;
+  });
+}
+
+function getChromaFxImage(src) {
+  if (fxImgElCache[src]) {
+    return Promise.resolve(fxImgElCache[src]);
+  }
+  return getChromaFxUrl(src).then((dataUrl) => new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      fxImgElCache[src] = img;
+      resolve(img);
+    };
+    img.src = dataUrl;
+  }));
+}
+
+function playShopFx(kind) {
+  const paths = {
+    buy: "assets/fx/shop-buy.png",
+    feed: "assets/fx/shop-feed.png",
+    sell: "assets/fx/shop-sell.png"
+  };
+  const src = paths[kind];
+  if (!src) return;
+  const host = document.querySelector(".shop-chrome-container") || document.querySelector("#shop-products-grid");
+  if (!host) return;
+  getChromaFxUrl(src).then((url) => {
+    const el = document.createElement("div");
+    el.className = `shop-fx-burst shop-fx-${kind}`;
+    el.style.backgroundImage = `url("${url}")`;
+    host.appendChild(el);
+    requestAnimationFrame(() => el.classList.add("is-on"));
+    window.setTimeout(() => el.remove(), 720);
+  });
+}
+
 function renderShop() {
   updateResourceDisplays();
 
@@ -2397,6 +2445,7 @@ function shopBuyMonster(species) {
   };
 
   soundManager.play("buy");
+  playShopFx("buy");
   showToast(`몬스터를 구입했습니다! 먹이를 주어 레벨업하세요.`, "success");
   saveGame();
   renderShop();
@@ -2423,6 +2472,7 @@ function shopFeedMonster() {
   }
 
   soundManager.play("click");
+  playShopFx("feed");
   saveGame();
   renderShop();
 }
@@ -2433,7 +2483,8 @@ function shopSellMonster() {
   const sellValue = getMonsterSellValue(gameState.shopTraining);
   gameState.gold += sellValue;
 
-  soundManager.play("buy");
+  soundManager.play("loot");
+  playShopFx("sell");
   showToast(`몬스터를 ${sellValue} Gold에 판매했습니다!`, "success");
   
   gameState.shopTraining = null;
@@ -3675,6 +3726,20 @@ function spawnHitEffect(x, y, color, isCrit) {
       life: isCrit ? 0.45 : 0.35
     });
   }
+
+  const hitLife = isCrit ? 0.45 : 0.28;
+  pvpState.particles.push({
+    kind: "hitSprite",
+    x,
+    y,
+    vx: 0,
+    vy: 0,
+    color,
+    life: hitLife,
+    maxLife: hitLife,
+    scale: isCrit ? 1.35 : 1.0
+  });
+  getChromaFxImage("assets/fx/combat-hit.png");
 }
 
 function endBattle(victory) {
@@ -3767,6 +3832,17 @@ function drawPvp() {
 
   pvpState.projectiles.forEach((projectile) => drawPvpProjectile(context, projectile));
   pvpState.particles.forEach((particle) => {
+    if (particle.kind === "hitSprite") {
+      const img = fxImgElCache["assets/fx/combat-hit.png"];
+      if (!img) return;
+      const t = Math.max(0, Math.min(1, particle.life / Math.max(0.001, particle.maxLife || 0.28)));
+      const size = 110 * (particle.scale || 1) * (0.75 + 0.35 * t);
+      context.save();
+      context.globalAlpha = t;
+      context.drawImage(img, Math.round(particle.x - size / 2), Math.round(particle.y - size / 2), size, size);
+      context.restore();
+      return;
+    }
     context.fillStyle = particle.color;
     context.fillRect(Math.round(particle.x) - 3, Math.round(particle.y) - 3, 6, 6);
   });
