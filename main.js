@@ -4183,6 +4183,18 @@ function drawFallbackActor(context, actor, definition, renderSize) {
   );
 }
 
+
+function preloadProjectileFx() {
+  const sheets = new Set();
+  Object.values(projectileVfxDefinitions).forEach((family) => {
+    Object.values(family).forEach((def) => {
+      if (def && def.spriteSheet) sheets.add(def.spriteSheet);
+    });
+  });
+  if (cutieStarVfx && cutieStarVfx.spriteSheet) sheets.add(cutieStarVfx.spriteSheet);
+  sheets.forEach((src) => getChromaFxImage(src));
+}
+
 function drawPvpProjectile(context, projectile) {
   const x = Math.round(projectile.x);
   const y = Math.round(projectile.y);
@@ -4191,28 +4203,38 @@ function drawPvpProjectile(context, projectile) {
   
   const vfxDef = projectile.vfxDef;
   if (vfxDef && vfxDef.spriteSheet) {
-    const img = new Image();
-    img.src = vfxDef.spriteSheet;
-    
+    const img = fxImgElCache[vfxDef.spriteSheet];
+    if (!img) {
+      getChromaFxImage(vfxDef.spriteSheet);
+      // Fallback until chroma cache is ready
+      context.save();
+      context.fillStyle = projectile.color || "#ffd54f";
+      context.beginPath();
+      context.arc(x, y, isSkill ? 10 : 6, 0, Math.PI * 2);
+      context.fill();
+      context.restore();
+      return;
+    }
+
     context.save();
-    
+
     const angle = Math.atan2(projectile.vy, projectile.vx);
     context.translate(x, y);
     context.rotate(angle);
-    
+
     const width = vfxDef.width || 100;
     const height = vfxDef.height || 50;
     const scale = 0.3;
     const scaledWidth = width * scale;
     const scaledHeight = height * scale;
-    
+
     try {
       context.drawImage(img, -scaledWidth / 2, -scaledHeight / 2, scaledWidth, scaledHeight);
     } catch (e) {
-      context.fillStyle = projectile.color || "#ff00ff";
+      context.fillStyle = projectile.color || "#ffd54f";
       context.fillRect(-10, -10, 20, 20);
     }
-    
+
     context.restore();
     return;
   }
