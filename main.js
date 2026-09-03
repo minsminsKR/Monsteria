@@ -2261,6 +2261,13 @@ function getChromaFxImage(src) {
   }));
 }
 
+
+function applyGothicIconSheet() {
+  getChromaFxUrl("assets/ui/icon-set.png").then((url) => {
+    document.documentElement.style.setProperty("--gothic-icon-sheet", `url("${url}")`);
+  });
+}
+
 function playWorldFx(kind, host) {
   const paths = {
     crit: "assets/fx/crit.png",

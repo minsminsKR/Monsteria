@@ -3405,13 +3405,41 @@ kbd {
 }
 
 .gothic-icon {
-  width: 32px;
-  height: 32px;
-  background-image: url("assets/ui/icon-set.png");
+  width: 28px;
+  height: 28px;
+  margin-right: 6px;
+  background-image: var(--gothic-icon-sheet, url("assets/ui/icon-set.png"));
   background-repeat: no-repeat;
-  background-size: 128px 96px; /* 4x3 grid on 1536x1024 → scaled */
+  /* 4 cols x 3 rows sheet scaled to 112x84 so each cell is 28px */
+  background-size: 112px 84px;
   image-rendering: pixelated;
   display: inline-block;
+  vertical-align: -6px;
+  flex-shrink: 0;
+}
+
+.gothic-icon[data-icon="0"] { background-position: 0 0; }
+.gothic-icon[data-icon="1"] { background-position: -28px 0; }
+.gothic-icon[data-icon="2"] { background-position: -56px 0; }
+.gothic-icon[data-icon="3"] { background-position: -84px 0; }
+.gothic-icon[data-icon="4"] { background-position: 0 -28px; }
+.gothic-icon[data-icon="5"] { background-position: -28px -28px; }
+.gothic-icon[data-icon="6"] { background-position: -56px -28px; }
+.gothic-icon[data-icon="7"] { background-position: -84px -28px; }
+.gothic-icon[data-icon="8"] { background-position: 0 -56px; }
+.gothic-icon[data-icon="9"] { background-position: -28px -56px; }
+.gothic-icon[data-icon="10"] { background-position: -56px -56px; }
+.gothic-icon[data-icon="11"] { background-position: -84px -56px; }
+
+.game-nav button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+}
+
+.mute-toggle-button .gothic-icon {
+  margin-right: 0;
   vertical-align: middle;
 }
 
