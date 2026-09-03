@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#18233a">
+  <meta name="theme-color" content="#1a051d">
   <title>Monsteria</title>
   <link rel="icon" href="data:,">
   <link rel="stylesheet" href="style.css">
@@ -16,7 +16,7 @@
       <span class="brand-gem"></span>
       <span>
         <strong>MONSTERIA</strong>
-        <small>PIXEL TRAINER LAB</small>
+        <small>귀여운 공포의 육성</small>
       </span>
     </button>
 
@@ -41,32 +41,32 @@
   </header>
 
   <nav id="game-nav" class="game-nav is-hidden" aria-label="게임 메뉴">
-    <button data-screen="mining">Mining</button>
-    <button data-screen="monsters">Monsters</button>
-    <button data-screen="shop">Shop</button>
-    <button data-screen="evolution">Evolution</button>
-    <button data-screen="pvp">PVP Test</button>
-    <button id="reset-save-button" class="danger-button">Reset Save</button>
+    <button data-screen="mining">채굴</button>
+    <button data-screen="monsters">몬스터</button>
+    <button data-screen="shop">상점</button>
+    <button data-screen="evolution">진화</button>
+    <button data-screen="pvp">결투</button>
+    <button id="reset-save-button" class="danger-button">리셋</button>
   </nav>
 
   <main class="game-shell">
-    <section id="starter-screen" class="screen starter-screen active">
+    <section id="starter-screen" class="screen starter-screen gothic-chrome active">
       <div class="title-panel pixel-panel">
         <div class="title-orb"><span></span></div>
-        <p class="eyebrow">A TINY MONSTER RAISING PROTOTYPE</p>
-        <h1>MONSTERIA</h1>
-        <p class="title-copy">첫 파트너를 선택하고, 돌을 부수고, 진화에 도전하세요.</p>
+        <p class="eyebrow">귀여운 공포의 육성</p>
+        <h1>몬스테리아</h1>
+        <p class="title-copy">첫 파트너를 고르고, 심연의 암석을 부수고, 상점에서 키워 팔아보세요.</p>
         <div class="pixel-divider"></div>
-        <h2>CHOOSE YOUR FIRST MONSTER</h2>
+        <h2>시작하기 · 파트너 선택</h2>
       </div>
       <div id="starter-options" class="starter-grid"></div>
     </section>
 
-    <section id="mining-screen" class="screen">
+    <section id="mining-screen" class="screen gothic-chrome">
       <div class="screen-heading">
         <div>
-          <p class="eyebrow">RESOURCE FIELD</p>
-          <h1>Mining Grounds</h1>
+          <p class="eyebrow">심연 채굴장</p>
+          <h1>채굴</h1>
         </div>
         <div id="mining-monster-summary" class="heading-status"></div>
       </div>
@@ -159,11 +159,11 @@
       </div>
     </section>
 
-    <section id="monsters-screen" class="screen">
+    <section id="monsters-screen" class="screen gothic-chrome">
       <div class="screen-heading">
         <div>
-          <p class="eyebrow">PARTNER ARCHIVE</p>
-          <h1>Monsters</h1>
+          <p class="eyebrow">파트너 기록</p>
+          <h1>몬스터</h1>
         </div>
         <div class="heading-status">Mining과 PVP에 사용할 파트너를 지정하세요.</div>
       </div>
@@ -180,7 +180,7 @@
     <section id="shop-screen" class="screen">
       <div class="screen-heading">
         <div>
-          <p class="eyebrow">SHOP & TRAINING</p>
+          <p class="eyebrow">몬스터 상점</p>
           <h1>상점 · 육성</h1>
         </div>
         <div class="heading-status">매입 → 육성(먹이주기) → 매각 경제 루프로 자원을 확보하세요!</div>
@@ -192,11 +192,11 @@
       </div>
     </section>
 
-    <section id="evolution-screen" class="screen">
+    <section id="evolution-screen" class="screen gothic-chrome">
       <div class="screen-heading">
         <div>
-          <p class="eyebrow">EVOLUTION CHAMBER</p>
-          <h1>Evolution</h1>
+          <p class="eyebrow">진화의 제단</p>
+          <h1>진화</h1>
         </div>
         <div class="heading-status">실패해도 레벨은 유지되며 골드와 크리스탈만 소모됩니다.</div>
       </div>
@@ -217,12 +217,12 @@
       </div>
     </section>
 
-    <section id="pvp-screen" class="screen">
+    <section id="pvp-screen" class="screen gothic-chrome">
       <div id="pvp-setup">
         <div class="screen-heading">
           <div>
-            <p class="eyebrow">COMBAT SIMULATOR</p>
-            <h1>PVP Test</h1>
+            <p class="eyebrow">결투장</p>
+            <h1>결투</h1>
           </div>
           <div class="heading-status">온라인 대전이 아닌 AI 더미 전투 테스트입니다.</div>
         </div>
@@ -249,7 +249,7 @@
             <strong id="battle-player-name">Player</strong>
             <span id="battle-player-hp">HP</span>
           </div>
-          <div class="battle-title">MONSTERIA TEST ARENA</div>
+          <div class="battle-title">결투 아레나</div>
           <div>
             <strong id="battle-ai-name">Training Dummy</strong>
             <span id="battle-ai-hp">HP</span>

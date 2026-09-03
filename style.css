@@ -1,22 +1,26 @@
 :root {
-  --ink: #172033;
-  --ink-soft: #35405c;
-  --paper: #f4efd8;
-  --paper-dark: #d8cfaa;
-  --panel: #fff8dc;
-  --panel-blue: #dbeafa;
-  --blue: #3674a8;
-  --blue-dark: #214663;
-  --cyan: #48c3c8;
-  --gold: #f2c84b;
-  --gold-dark: #a66a24;
-  --crystal: #66d8e5;
-  --purple: #8a67bd;
-  --green: #63b85c;
-  --green-dark: #2d6e45;
-  --red: #d95754;
-  --red-dark: #8e383e;
-  --shadow: rgba(22, 31, 52, 0.25);
+  --ink: #f3e6c8;
+  --ink-soft: #c9b58a;
+  --paper: #2a1833;
+  --paper-dark: #1a0f22;
+  --panel: #24152e;
+  --panel-blue: #2d1b3d;
+  --blue: #7b4aa8;
+  --blue-dark: #3a2048;
+  --cyan: #9b5de5;
+  --gold: #d4af37;
+  --gold-dark: #8a6a1a;
+  --crystal: #6ec8ff;
+  --purple: #a020f0;
+  --purple-deep: #1a051d;
+  --purple-mid: #3d1f52;
+  --green: #6a9a5c;
+  --green-dark: #2d4e35;
+  --red: #c94b5a;
+  --red-dark: #7a2833;
+  --shadow: rgba(0, 0, 0, 0.55);
+  --stone: #3a3a42;
+  --cream: #f3e6c8;
 }
 
 * {
@@ -25,19 +29,17 @@
 
 html {
   min-height: 100%;
-  background: #17233a;
+  background: var(--purple-deep);
 }
 
 body {
   min-width: 320px;
   min-height: 100vh;
   margin: 0;
-  color: var(--ink);
+  color: var(--cream);
   background:
-    linear-gradient(rgba(23, 35, 58, 0.13) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(23, 35, 58, 0.13) 1px, transparent 1px),
-    #92c5b0;
-  background-size: 16px 16px;
+    radial-gradient(ellipse at top, #3a1848 0%, transparent 55%),
+    linear-gradient(180deg, #1a051d 0%, #120412 100%);
   font-family: "Courier New", "Lucida Console", monospace;
   font-weight: 700;
   image-rendering: pixelated;
@@ -81,7 +83,7 @@ button:focus-visible {
   gap: 16px;
   padding: 10px max(16px, calc((100vw - 1320px) / 2));
   border-bottom: 4px solid var(--ink);
-  background: #fff5cf;
+  background: #24152e;
   box-shadow: 0 5px 0 rgba(23, 32, 51, 0.24);
 }
 
@@ -3154,4 +3156,267 @@ kbd {
 .shop-fx-sell {
   left: 82%;
   top: 55%;
+}
+
+
+/* =====================================================================
+   Gothic Shop UI skin — stone / purple / cream / gold / skull-eye tone
+   Artist chrome: title-screen, hud-chrome, mining-screen, pvp-screen,
+   shop-raise-sell. Bright mint grid + yellow headers removed.
+   ===================================================================== */
+
+.game-header {
+  background: linear-gradient(180deg, #2a1536 0%, #1a0f22 100%);
+  border-bottom: 4px solid #d4af37;
+  box-shadow: 0 6px 0 rgba(0, 0, 0, 0.45);
+}
+
+.brand-button strong {
+  color: #c77dff;
+  text-shadow: 0 0 8px rgba(160, 32, 240, 0.7), 2px 2px 0 #1a051d;
+}
+
+.brand-button small {
+  color: var(--ink-soft);
+}
+
+.brand-gem {
+  border-color: #d4af37;
+  background: radial-gradient(circle at 30% 30%, #e0aaff, #6b21a8 55%, #2d0a3a);
+  box-shadow:
+    inset 4px 4px 0 rgba(255, 255, 255, 0.25),
+    inset -4px -4px 0 rgba(0, 0, 0, 0.45),
+    0 0 10px rgba(160, 32, 240, 0.55);
+  transform: none;
+  border-radius: 50%;
+}
+
+.resource-chip {
+  border: 2px solid #d4af37;
+  background: #1a0f22;
+  box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.5);
+  color: var(--cream);
+}
+
+.resource-icon {
+  border-color: #d4af37;
+  background: #d4af37;
+  color: #1a051d;
+}
+
+.crystal-chip .resource-icon {
+  background: #6ec8ff;
+  transform: none;
+}
+
+.game-nav {
+  background: linear-gradient(180deg, #3a2048 0%, #24152e 100%);
+  border-bottom: 3px solid #8a6a1a;
+}
+
+.game-nav button {
+  color: var(--cream);
+  background: linear-gradient(180deg, #5a2d78 0%, #3a1848 100%);
+  border: 2px solid #d4af37;
+}
+
+.game-nav button.active,
+.game-nav button:hover {
+  background: linear-gradient(180deg, #8b3dff 0%, #5a2d78 100%);
+  filter: brightness(1.08);
+}
+
+.primary-button {
+  color: var(--cream);
+  background: linear-gradient(180deg, #6b2d8a 0%, #3d1a55 100%);
+  border: 2px solid #d4af37;
+}
+
+.primary-button:hover {
+  background: linear-gradient(180deg, #8b3dff 0%, #5a2d78 100%);
+}
+
+.secondary-button {
+  color: var(--cream);
+  background: #2a1833;
+  border: 2px solid #8a6a1a;
+}
+
+.danger-button {
+  color: #ffd0d6;
+  background: linear-gradient(180deg, #8e383e 0%, #4a151a 100%);
+  border: 2px solid #d4af37;
+}
+
+.pixel-panel {
+  background: linear-gradient(180deg, #2a1833 0%, #1a0f22 100%);
+  border: 3px solid #5a4570;
+  box-shadow:
+    inset 0 0 0 2px #3a2048,
+    4px 4px 0 rgba(0, 0, 0, 0.45);
+  color: var(--cream);
+}
+
+.screen-heading h1 {
+  color: #d4af37;
+  text-shadow: 2px 2px 0 #1a051d;
+}
+
+.eyebrow {
+  color: #c77dff;
+}
+
+.heading-status {
+  color: var(--ink-soft);
+  border-color: #5a4570;
+  background: rgba(26, 5, 29, 0.65);
+}
+
+.muted {
+  color: #a89878;
+}
+
+/* Full-screen artist chrome shells */
+.gothic-chrome {
+  position: relative;
+  background-color: #120412;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center top;
+  min-height: min(72vh, 720px);
+  border: 3px solid #5a4570;
+  box-shadow: 0 0 0 2px #1a051d, 6px 6px 0 rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+}
+
+.starter-screen.gothic-chrome {
+  background-image: url("assets/ui/title-screen.png");
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 24px 20px 28px;
+  min-height: min(86vh, 900px);
+}
+
+.starter-screen .title-panel {
+  background: rgba(18, 4, 18, 0.72);
+  border: 2px solid #d4af37;
+  box-shadow: 0 0 24px rgba(160, 32, 240, 0.35);
+  max-width: 720px;
+  margin: 0 auto 12px;
+}
+
+.starter-screen .title-panel h1 {
+  color: #f3e6c8;
+  text-shadow: 0 0 12px rgba(215, 175, 55, 0.55);
+}
+
+.starter-screen .title-copy,
+.starter-screen .eyebrow {
+  color: #c9b58a;
+}
+
+.starter-grid {
+  background: rgba(18, 4, 18, 0.55);
+  border: 2px solid #5a4570;
+  padding: 12px;
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+#mining-screen.gothic-chrome {
+  background-image: url("assets/ui/mining-screen.png");
+}
+
+#mining-screen .screen-heading,
+#pvp-screen .screen-heading,
+#monsters-screen .screen-heading,
+#evolution-screen .screen-heading,
+#shop-screen .screen-heading {
+  background: rgba(18, 4, 18, 0.72);
+  border: 2px solid #d4af37;
+  padding: 10px 14px;
+  margin-bottom: 12px;
+}
+
+#pvp-screen.gothic-chrome,
+#pvp-setup.gothic-chrome {
+  background-image: url("assets/ui/pvp-screen.png");
+}
+
+#pvp-battle {
+  background: rgba(18, 4, 18, 0.55);
+  border: 2px solid #5a4570;
+}
+
+.game-shell {
+  background:
+    linear-gradient(rgba(18, 4, 18, 0.35), rgba(18, 4, 18, 0.35)),
+    url("assets/ui/hud-chrome.png");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  padding: 12px max(12px, calc((100vw - 1320px) / 2)) 28px;
+}
+
+.shop-chrome-container {
+  background-color: #120412;
+}
+
+.gothic-button,
+.buy-button,
+.feed-button,
+.sell-button {
+  background: linear-gradient(180deg, #6b2d8a 0%, #3d1a55 100%) !important;
+  border: 2px solid #d4af37 !important;
+  color: #f3e6c8 !important;
+}
+
+.level-badge {
+  background: #3d1a55;
+  color: #f3e6c8;
+  border: 1px solid #d4af37;
+}
+
+.toast-container .toast,
+.toast {
+  background: #24152e;
+  border: 2px solid #d4af37;
+  color: #f3e6c8;
+}
+
+.mine-stage {
+  background: rgba(18, 4, 18, 0.35);
+}
+
+.pixel-bar {
+  background: rgba(0, 0, 0, 0.45);
+  border: 2px solid #5a4570;
+}
+
+.pixel-bar > span,
+.exp-fill,
+#player-xp-fill,
+#rock-hp-fill {
+  background: linear-gradient(90deg, #7b2cff 0%, #c77dff 100%) !important;
+}
+
+
+#monsters-screen.gothic-chrome {
+  background-image: url("assets/ui/monsters-screen.png");
+}
+
+#evolution-screen.gothic-chrome {
+  background-image: url("assets/ui/evolution-screen.png");
+}
+
+.gothic-icon {
+  width: 32px;
+  height: 32px;
+  background-image: url("assets/ui/icon-set.png");
+  background-repeat: no-repeat;
+  background-size: 128px 96px; /* 4x3 grid on 1536x1024 → scaled */
+  image-rendering: pixelated;
+  display: inline-block;
+  vertical-align: middle;
 }

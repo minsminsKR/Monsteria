@@ -2294,12 +2294,8 @@ function renderShop() {
   ];
 
   if (!shopChromeBgUrl) {
-    applyChromaKey('assets/ui/shop-raise-sell.png').then((dataUrl) => {
-      shopChromeBgUrl = dataUrl;
-      renderShop();
-    });
-    grid.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--ink);">Loading shop...</div>';
-    return;
+    // Full painted gothic shop UI (no magenta key)
+    shopChromeBgUrl = 'assets/ui/shop-raise-sell.png';
   }
 
   let html = `
