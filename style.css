@@ -691,16 +691,13 @@ button:disabled {
   display: none;
 }
 
-.rock-sprite.stone {
-  background-image: url('assets/rock_stone.png');
-}
-
-.rock-sprite.iron {
-  background-image: url('assets/rock_iron.png');
-}
-
+.rock-sprite.stone,
+.rock-sprite.iron,
 .rock-sprite.crystal {
-  background-image: url('assets/rock_crystal.png');
+  /* chroma-keyed gothic mine-rock applied via JS */
+  background-image: none;
+  width: 160px;
+  height: 140px;
 }
 
 .stat-grid {
@@ -807,8 +804,12 @@ button:disabled {
   position: relative;
   overflow: hidden;
   min-height: 620px;
-  border-bottom: 4px solid var(--ink);
-  background: radial-gradient(ellipse at bottom, #8edea4 0%, #4b9e58 80%);
+  border-bottom: 4px solid #5a4570;
+  background-color: #120412;
+  background-image: url("assets/bg/mining-cave.png");
+  background-size: cover;
+  background-position: center bottom;
+  background-repeat: no-repeat;
 }
 
 .mine-waiting-fence {
@@ -828,23 +829,16 @@ button:disabled {
   right: 0;
   top: 70%;
   bottom: 0;
-  background: #cb9b64;
-  background-image: 
-    repeating-linear-gradient(90deg, rgba(23, 32, 51, 0.08) 0px, rgba(23, 32, 51, 0.08) 2px, transparent 2px, transparent 40px),
-    linear-gradient(rgba(255, 255, 255, 0.12) 1px, transparent 1px);
-  background-size: 40px 100%, 100% 16px;
-  border-top: 4px solid var(--ink);
+  background: rgba(18, 4, 18, 0.55);
+  background-image: none;
+  border-top: 3px solid #5a4570;
   z-index: 1;
 }
 
 .mine-stage-floor {
   position: absolute;
   inset: 0;
-  background: 
-    linear-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.06) 1px, transparent 1px),
-    #5c9e6b;
-  background-size: 32px 32px;
+  background: transparent;
 }
 
 .mine-combatants {
@@ -3419,4 +3413,42 @@ kbd {
   image-rendering: pixelated;
   display: inline-block;
   vertical-align: middle;
+}
+
+
+/* Mining gothic FX bursts */
+.world-fx-burst {
+  position: absolute;
+  left: 50%;
+  top: 42%;
+  width: 220px;
+  height: 220px;
+  margin-left: -110px;
+  margin-top: -110px;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  pointer-events: none;
+  opacity: 0;
+  transform: scale(0.7);
+  transition: opacity 0.12s ease-out, transform 0.2s ease-out;
+  z-index: 80;
+  image-rendering: pixelated;
+}
+
+.world-fx-burst.is-on {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.world-fx-crit {
+  top: 40%;
+}
+
+.world-fx-levelup {
+  top: 48%;
+  width: 260px;
+  height: 260px;
+  margin-left: -130px;
+  margin-top: -130px;
 }

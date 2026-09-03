@@ -290,7 +290,7 @@ const monsterDefinitions = {
 const rockDefinitions = {
   stone: {
     id: "stone",
-    name: "Stone Rock",
+    name: "T1 심연의 암석",
     tier: 1,
     maxHp: 80,
     gold: [18, 28],
@@ -299,7 +299,7 @@ const rockDefinitions = {
   },
   iron: {
     id: "iron",
-    name: "Iron Rock",
+    name: "T2 심연의 암석",
     tier: 2,
     maxHp: 380,
     gold: [72, 108],
@@ -308,7 +308,7 @@ const rockDefinitions = {
   },
   crystal: {
     id: "crystal",
-    name: "Crystal Rock",
+    name: "T3 심연의 암석",
     tier: 3,
     maxHp: 1120,
     gold: [210, 290],
@@ -1952,6 +1952,7 @@ function applyMiningDamage(damage) {
       soundManager.play("break"); // Heavier critical hit sound
       spawnDamageNumber(finalDamage, true);
       spawnMiningDebris($("#rock-target"), miningState.type);
+      playWorldFx("crit", $("#mine-stage"));
 
       // Mine Stage screen shake
       const mineStage = $("#mine-stage");
@@ -2258,6 +2259,32 @@ function getChromaFxImage(src) {
     };
     img.src = dataUrl;
   }));
+}
+
+function playWorldFx(kind, host) {
+  const paths = {
+    crit: "assets/fx/crit.png",
+    levelup: "assets/fx/levelup.png"
+  };
+  const src = paths[kind];
+  if (!src) return;
+  const mount = host || document.querySelector("#mine-stage") || document.body;
+  getChromaFxUrl(src).then((url) => {
+    const el = document.createElement("div");
+    el.className = `world-fx-burst world-fx-${kind}`;
+    el.style.backgroundImage = `url("${url}")`;
+    mount.appendChild(el);
+    requestAnimationFrame(() => el.classList.add("is-on"));
+    window.setTimeout(() => el.remove(), 780);
+  });
+}
+
+function ensureMineRockArt() {
+  getChromaFxUrl("assets/fx/mine-rock.png").then((url) => {
+    document.querySelectorAll("#rock-sprite .rock-sprite").forEach((el) => {
+      el.style.backgroundImage = `url("${url}")`;
+    });
+  });
 }
 
 function playShopFx(kind) {
@@ -2736,6 +2763,9 @@ function triggerLevelUpZoneVisualEffect(monsterIndex, succeeded) {
   spotEl.classList.remove("level-up-success", "level-up-fail");
   void spotEl.offsetWidth; // Trigger reflow
   spotEl.classList.add(className);
+  if (succeeded) {
+    playWorldFx("levelup", $("#mine-stage"));
+  }
   
   setTimeout(() => {
     spotEl.classList.remove(className);
@@ -3725,6 +3755,7 @@ function spawnHitEffect(x, y, color, isCrit) {
   }
 
   const hitLife = isCrit ? 0.45 : 0.28;
+  const hitSheet = isCrit ? "assets/fx/crit.png" : "assets/fx/combat-hit.png";
   pvpState.particles.push({
     kind: "hitSprite",
     x,
@@ -3734,9 +3765,10 @@ function spawnHitEffect(x, y, color, isCrit) {
     color,
     life: hitLife,
     maxLife: hitLife,
-    scale: isCrit ? 1.35 : 1.0
+    scale: isCrit ? 1.45 : 1.0,
+    sheet: hitSheet
   });
-  getChromaFxImage("assets/fx/combat-hit.png");
+  getChromaFxImage(hitSheet);
 }
 
 function endBattle(victory) {
@@ -3830,7 +3862,7 @@ function drawPvp() {
   pvpState.projectiles.forEach((projectile) => drawPvpProjectile(context, projectile));
   pvpState.particles.forEach((particle) => {
     if (particle.kind === "hitSprite") {
-      const img = fxImgElCache["assets/fx/combat-hit.png"];
+      const img = fxImgElCache[particle.sheet || "assets/fx/combat-hit.png"];
       if (!img) return;
       const t = Math.max(0, Math.min(1, particle.life / Math.max(0.001, particle.maxLife || 0.28)));
       const size = 110 * (particle.scale || 1) * (0.75 + 0.35 * t);
