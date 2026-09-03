@@ -295,7 +295,10 @@ const rockDefinitions = {
     maxHp: 80,
     gold: [18, 28],
     crystal: [0, 1],
-    note: "초반 채굴에 적합한 무른 돌입니다."
+    note: "초반 채굴에 적합한 무른 돌입니다.",
+    unlockLevel: 1,
+    unlockBreaks: 0,
+    unlockFrom: null
   },
   iron: {
     id: "iron",
@@ -304,7 +307,10 @@ const rockDefinitions = {
     maxHp: 380,
     gold: [72, 108],
     crystal: [2, 4],
-    note: "단단하지만 안정적인 중급 보상을 줍니다."
+    note: "플레이어 LV5 또는 T1 파괴 3회 시 해금.",
+    unlockLevel: 5,
+    unlockBreaks: 3,
+    unlockFrom: "stone"
   },
   crystal: {
     id: "crystal",
@@ -313,9 +319,39 @@ const rockDefinitions = {
     maxHp: 1120,
     gold: [210, 290],
     crystal: [8, 13],
-    note: "매우 단단하며 많은 Crystal을 품고 있습니다."
+    note: "플레이어 LV15 또는 T2 파괴 5회 시 해금.",
+    unlockLevel: 15,
+    unlockBreaks: 5,
+    unlockFrom: "iron"
   }
 };
+
+function getRockBreakCount(rockId) {
+  const map = gameState.rocksBrokenByTier || {};
+  return Math.max(0, Number(map[rockId]) || 0);
+}
+
+function isRockTierUnlocked(rockId) {
+  const rock = rockDefinitions[rockId];
+  if (!rock) return false;
+  if (rock.tier <= 1) return true;
+  const level = gameState.playerLevel || 1;
+  if (level >= (rock.unlockLevel || 1)) return true;
+  if (rock.unlockFrom) {
+    return getRockBreakCount(rock.unlockFrom) >= (rock.unlockBreaks || 0);
+  }
+  return false;
+}
+
+function rockTierLockHint(rockId) {
+  const rock = rockDefinitions[rockId];
+  if (!rock || isRockTierUnlocked(rockId)) return "";
+  const from = rock.unlockFrom ? rockDefinitions[rock.unlockFrom] : null;
+  const need = rock.unlockBreaks || 0;
+  const have = from ? getRockBreakCount(from.id) : 0;
+  return `잠금 · LV${rock.unlockLevel} 또는 ${from ? from.name : "이전 티어"} 파괴 ${have}/${need}`;
+}
+
 
 const levelRequirements = {
   1: { gold: 100, crystal: 4, chance: 0.85 },
@@ -495,7 +531,8 @@ function createDefaultGameState() {
     talentPoints: 0,
     investedTalents: 0,
     automation: createDefaultAutomationSettings(),
-    shopTraining: null
+    shopTraining: null,
+    rocksBrokenByTier: { stone: 0, iron: 0, crystal: 0 }
   };
 }
 
@@ -980,12 +1017,16 @@ function startMiningMovementLoop() {
   miningMovementRaf = requestAnimationFrame(tick);
 }
 
+const PVP_MAX_TURNS = 20;
+const PVP_TURN_MS = 3000;
+
 const pvpState = {
   active: false,
   over: false,
   rafId: null,
   lastTime: 0,
   elapsed: 0,
+  turn: 1,
   keys: new Set(),
   mouse: { x: 400, y: 240 },
   playerTeam: [],
@@ -995,7 +1036,9 @@ const pvpState = {
   floaters: [],
   lastBasic: -Infinity,
   lastSkill: -Infinity,
-  aiLastShot: -Infinity
+  aiLastShot: -Infinity,
+  shakeTime: 0,
+  hitstop: 0
 };
 
 const $ = (selector) => document.querySelector(selector);
@@ -1093,7 +1136,8 @@ function saveGame() {
     playerXp: gameState.playerXp,
     talentPoints: gameState.talentPoints,
     investedTalents: gameState.investedTalents,
-    automation: normalizeAutomationSettings(gameState.automation)
+    automation: normalizeAutomationSettings(gameState.automation),
+    rocksBrokenByTier: gameState.rocksBrokenByTier || { stone: 0, iron: 0, crystal: 0 }
   };
 
   localStorage.setItem(SAVE_KEY, JSON.stringify(saveData));
@@ -1139,8 +1183,16 @@ function loadGame() {
       playerXp: Math.max(0, Number(saved.playerXp) || 0),
       talentPoints: Math.max(0, Number(saved.talentPoints) || 0),
       investedTalents: Math.max(0, Number(saved.investedTalents) || 0),
-      automation: normalizeAutomationSettings(saved.automation)
+      automation: normalizeAutomationSettings(saved.automation),
+      rocksBrokenByTier: {
+        stone: Math.max(0, Number(saved.rocksBrokenByTier?.stone) || 0),
+        iron: Math.max(0, Number(saved.rocksBrokenByTier?.iron) || 0),
+        crystal: Math.max(0, Number(saved.rocksBrokenByTier?.crystal) || 0)
+      }
     };
+    if (!isRockTierUnlocked(gameState.selectedRock)) {
+      gameState.selectedRock = "stone";
+    }
     syncDisplayResources();
     updatePlayerUi();
   } catch (error) {
@@ -1562,13 +1614,18 @@ function renderMining() {
   $("#rock-name").textContent = rock.name;
   requestAnimationFrame(updateRockHpGaugePosition);
 
-  $("#rock-tier-buttons").innerHTML = Object.values(rockDefinitions).map((definition) => `
-    <button class="tier-button ${definition.id === gameState.selectedRock ? "active" : ""}" data-rock-tier="${definition.id}">
+  $("#rock-tier-buttons").innerHTML = Object.values(rockDefinitions).map((definition) => {
+    const unlocked = isRockTierUnlocked(definition.id);
+    const lockedClass = unlocked ? "" : " is-locked";
+    const activeClass = definition.id === gameState.selectedRock ? " active" : "";
+    const lockHint = unlocked ? `HP ${definition.maxHp.toLocaleString()} / TIER ${definition.tier}` : rockTierLockHint(definition.id);
+    return `
+    <button class="tier-button${activeClass}${lockedClass}" data-rock-tier="${definition.id}" ${unlocked ? "" : "disabled aria-disabled=\"true\""}>
       <span class="tier-dot" style="background:${definition.id === "stone" ? "#9a9a87" : definition.id === "iron" ? "#697486" : "#5eb9ce"}"></span>
-      <strong>${definition.name}</strong>
-      <small>HP ${definition.maxHp.toLocaleString()} / TIER ${definition.tier}</small>
-    </button>
-  `).join("");
+      <strong>${definition.name}${unlocked ? "" : " 🔒"}</strong>
+      <small>${lockHint}</small>
+    </button>`;
+  }).join("");
 
   $("#rock-info").innerHTML = `
     <div class="rock-data-list">
@@ -1797,6 +1854,10 @@ function selectRockTier(type) {
   if (!rockDefinitions[type] || gameState.selectedRock === type) {
     return;
   }
+  if (!isRockTierUnlocked(type)) {
+    showToast(rockTierLockHint(type) || "아직 잠긴 암석입니다.", "error");
+    return;
+  }
 
   const wasActive = miningState.active;
   stopMining();
@@ -2022,6 +2083,16 @@ function breakMiningRock() {
 
   gameState.gold += goldReward;
   gameState.crystal += crystalReward;
+  if (!gameState.rocksBrokenByTier) {
+    gameState.rocksBrokenByTier = { stone: 0, iron: 0, crystal: 0 };
+  }
+  gameState.rocksBrokenByTier[rock.id] = getRockBreakCount(rock.id) + 1;
+  const unlockedNow = [];
+  Object.values(rockDefinitions).forEach((def) => {
+    if (def.unlockFrom === rock.id && getRockBreakCount(rock.id) === def.unlockBreaks) {
+      unlockedNow.push(def.name);
+    }
+  });
   saveGame();
   updateResourceDisplays();
 
@@ -2029,6 +2100,10 @@ function breakMiningRock() {
     $("#rock-target").classList.add("is-breaking");
   }
   updateMiningUi(`${rock.name} 파괴! +${goldReward} Gold, +${crystalReward} Crystal`);
+  if (unlockedNow.length) {
+    showToast(`${unlockedNow.join(", ")} 해금!`, "success");
+    renderMining();
+  }
 
   clearTimeout(miningState.respawnTimer);
   miningState.respawnTimer = setTimeout(() => {
@@ -3185,6 +3260,9 @@ function startPvp() {
   pvpState.over = false;
   pvpState.lastTime = performance.now();
   pvpState.elapsed = 0;
+  pvpState.turn = 1;
+  pvpState.shakeTime = 0;
+  pvpState.hitstop = 0;
   pvpState.projectiles = [];
   pvpState.particles = [];
   preloadProjectileFx();
@@ -3292,9 +3370,11 @@ function startPvp() {
   $("#pvp-setup").classList.add("is-hidden");
   $("#pvp-battle").classList.remove("is-hidden");
   $("#battle-result-overlay").classList.add("is-hidden");
-  $("#battle-player-name").textContent = "Player Team";
-  $("#battle-ai-name").textContent = "AI Team";
-  $("#battle-skill-name").textContent = "AUTO COMBAT";
+  $("#battle-player-name").textContent = "몬스터리아";
+  $("#battle-ai-name").textContent = "암흑의 소환사";
+  $("#battle-skill-name").textContent = "자동 전투";
+  const turnEl = $("#battle-turn-count");
+  if (turnEl) turnEl.textContent = `1 / ${PVP_MAX_TURNS} 턴`;
   updateBattleHud();
   pvpState.rafId = requestAnimationFrame(pvpFrame);
 }
@@ -3320,9 +3400,28 @@ function pvpFrame(timestamp) {
     return;
   }
 
-  const dt = Math.min(0.035, (timestamp - pvpState.lastTime) / 1000 || 0);
+  let dt = Math.min(0.035, (timestamp - pvpState.lastTime) / 1000 || 0);
   pvpState.lastTime = timestamp;
+  if (pvpState.hitstop > 0) {
+    pvpState.hitstop = Math.max(0, pvpState.hitstop - dt);
+    dt *= 0.15;
+  }
   pvpState.elapsed += dt * 1000;
+  const nextTurn = Math.min(PVP_MAX_TURNS, Math.floor(pvpState.elapsed / PVP_TURN_MS) + 1);
+  if (nextTurn !== pvpState.turn) {
+    pvpState.turn = nextTurn;
+    const turnEl = $("#battle-turn-count");
+    if (turnEl) turnEl.textContent = `${pvpState.turn} / ${PVP_MAX_TURNS} 턴`;
+  }
+  if (!pvpState.over && pvpState.turn >= PVP_MAX_TURNS) {
+    const playerAlive = pvpState.playerTeam.some((a) => !a.fainted);
+    const enemyAlive = pvpState.enemyTeam.some((a) => !a.fainted);
+    if (playerAlive && enemyAlive) {
+      endBattle(false);
+      const copy = $("#battle-result-copy");
+      if (copy) copy.textContent = "턴 제한에 도달했습니다. 후퇴합니다.";
+    }
+  }
   updatePvp(dt);
   drawPvp();
   updateBattleHud();
@@ -3698,7 +3797,8 @@ function damageActor(actor, rawDamage, source) {
 
   if (isCrit) {
     soundManager.play("break"); // Heavier strike sound for critical hits
-    pvpState.shakeTime = 0.20;  // 200ms screen shake duration in PVP
+    pvpState.shakeTime = 0.28;
+    pvpState.hitstop = 0.08;
     pvpState.floaters.push({
       x: actor.x,
       y: actor.y - 35,
@@ -3709,6 +3809,7 @@ function damageActor(actor, rawDamage, source) {
     });
   } else {
     soundManager.play("hurt");
+    pvpState.shakeTime = Math.max(pvpState.shakeTime || 0, 0.08);
     pvpState.floaters.push({
       x: actor.x,
       y: actor.y - 30,
@@ -3721,6 +3822,8 @@ function damageActor(actor, rawDamage, source) {
 
   if (actor.hp <= 0) {
     actor.fainted = true;
+    pvpState.shakeTime = Math.max(pvpState.shakeTime || 0, 0.22);
+    pvpState.hitstop = Math.max(pvpState.hitstop || 0, 0.1);
     triggerActorAnimation(actor, "faint", 950);
     checkBattleEnd();
   } else {
@@ -3792,10 +3895,10 @@ function endBattle(victory) {
     soundManager.play("defeat");
   }
 
-  $("#battle-result-title").textContent = victory ? "VICTORY" : "DEFEAT";
+  $("#battle-result-title").textContent = victory ? "승리" : "패배";
   $("#battle-result-copy").textContent = victory
-    ? "적군 AI 팀을 모두 쓰러뜨렸습니다!"
-    : "아군 팀이 모두 쓰러졌습니다. 다시 도전해 보세요.";
+    ? "암흑의 소환사 팀을 쓰러뜨렸습니다!"
+    : "아군이 전멸했습니다. 다시 결투하세요.";
   $("#battle-result-overlay").classList.remove("is-hidden");
 }
 
@@ -3818,8 +3921,12 @@ function updateBattleHud() {
   const enemyHpSum = pvpState.enemyTeam.reduce((sum, a) => sum + (a.fainted ? 0 : a.hp), 0);
   const enemyMaxHpSum = pvpState.enemyTeam.reduce((sum, a) => sum + a.maxHp, 0);
 
-  $("#battle-player-hp").textContent = `Alive: ${playerAliveCount}/${playerTotal} | HP ${Math.ceil(playerHpSum)} / ${playerMaxHpSum}`;
-  $("#battle-ai-hp").textContent = `Alive: ${enemyAliveCount}/${enemyTotal} | HP ${Math.ceil(enemyHpSum)} / ${enemyMaxHpSum}`;
+  $("#battle-player-hp").textContent = `생존 ${playerAliveCount}/${playerTotal} · HP ${Math.ceil(playerHpSum)} / ${playerMaxHpSum}`;
+  $("#battle-ai-hp").textContent = `생존 ${enemyAliveCount}/${enemyTotal} · HP ${Math.ceil(enemyHpSum)} / ${enemyMaxHpSum}`;
+  const turnEl = $("#battle-turn-count");
+  if (turnEl) turnEl.textContent = `${pvpState.turn || 1} / ${PVP_MAX_TURNS} 턴`;
+  const statusEl = $("#battle-skill-cooldown");
+  if (statusEl) statusEl.textContent = pvpState.over ? "종료" : "전투중";
 }
 
 function drawPvp() {

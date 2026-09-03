@@ -3480,3 +3480,39 @@ kbd {
   margin-left: -130px;
   margin-top: -130px;
 }
+
+
+.tier-button.is-locked {
+  opacity: 0.55;
+  filter: grayscale(0.35);
+  cursor: not-allowed;
+  border-color: #5a4570;
+  background: #1a0f22;
+}
+
+.tier-button.is-locked strong {
+  color: #c9b58a;
+}
+
+.tier-button.active:not(.is-locked) {
+  border-color: #a020f0;
+  box-shadow: 0 0 10px rgba(160, 32, 240, 0.45);
+}
+
+.battle-bottom-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  background: linear-gradient(180deg, #2a1833 0%, #1a0f22 100%);
+  border: 2px solid #d4af37;
+  color: #f3e6c8;
+}
+
+#battle-turn-count {
+  font-size: 16px;
+  color: #d4af37;
+  font-weight: 900;
+  letter-spacing: 1px;
+}
