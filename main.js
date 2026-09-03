@@ -3152,6 +3152,7 @@ function startPvp() {
   pvpState.elapsed = 0;
   pvpState.projectiles = [];
   pvpState.particles = [];
+  preloadProjectileFx();
   pvpState.floaters = [];
   pvpState.keys.clear();
   pvpState.lastBasic = -Infinity;
