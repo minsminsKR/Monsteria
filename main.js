@@ -9,6 +9,62 @@
 const SAVE_KEY = "monsteria-save-v1";
 const EVO_STONE_PRICE = 120;
 
+// Projectile VFX definitions for each character line
+// Artist assets with magenta (#FF00FF) chroma-key
+// Sprites are 1536×1024 canvases - CSS will handle cropping and scaling
+const projectileVfxDefinitions = {
+  "0": {
+    basic: {
+      type: "beam",
+      spriteSheet: "assets/fx/cyclops-beam.png",
+      width: 400,
+      height: 100
+    },
+    skill: {
+      type: "beam",
+      spriteSheet: "assets/fx/cyclops-beam.png",
+      width: 400,
+      height: 100
+    }
+  },
+  "1": {
+    basic: {
+      type: "water",
+      spriteSheet: "assets/fx/lovelydoll-water.png",
+      width: 350,
+      height: 120
+    },
+    skill: {
+      type: "water_wave",
+      spriteSheet: "assets/fx/lovelydoll-water.png",
+      width: 350,
+      height: 120
+    }
+  },
+  "2": {
+    basic: {
+      type: "claw",
+      spriteSheet: "assets/fx/unnyangi-scratch.png",
+      width: 200,
+      height: 150
+    },
+    skill: {
+      type: "energy_ball",
+      spriteSheet: "assets/fx/unnyangi-scratch.png",
+      width: 200,
+      height: 150
+    }
+  }
+};
+
+// Special projectile for cutie (doll evolution)
+const cutieStarVfx = {
+  type: "star",
+  spriteSheet: "assets/fx/cutie-star.png",
+  width: 250,
+  height: 100
+};
+
 const monsterDefinitions = {
   "0_1_cyclopse": {
     id: "0_1_cyclopse",
@@ -438,7 +494,8 @@ function createDefaultGameState() {
     playerXp: 0,
     talentPoints: 0,
     investedTalents: 0,
-    automation: createDefaultAutomationSettings()
+    automation: createDefaultAutomationSettings(),
+    shopTraining: null
   };
 }
 
@@ -950,6 +1007,7 @@ const $ = (selector) => document.querySelector(selector);
 function getMonsterStats(species, level) {
   const definition = monsterDefinitions[species];
   const steps = Math.max(0, level - 1);
+  
   return {
     attack: definition.base.attack + definition.growth.attack * steps,
     attackSpeed: Number((definition.base.attackSpeed + definition.growth.attackSpeed * steps).toFixed(2)),
@@ -2030,23 +2088,19 @@ function incinerateMonster(index, options = {}) {
   placeMonsterOnZoneCenter(index, "mine-incinerator");
   saveMiningPositions();
 
-  const refund = getMonsterRefundValue(monster.species);
+  const refund = getMonsterSellValue(monster);
 
-  // Clear attack timers immediately
   if (miningState.timers[monster.id]) {
     clearTimeout(miningState.timers[monster.id]);
     delete miningState.timers[monster.id];
   }
 
-  // Play incinerate sound
   soundManager.play("break");
 
-  // Refund gold immediately
   gameState.gold += refund;
   const xpGain = monster.level * 5;
   addPlayerXp(xpGain, { showToastMessages: !options.auto });
 
-  // Apply the CSS animation classes to the DOM element
   const spotElement = $(`#mining-spot-${index}`);
   if (spotElement) {
     spotElement.classList.add("is-fainted");
@@ -2145,43 +2199,309 @@ function selectPvpMonster(monsterId) {
   showToast(`${monster.name}을 PVP 파트너로 선택했습니다.`, "success");
 }
 
+// Shop chrome background with magenta chroma-key removed
+let shopChromeBgUrl = null;
+
+function applyChromaKey(imageSrc, chromaKeyColor = [255, 0, 255]) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+      
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const data = imageData.data;
+      
+      for (let i = 0; i < data.length; i += 4) {
+        const r = data[i];
+        const g = data[i + 1];
+        const b = data[i + 2];
+        
+        if (r === chromaKeyColor[0] && g === chromaKeyColor[1] && b === chromaKeyColor[2]) {
+          data[i + 3] = 0;
+        }
+      }
+      
+      ctx.putImageData(imageData, 0, 0);
+      resolve(canvas.toDataURL());
+    };
+    img.src = imageSrc;
+  });
+}
+
+
+const fxImageCache = {};
+const fxImgElCache = {};
+
+function getChromaFxUrl(src) {
+  if (fxImageCache[src]) {
+    return Promise.resolve(fxImageCache[src]);
+  }
+  return applyChromaKey(src).then((dataUrl) => {
+    fxImageCache[src] = dataUrl;
+    return dataUrl;
+  });
+}
+
+function getChromaFxImage(src) {
+  if (fxImgElCache[src]) {
+    return Promise.resolve(fxImgElCache[src]);
+  }
+  return getChromaFxUrl(src).then((dataUrl) => new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      fxImgElCache[src] = img;
+      resolve(img);
+    };
+    img.src = dataUrl;
+  }));
+}
+
+function playShopFx(kind) {
+  const paths = {
+    buy: "assets/fx/shop-buy.png",
+    feed: "assets/fx/shop-feed.png",
+    sell: "assets/fx/shop-sell.png"
+  };
+  const src = paths[kind];
+  if (!src) return;
+  const host = document.querySelector(".shop-chrome-container") || document.querySelector("#shop-products-grid");
+  if (!host) return;
+  getChromaFxUrl(src).then((url) => {
+    const el = document.createElement("div");
+    el.className = `shop-fx-burst shop-fx-${kind}`;
+    el.style.backgroundImage = `url("${url}")`;
+    host.appendChild(el);
+    requestAnimationFrame(() => el.classList.add("is-on"));
+    window.setTimeout(() => el.remove(), 720);
+  });
+}
+
 function renderShop() {
   updateResourceDisplays();
 
   const grid = $("#shop-products-grid");
   if (!grid) return;
 
-  // 1. Evo Stone Card (Removed)
-  let html = ``;
-
-  // 2. 3 Monster Cards to buy
-  const monstersToBuy = [
-    { species: "0_1_cyclopse", price: 400 },
-    { species: "2_1_unnyangi", price: 500 },
-    { species: "1_1_lovelydoll", price: 600 }
+  const trainingMonster = gameState.shopTraining;
+  const buyOptions = [
+    { species: "0_1_cyclopse", price: 320, name: "사이클롭스" },
+    { species: "2_1_unnyangi", price: 280, name: "운냥이" },
+    { species: "1_1_lovelydoll", price: 300, name: "러블리돌" }
   ];
 
-  monstersToBuy.forEach((item) => {
-    const definition = monsterDefinitions[item.species];
+  if (!shopChromeBgUrl) {
+    applyChromaKey('assets/ui/shop-raise-sell.png').then((dataUrl) => {
+      shopChromeBgUrl = dataUrl;
+      renderShop();
+    });
+    grid.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--ink);">Loading shop...</div>';
+    return;
+  }
+
+  let html = `
+    <div class="shop-chrome-container" style="background-image: url('${shopChromeBgUrl}');">
+      <div class="shop-interactive-overlay">
+        <div class="shop-section shop-buy-section">
+  `;
+
+  buyOptions.forEach((opt) => {
+    const canAfford = gameState.gold >= opt.price;
+    const disabled = trainingMonster ? "disabled" : "";
     html += `
-      <div class="pixel-panel product-card monster-product">
-        <div class="product-sprite-stage">
-          ${monsterSpriteMarkup(item.species, 1)}
+      <div class="caged-monster">
+        <div class="cage-sprite">
+          ${monsterSpriteMarkup(opt.species, 1)}
         </div>
-        <div class="product-copy">
-          <p class="eyebrow">PARTNER</p>
-          <h2>${definition.name}</h2>
-          <p>${definition.role} - ${definition.description}</p>
-          <div class="price-tag"><span>PRICE</span><strong>${item.price} Gold</strong></div>
-          <div class="product-actions">
-            <button class="primary-button wide-button" data-buy-monster="${item.species}">Adopt ${definition.name}</button>
-          </div>
+        <div class="cage-price">
+          <span class="gold-icon">💰</span>
+          <strong>${opt.price}</strong>
         </div>
+        <button class="gothic-button buy-button ${!canAfford || trainingMonster ? 'disabled' : ''}" 
+                data-shop-buy="${opt.species}"
+                ${!canAfford || trainingMonster ? 'disabled' : ''}>
+          구입
+        </button>
       </div>
     `;
   });
 
+  html += `
+        </div>
+        <div class="shop-section shop-train-section">
+  `;
+
+  if (trainingMonster) {
+    const maxExp = 100;
+    const expPercent = (trainingMonster.exp / maxExp) * 100;
+    const feedCost = 50;
+    const canFeed = gameState.gold >= feedCost;
+    const sellReady = trainingMonster.level >= 5;
+
+    html += `
+      <div class="training-monster-display">
+        <div class="training-sprite">
+          ${monsterSpriteMarkup(trainingMonster.species, trainingMonster.level)}
+        </div>
+        <div class="training-info">
+          <div class="training-level">LV ${trainingMonster.level}</div>
+          <div class="exp-bar-container">
+            <span class="exp-label">EXP</span>
+            <div class="exp-bar">
+              <div class="exp-fill" style="width: ${expPercent}%"></div>
+            </div>
+          </div>
+          <div class="food-bowl">🍖</div>
+        </div>
+      </div>
+      <button class="gothic-button feed-button ${!canFeed ? 'disabled' : ''}" 
+              data-shop-feed="true"
+              ${!canFeed ? 'disabled' : ''}>
+        먹이주기 (${feedCost}G)
+      </button>
+      ${sellReady ? '<div class="ready-badge">판매 준비 완료!</div>' : ''}
+    `;
+  } else {
+    html += `
+      <div class="empty-training">
+        <div class="empty-icon">🏺</div>
+        <p>육성 중인 몬스터가 없습니다</p>
+        <p class="muted">왼쪽에서 몬스터를 구입하세요</p>
+      </div>
+    `;
+  }
+
+  html += `
+        </div>
+        <div class="shop-section shop-sell-section">
+  `;
+
+  if (trainingMonster) {
+    const sellValue = getMonsterSellValue(trainingMonster);
+    html += `
+      <div class="sell-monster-display">
+        <div class="sell-sprite">
+          ${monsterSpriteMarkup(trainingMonster.species, trainingMonster.level)}
+        </div>
+        <div class="sell-value">
+          <span class="gold-icon">💰</span>
+          <strong>${sellValue}</strong>
+        </div>
+      </div>
+      <button class="gothic-button sell-button" data-shop-sell="true">
+        판매
+      </button>
+    `;
+  } else {
+    html += `
+      <div class="empty-sell">
+        <div class="empty-icon">📦</div>
+        <p>판매할 몬스터가 없습니다</p>
+      </div>
+    `;
+  }
+
+  html += `
+        </div>
+      </div>
+    </div>
+    
+    <div class="shop-guide">
+      <p><strong>💡 경제 루프:</strong> 저렴한 몬스터 구입 → 먹이로 레벨업 → 높은 가격에 판매 → 반복</p>
+    </div>
+  `;
+
   grid.innerHTML = html;
+}
+
+function shopBuyMonster(species) {
+  if (gameState.shopTraining) {
+    showToast("이미 육성 중인 몬스터가 있습니다!", "error");
+    return;
+  }
+
+  const prices = {
+    "0_1_cyclopse": 320,
+    "2_1_unnyangi": 280,
+    "1_1_lovelydoll": 300
+  };
+  
+  const price = prices[species];
+  if (!price) return;
+
+  if (gameState.gold < price) {
+    showToast(`Gold가 부족합니다. ${price} Gold가 필요합니다.`, "error");
+    return;
+  }
+
+  gameState.gold -= price;
+  gameState.shopTraining = {
+    species: species,
+    level: 1,
+    exp: 0
+  };
+
+  soundManager.play("buy");
+  playShopFx("buy");
+  showToast(`몬스터를 구입했습니다! 먹이를 주어 레벨업하세요.`, "success");
+  saveGame();
+  renderShop();
+}
+
+function shopFeedMonster() {
+  if (!gameState.shopTraining) return;
+
+  const feedCost = 50;
+  if (gameState.gold < feedCost) {
+    showToast(`Gold가 부족합니다. ${feedCost} Gold가 필요합니다.`, "error");
+    return;
+  }
+
+  gameState.gold -= feedCost;
+  gameState.shopTraining.exp += 30;
+
+  const maxExp = 100;
+  while (gameState.shopTraining.exp >= maxExp) {
+    gameState.shopTraining.exp -= maxExp;
+    gameState.shopTraining.level++;
+    soundManager.play("skill");
+    showToast(`레벨 업! (LV ${gameState.shopTraining.level})`, "success");
+  }
+
+  soundManager.play("click");
+  playShopFx("feed");
+  saveGame();
+  renderShop();
+}
+
+function shopSellMonster() {
+  if (!gameState.shopTraining) return;
+
+  const sellValue = getMonsterSellValue(gameState.shopTraining);
+  gameState.gold += sellValue;
+
+  soundManager.play("loot");
+  playShopFx("sell");
+  showToast(`몬스터를 ${sellValue} Gold에 판매했습니다!`, "success");
+  
+  gameState.shopTraining = null;
+  saveGame();
+  renderShop();
+}
+
+function getMonsterSellValue(monster) {
+  const basePrices = {
+    "0_1_cyclopse": 320,
+    "2_1_unnyangi": 280,
+    "1_1_lovelydoll": 300
+  };
+  
+  const basePrice = basePrices[monster.species] || 300;
+  const levelBonus = (monster.level - 1) * 80;
+  return Math.round(basePrice * 1.5 + levelBonus);
 }
 
 function addMiningPositionForMonster(monster, index = gameState.monsters.length - 1) {
@@ -2832,6 +3152,7 @@ function startPvp() {
   pvpState.elapsed = 0;
   pvpState.projectiles = [];
   pvpState.particles = [];
+  preloadProjectileFx();
   pvpState.floaters = [];
   pvpState.keys.clear();
   pvpState.lastBasic = -Infinity;
@@ -3309,6 +3630,10 @@ function fireProjectile(actor, targetX, targetY, isSkill, owner) {
   const length = Math.max(1, Math.hypot(dx, dy));
   const speed = isSkill ? actor.projectileSpeed * 0.9 : actor.projectileSpeed;
   const definition = monsterDefinitions[actor.species];
+  
+  const family = getMonsterFamilyPrefix(actor.species);
+  const vfxType = isSkill ? "skill" : "basic";
+  const vfxDef = projectileVfxDefinitions[family]?.[vfxType] || projectileVfxDefinitions["0"].basic;
 
   actor.facing = dx >= 0 ? 1 : -1;
   triggerActorAnimation(actor, isSkill ? "skill" : "attack", isSkill ? 560 : 420);
@@ -3316,6 +3641,9 @@ function fireProjectile(actor, targetX, targetY, isSkill, owner) {
     owner,
     isSkill,
     species: actor.species,
+    family,
+    vfxType,
+    vfxDef,
     x: actor.x + (dx / length) * 18,
     y: actor.y + (dy / length) * 18,
     vx: (dx / length) * speed,
@@ -3399,6 +3727,20 @@ function spawnHitEffect(x, y, color, isCrit) {
       life: isCrit ? 0.45 : 0.35
     });
   }
+
+  const hitLife = isCrit ? 0.45 : 0.28;
+  pvpState.particles.push({
+    kind: "hitSprite",
+    x,
+    y,
+    vx: 0,
+    vy: 0,
+    color,
+    life: hitLife,
+    maxLife: hitLife,
+    scale: isCrit ? 1.35 : 1.0
+  });
+  getChromaFxImage("assets/fx/combat-hit.png");
 }
 
 function endBattle(victory) {
@@ -3491,6 +3833,17 @@ function drawPvp() {
 
   pvpState.projectiles.forEach((projectile) => drawPvpProjectile(context, projectile));
   pvpState.particles.forEach((particle) => {
+    if (particle.kind === "hitSprite") {
+      const img = fxImgElCache["assets/fx/combat-hit.png"];
+      if (!img) return;
+      const t = Math.max(0, Math.min(1, particle.life / Math.max(0.001, particle.maxLife || 0.28)));
+      const size = 110 * (particle.scale || 1) * (0.75 + 0.35 * t);
+      context.save();
+      context.globalAlpha = t;
+      context.drawImage(img, Math.round(particle.x - size / 2), Math.round(particle.y - size / 2), size, size);
+      context.restore();
+      return;
+    }
     context.fillStyle = particle.color;
     context.fillRect(Math.round(particle.x) - 3, Math.round(particle.y) - 3, 6, 6);
   });
@@ -3831,17 +4184,65 @@ function drawFallbackActor(context, actor, definition, renderSize) {
   );
 }
 
+
+function preloadProjectileFx() {
+  const sheets = new Set();
+  Object.values(projectileVfxDefinitions).forEach((family) => {
+    Object.values(family).forEach((def) => {
+      if (def && def.spriteSheet) sheets.add(def.spriteSheet);
+    });
+  });
+  if (cutieStarVfx && cutieStarVfx.spriteSheet) sheets.add(cutieStarVfx.spriteSheet);
+  sheets.forEach((src) => getChromaFxImage(src));
+}
+
 function drawPvpProjectile(context, projectile) {
   const x = Math.round(projectile.x);
   const y = Math.round(projectile.y);
   const species = projectile.species || "";
   const isSkill = projectile.isSkill;
   
-  // Base radius size calculation
+  const vfxDef = projectile.vfxDef;
+  if (vfxDef && vfxDef.spriteSheet) {
+    const img = fxImgElCache[vfxDef.spriteSheet];
+    if (!img) {
+      getChromaFxImage(vfxDef.spriteSheet);
+      // Fallback until chroma cache is ready
+      context.save();
+      context.fillStyle = projectile.color || "#ffd54f";
+      context.beginPath();
+      context.arc(x, y, isSkill ? 10 : 6, 0, Math.PI * 2);
+      context.fill();
+      context.restore();
+      return;
+    }
+
+    context.save();
+
+    const angle = Math.atan2(projectile.vy, projectile.vx);
+    context.translate(x, y);
+    context.rotate(angle);
+
+    const width = vfxDef.width || 100;
+    const height = vfxDef.height || 50;
+    const scale = 0.3;
+    const scaledWidth = width * scale;
+    const scaledHeight = height * scale;
+
+    try {
+      context.drawImage(img, -scaledWidth / 2, -scaledHeight / 2, scaledWidth, scaledHeight);
+    } catch (e) {
+      context.fillStyle = projectile.color || "#ffd54f";
+      context.fillRect(-10, -10, 20, 20);
+    }
+
+    context.restore();
+    return;
+  }
+  
   const radius = isSkill ? 12 : 6;
   const angle = Math.atan2(projectile.vy, projectile.vx);
 
-  // Helper function: shadow glow config
   const setGlow = (color, blur) => {
     context.shadowColor = color;
     context.shadowBlur = blur;
@@ -3851,7 +4252,6 @@ function drawPvpProjectile(context, projectile) {
     context.shadowBlur = 0;
   };
 
-  // Save context state
   context.save();
 
   // 1. Cyclops (0_*) - Lasers
@@ -4446,6 +4846,9 @@ function bindEvents() {
     if (button.dataset.selectPvp) selectPvpMonster(button.dataset.selectPvp);
     if (button.dataset.selectEvolution) selectEvolutionMonster(button.dataset.selectEvolution);
     if (button.dataset.buyMonster) buyMonster(button.dataset.buyMonster);
+    if (button.dataset.shopBuy) shopBuyMonster(button.dataset.shopBuy);
+    if (button.dataset.shopFeed) shopFeedMonster();
+    if (button.dataset.shopSell) shopSellMonster();
     if (button.dataset.toggleId) togglePvpTeamMember(button.dataset.toggleId);
     if (button.dataset.removeId) togglePvpTeamMember(button.dataset.removeId);
   });

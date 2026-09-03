@@ -2900,3 +2900,258 @@ kbd {
   animation: electric-pulse 0.12s ease-in-out infinite alternate;
 }
 
+/* Shop Train-Sell System */
+.shop-chrome-container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  aspect-ratio: 3 / 2;
+  position: relative;
+}
+
+.shop-interactive-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  padding: 60px 40px;
+  gap: 20px;
+}
+
+.shop-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 20px;
+}
+
+.caged-monster {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 2px solid #5a4570;
+  border-radius: 6px;
+  margin-bottom: 12px;
+}
+
+.cage-sprite,
+.training-sprite,
+.sell-sprite {
+  width: 96px;
+  height: 96px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cage-price,
+.sell-value {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #ffd700;
+  font-weight: bold;
+  font-size: 16px;
+}
+
+.gold-icon {
+  font-size: 18px;
+}
+
+.gothic-button {
+  padding: 8px 16px;
+  background: linear-gradient(135deg, #8b6f47 0%, #654321 100%);
+  border: 2px solid #a0826d;
+  border-radius: 4px;
+  color: #fff;
+  font-weight: bold;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+.gothic-button:hover:not(.disabled) {
+  background: linear-gradient(135deg, #a0826d 0%, #7a5c3f 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+}
+
+.gothic-button.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.training-monster-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 2px solid #5a4570;
+  border-radius: 6px;
+}
+
+.training-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.training-level {
+  color: #d4af37;
+  font-weight: bold;
+  font-size: 16px;
+}
+
+.exp-bar-container {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.exp-label {
+  color: #ffd700;
+  font-size: 12px;
+  font-weight: bold;
+  min-width: 30px;
+}
+
+.exp-bar {
+  flex: 1;
+  height: 12px;
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid #5a4570;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.exp-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #52c41a 0%, #73d13d 100%);
+  transition: width 0.3s;
+}
+
+.food-bowl {
+  font-size: 24px;
+}
+
+.ready-badge {
+  padding: 6px 12px;
+  background: #52c41a;
+  color: white;
+  font-weight: bold;
+  font-size: 12px;
+  border-radius: 4px;
+  text-align: center;
+}
+
+.empty-training,
+.empty-sell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 20px;
+  text-align: center;
+  color: #888;
+}
+
+.empty-icon {
+  font-size: 48px;
+  opacity: 0.5;
+}
+
+.muted {
+  font-size: 12px;
+  color: #666;
+}
+
+.sell-monster-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 2px solid #5a4570;
+  border-radius: 6px;
+}
+
+.shop-guide {
+  text-align: center;
+  color: var(--ink);
+  padding: 16px;
+  background: rgba(82, 196, 26, 0.1);
+  border: 2px solid #52c41a;
+  border-radius: 6px;
+  margin-top: 20px;
+}
+
+@media (max-width: 768px) {
+  .shop-interactive-overlay {
+    grid-template-columns: 1fr;
+    padding: 30px 20px;
+  }
+}
+
+
+
+/* Shop / combat FX bursts (chroma-keyed PNGs) */
+.shop-chrome-container {
+  overflow: hidden;
+}
+
+.shop-fx-burst {
+  position: absolute;
+  left: 50%;
+  top: 48%;
+  width: 240px;
+  height: 160px;
+  margin-left: -120px;
+  margin-top: -80px;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  pointer-events: none;
+  opacity: 0;
+  transform: scale(0.72);
+  transition: opacity 0.12s ease-out, transform 0.18s ease-out;
+  z-index: 8;
+}
+
+.shop-fx-burst.is-on {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.shop-fx-buy {
+  left: 18%;
+  top: 55%;
+}
+
+.shop-fx-feed {
+  left: 50%;
+  top: 45%;
+}
+
+.shop-fx-sell {
+  left: 82%;
+  top: 55%;
+}
