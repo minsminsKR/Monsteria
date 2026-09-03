@@ -9,6 +9,62 @@
 const SAVE_KEY = "monsteria-save-v1";
 const EVO_STONE_PRICE = 120;
 
+// Projectile VFX definitions for each character line
+// Artist assets with magenta (#FF00FF) chroma-key
+// Sprites are 1536×1024 canvases - CSS will handle cropping and scaling
+const projectileVfxDefinitions = {
+  "0": {
+    basic: {
+      type: "beam",
+      spriteSheet: "assets/fx/cyclops-beam.png",
+      width: 400,
+      height: 100
+    },
+    skill: {
+      type: "beam",
+      spriteSheet: "assets/fx/cyclops-beam.png",
+      width: 400,
+      height: 100
+    }
+  },
+  "1": {
+    basic: {
+      type: "water",
+      spriteSheet: "assets/fx/lovelydoll-water.png",
+      width: 350,
+      height: 120
+    },
+    skill: {
+      type: "water_wave",
+      spriteSheet: "assets/fx/lovelydoll-water.png",
+      width: 350,
+      height: 120
+    }
+  },
+  "2": {
+    basic: {
+      type: "claw",
+      spriteSheet: "assets/fx/unnyangi-scratch.png",
+      width: 200,
+      height: 150
+    },
+    skill: {
+      type: "energy_ball",
+      spriteSheet: "assets/fx/unnyangi-scratch.png",
+      width: 200,
+      height: 150
+    }
+  }
+};
+
+// Special projectile for cutie (doll evolution)
+const cutieStarVfx = {
+  type: "star",
+  spriteSheet: "assets/fx/cutie-star.png",
+  width: 250,
+  height: 100
+};
+
 const monsterDefinitions = {
   "0_1_cyclopse": {
     id: "0_1_cyclopse",
@@ -234,32 +290,68 @@ const monsterDefinitions = {
 const rockDefinitions = {
   stone: {
     id: "stone",
-    name: "Stone Rock",
+    name: "T1 심연의 암석",
     tier: 1,
     maxHp: 80,
     gold: [18, 28],
     crystal: [0, 1],
-    note: "초반 채굴에 적합한 무른 돌입니다."
+    note: "초반 채굴에 적합한 무른 돌입니다.",
+    unlockLevel: 1,
+    unlockBreaks: 0,
+    unlockFrom: null
   },
   iron: {
     id: "iron",
-    name: "Iron Rock",
+    name: "T2 심연의 암석",
     tier: 2,
     maxHp: 380,
     gold: [72, 108],
     crystal: [2, 4],
-    note: "단단하지만 안정적인 중급 보상을 줍니다."
+    note: "플레이어 LV5 또는 T1 파괴 3회 시 해금.",
+    unlockLevel: 5,
+    unlockBreaks: 3,
+    unlockFrom: "stone"
   },
   crystal: {
     id: "crystal",
-    name: "Crystal Rock",
+    name: "T3 심연의 암석",
     tier: 3,
     maxHp: 1120,
     gold: [210, 290],
     crystal: [8, 13],
-    note: "매우 단단하며 많은 Crystal을 품고 있습니다."
+    note: "플레이어 LV15 또는 T2 파괴 5회 시 해금.",
+    unlockLevel: 15,
+    unlockBreaks: 5,
+    unlockFrom: "iron"
   }
 };
+
+function getRockBreakCount(rockId) {
+  const map = gameState.rocksBrokenByTier || {};
+  return Math.max(0, Number(map[rockId]) || 0);
+}
+
+function isRockTierUnlocked(rockId) {
+  const rock = rockDefinitions[rockId];
+  if (!rock) return false;
+  if (rock.tier <= 1) return true;
+  const level = gameState.playerLevel || 1;
+  if (level >= (rock.unlockLevel || 1)) return true;
+  if (rock.unlockFrom) {
+    return getRockBreakCount(rock.unlockFrom) >= (rock.unlockBreaks || 0);
+  }
+  return false;
+}
+
+function rockTierLockHint(rockId) {
+  const rock = rockDefinitions[rockId];
+  if (!rock || isRockTierUnlocked(rockId)) return "";
+  const from = rock.unlockFrom ? rockDefinitions[rock.unlockFrom] : null;
+  const need = rock.unlockBreaks || 0;
+  const have = from ? getRockBreakCount(from.id) : 0;
+  return `잠금 · LV${rock.unlockLevel} 또는 ${from ? from.name : "이전 티어"} 파괴 ${have}/${need}`;
+}
+
 
 const levelRequirements = {
   1: { gold: 100, crystal: 4, chance: 0.85 },
@@ -438,7 +530,9 @@ function createDefaultGameState() {
     playerXp: 0,
     talentPoints: 0,
     investedTalents: 0,
-    automation: createDefaultAutomationSettings()
+    automation: createDefaultAutomationSettings(),
+    shopTraining: null,
+    rocksBrokenByTier: { stone: 0, iron: 0, crystal: 0 }
   };
 }
 
@@ -923,12 +1017,16 @@ function startMiningMovementLoop() {
   miningMovementRaf = requestAnimationFrame(tick);
 }
 
+const PVP_MAX_TURNS = 20;
+const PVP_TURN_MS = 3000;
+
 const pvpState = {
   active: false,
   over: false,
   rafId: null,
   lastTime: 0,
   elapsed: 0,
+  turn: 1,
   keys: new Set(),
   mouse: { x: 400, y: 240 },
   playerTeam: [],
@@ -938,7 +1036,9 @@ const pvpState = {
   floaters: [],
   lastBasic: -Infinity,
   lastSkill: -Infinity,
-  aiLastShot: -Infinity
+  aiLastShot: -Infinity,
+  shakeTime: 0,
+  hitstop: 0
 };
 
 const $ = (selector) => document.querySelector(selector);
@@ -950,6 +1050,7 @@ const $ = (selector) => document.querySelector(selector);
 function getMonsterStats(species, level) {
   const definition = monsterDefinitions[species];
   const steps = Math.max(0, level - 1);
+  
   return {
     attack: definition.base.attack + definition.growth.attack * steps,
     attackSpeed: Number((definition.base.attackSpeed + definition.growth.attackSpeed * steps).toFixed(2)),
@@ -1035,7 +1136,8 @@ function saveGame() {
     playerXp: gameState.playerXp,
     talentPoints: gameState.talentPoints,
     investedTalents: gameState.investedTalents,
-    automation: normalizeAutomationSettings(gameState.automation)
+    automation: normalizeAutomationSettings(gameState.automation),
+    rocksBrokenByTier: gameState.rocksBrokenByTier || { stone: 0, iron: 0, crystal: 0 }
   };
 
   localStorage.setItem(SAVE_KEY, JSON.stringify(saveData));
@@ -1081,8 +1183,16 @@ function loadGame() {
       playerXp: Math.max(0, Number(saved.playerXp) || 0),
       talentPoints: Math.max(0, Number(saved.talentPoints) || 0),
       investedTalents: Math.max(0, Number(saved.investedTalents) || 0),
-      automation: normalizeAutomationSettings(saved.automation)
+      automation: normalizeAutomationSettings(saved.automation),
+      rocksBrokenByTier: {
+        stone: Math.max(0, Number(saved.rocksBrokenByTier?.stone) || 0),
+        iron: Math.max(0, Number(saved.rocksBrokenByTier?.iron) || 0),
+        crystal: Math.max(0, Number(saved.rocksBrokenByTier?.crystal) || 0)
+      }
     };
+    if (!isRockTierUnlocked(gameState.selectedRock)) {
+      gameState.selectedRock = "stone";
+    }
     syncDisplayResources();
     updatePlayerUi();
   } catch (error) {
@@ -1504,13 +1614,18 @@ function renderMining() {
   $("#rock-name").textContent = rock.name;
   requestAnimationFrame(updateRockHpGaugePosition);
 
-  $("#rock-tier-buttons").innerHTML = Object.values(rockDefinitions).map((definition) => `
-    <button class="tier-button ${definition.id === gameState.selectedRock ? "active" : ""}" data-rock-tier="${definition.id}">
+  $("#rock-tier-buttons").innerHTML = Object.values(rockDefinitions).map((definition) => {
+    const unlocked = isRockTierUnlocked(definition.id);
+    const lockedClass = unlocked ? "" : " is-locked";
+    const activeClass = definition.id === gameState.selectedRock ? " active" : "";
+    const lockHint = unlocked ? `HP ${definition.maxHp.toLocaleString()} / TIER ${definition.tier}` : rockTierLockHint(definition.id);
+    return `
+    <button class="tier-button${activeClass}${lockedClass}" data-rock-tier="${definition.id}" ${unlocked ? "" : "disabled aria-disabled=\"true\""}>
       <span class="tier-dot" style="background:${definition.id === "stone" ? "#9a9a87" : definition.id === "iron" ? "#697486" : "#5eb9ce"}"></span>
-      <strong>${definition.name}</strong>
-      <small>HP ${definition.maxHp.toLocaleString()} / TIER ${definition.tier}</small>
-    </button>
-  `).join("");
+      <strong>${definition.name}${unlocked ? "" : " 🔒"}</strong>
+      <small>${lockHint}</small>
+    </button>`;
+  }).join("");
 
   $("#rock-info").innerHTML = `
     <div class="rock-data-list">
@@ -1739,6 +1854,10 @@ function selectRockTier(type) {
   if (!rockDefinitions[type] || gameState.selectedRock === type) {
     return;
   }
+  if (!isRockTierUnlocked(type)) {
+    showToast(rockTierLockHint(type) || "아직 잠긴 암석입니다.", "error");
+    return;
+  }
 
   const wasActive = miningState.active;
   stopMining();
@@ -1894,6 +2013,7 @@ function applyMiningDamage(damage) {
       soundManager.play("break"); // Heavier critical hit sound
       spawnDamageNumber(finalDamage, true);
       spawnMiningDebris($("#rock-target"), miningState.type);
+      playWorldFx("crit", $("#mine-stage"));
 
       // Mine Stage screen shake
       const mineStage = $("#mine-stage");
@@ -1963,6 +2083,16 @@ function breakMiningRock() {
 
   gameState.gold += goldReward;
   gameState.crystal += crystalReward;
+  if (!gameState.rocksBrokenByTier) {
+    gameState.rocksBrokenByTier = { stone: 0, iron: 0, crystal: 0 };
+  }
+  gameState.rocksBrokenByTier[rock.id] = getRockBreakCount(rock.id) + 1;
+  const unlockedNow = [];
+  Object.values(rockDefinitions).forEach((def) => {
+    if (def.unlockFrom === rock.id && getRockBreakCount(rock.id) === def.unlockBreaks) {
+      unlockedNow.push(def.name);
+    }
+  });
   saveGame();
   updateResourceDisplays();
 
@@ -1970,6 +2100,10 @@ function breakMiningRock() {
     $("#rock-target").classList.add("is-breaking");
   }
   updateMiningUi(`${rock.name} 파괴! +${goldReward} Gold, +${crystalReward} Crystal`);
+  if (unlockedNow.length) {
+    showToast(`${unlockedNow.join(", ")} 해금!`, "success");
+    renderMining();
+  }
 
   clearTimeout(miningState.respawnTimer);
   miningState.respawnTimer = setTimeout(() => {
@@ -2030,23 +2164,19 @@ function incinerateMonster(index, options = {}) {
   placeMonsterOnZoneCenter(index, "mine-incinerator");
   saveMiningPositions();
 
-  const refund = getMonsterRefundValue(monster.species);
+  const refund = getMonsterSellValue(monster);
 
-  // Clear attack timers immediately
   if (miningState.timers[monster.id]) {
     clearTimeout(miningState.timers[monster.id]);
     delete miningState.timers[monster.id];
   }
 
-  // Play incinerate sound
   soundManager.play("break");
 
-  // Refund gold immediately
   gameState.gold += refund;
   const xpGain = monster.level * 5;
   addPlayerXp(xpGain, { showToastMessages: !options.auto });
 
-  // Apply the CSS animation classes to the DOM element
   const spotElement = $(`#mining-spot-${index}`);
   if (spotElement) {
     spotElement.classList.add("is-fainted");
@@ -2145,43 +2275,340 @@ function selectPvpMonster(monsterId) {
   showToast(`${monster.name}을 PVP 파트너로 선택했습니다.`, "success");
 }
 
+// Shop chrome background with magenta chroma-key removed
+let shopChromeBgUrl = null;
+
+function applyChromaKey(imageSrc, chromaKeyColor = [255, 0, 255]) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+      
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const data = imageData.data;
+      
+      for (let i = 0; i < data.length; i += 4) {
+        const r = data[i];
+        const g = data[i + 1];
+        const b = data[i + 2];
+        
+        if (r === chromaKeyColor[0] && g === chromaKeyColor[1] && b === chromaKeyColor[2]) {
+          data[i + 3] = 0;
+        }
+      }
+      
+      ctx.putImageData(imageData, 0, 0);
+      resolve(canvas.toDataURL());
+    };
+    img.src = imageSrc;
+  });
+}
+
+
+const fxImageCache = {};
+const fxImgElCache = {};
+
+function getChromaFxUrl(src) {
+  if (fxImageCache[src]) {
+    return Promise.resolve(fxImageCache[src]);
+  }
+  return applyChromaKey(src).then((dataUrl) => {
+    fxImageCache[src] = dataUrl;
+    return dataUrl;
+  });
+}
+
+function getChromaFxImage(src) {
+  if (fxImgElCache[src]) {
+    return Promise.resolve(fxImgElCache[src]);
+  }
+  return getChromaFxUrl(src).then((dataUrl) => new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      fxImgElCache[src] = img;
+      resolve(img);
+    };
+    img.src = dataUrl;
+  }));
+}
+
+
+function applyGothicIconSheet() {
+  getChromaFxUrl("assets/ui/icon-set.png").then((url) => {
+    document.documentElement.style.setProperty("--gothic-icon-sheet", `url("${url}")`);
+  });
+}
+
+applyGothicIconSheet();
+
+function playWorldFx(kind, host) {
+  const paths = {
+    crit: "assets/fx/crit.png",
+    levelup: "assets/fx/levelup.png"
+  };
+  const src = paths[kind];
+  if (!src) return;
+  const mount = host || document.querySelector("#mine-stage") || document.body;
+  getChromaFxUrl(src).then((url) => {
+    const el = document.createElement("div");
+    el.className = `world-fx-burst world-fx-${kind}`;
+    el.style.backgroundImage = `url("${url}")`;
+    mount.appendChild(el);
+    requestAnimationFrame(() => el.classList.add("is-on"));
+    window.setTimeout(() => el.remove(), 780);
+  });
+}
+
+function ensureMineRockArt() {
+  getChromaFxUrl("assets/fx/mine-rock.png").then((url) => {
+    document.querySelectorAll("#rock-sprite .rock-sprite").forEach((el) => {
+      el.style.backgroundImage = `url("${url}")`;
+    });
+  });
+}
+
+function playShopFx(kind) {
+  const paths = {
+    buy: "assets/fx/shop-buy.png",
+    feed: "assets/fx/shop-feed.png",
+    sell: "assets/fx/shop-sell.png"
+  };
+  const src = paths[kind];
+  if (!src) return;
+  const host = document.querySelector(".shop-chrome-container") || document.querySelector("#shop-products-grid");
+  if (!host) return;
+  getChromaFxUrl(src).then((url) => {
+    const el = document.createElement("div");
+    el.className = `shop-fx-burst shop-fx-${kind}`;
+    el.style.backgroundImage = `url("${url}")`;
+    host.appendChild(el);
+    requestAnimationFrame(() => el.classList.add("is-on"));
+    window.setTimeout(() => el.remove(), 720);
+  });
+}
+
 function renderShop() {
   updateResourceDisplays();
 
   const grid = $("#shop-products-grid");
   if (!grid) return;
 
-  // 1. Evo Stone Card (Removed)
-  let html = ``;
-
-  // 2. 3 Monster Cards to buy
-  const monstersToBuy = [
-    { species: "0_1_cyclopse", price: 400 },
-    { species: "2_1_unnyangi", price: 500 },
-    { species: "1_1_lovelydoll", price: 600 }
+  const trainingMonster = gameState.shopTraining;
+  const buyOptions = [
+    { species: "0_1_cyclopse", price: 320, name: "사이클롭스" },
+    { species: "2_1_unnyangi", price: 280, name: "운냥이" },
+    { species: "1_1_lovelydoll", price: 300, name: "러블리돌" }
   ];
 
-  monstersToBuy.forEach((item) => {
-    const definition = monsterDefinitions[item.species];
+  if (!shopChromeBgUrl) {
+    // Full painted gothic shop UI (no magenta key)
+    shopChromeBgUrl = 'assets/ui/shop-raise-sell.png';
+  }
+
+  let html = `
+    <div class="shop-chrome-container" style="background-image: url('${shopChromeBgUrl}');">
+      <div class="shop-interactive-overlay">
+        <div class="shop-section shop-buy-section">
+  `;
+
+  buyOptions.forEach((opt) => {
+    const canAfford = gameState.gold >= opt.price;
+    const disabled = trainingMonster ? "disabled" : "";
     html += `
-      <div class="pixel-panel product-card monster-product">
-        <div class="product-sprite-stage">
-          ${monsterSpriteMarkup(item.species, 1)}
+      <div class="caged-monster">
+        <div class="cage-sprite">
+          ${monsterSpriteMarkup(opt.species, 1)}
         </div>
-        <div class="product-copy">
-          <p class="eyebrow">PARTNER</p>
-          <h2>${definition.name}</h2>
-          <p>${definition.role} - ${definition.description}</p>
-          <div class="price-tag"><span>PRICE</span><strong>${item.price} Gold</strong></div>
-          <div class="product-actions">
-            <button class="primary-button wide-button" data-buy-monster="${item.species}">Adopt ${definition.name}</button>
-          </div>
+        <div class="cage-price">
+          <span class="gold-icon">💰</span>
+          <strong>${opt.price}</strong>
         </div>
+        <button class="gothic-button buy-button ${!canAfford || trainingMonster ? 'disabled' : ''}" 
+                data-shop-buy="${opt.species}"
+                ${!canAfford || trainingMonster ? 'disabled' : ''}>
+          구입
+        </button>
       </div>
     `;
   });
 
+  html += `
+        </div>
+        <div class="shop-section shop-train-section">
+  `;
+
+  if (trainingMonster) {
+    const maxExp = 100;
+    const expPercent = (trainingMonster.exp / maxExp) * 100;
+    const feedCost = 50;
+    const canFeed = gameState.gold >= feedCost;
+    const sellReady = trainingMonster.level >= 5;
+
+    html += `
+      <div class="training-monster-display">
+        <div class="training-sprite">
+          ${monsterSpriteMarkup(trainingMonster.species, trainingMonster.level)}
+        </div>
+        <div class="training-info">
+          <div class="training-level">LV ${trainingMonster.level}</div>
+          <div class="exp-bar-container">
+            <span class="exp-label">EXP</span>
+            <div class="exp-bar">
+              <div class="exp-fill" style="width: ${expPercent}%"></div>
+            </div>
+          </div>
+          <div class="food-bowl">🍖</div>
+        </div>
+      </div>
+      <button class="gothic-button feed-button ${!canFeed ? 'disabled' : ''}" 
+              data-shop-feed="true"
+              ${!canFeed ? 'disabled' : ''}>
+        먹이주기 (${feedCost}G)
+      </button>
+      ${sellReady ? '<div class="ready-badge">판매 준비 완료!</div>' : ''}
+    `;
+  } else {
+    html += `
+      <div class="empty-training">
+        <div class="empty-icon">🏺</div>
+        <p>육성 중인 몬스터가 없습니다</p>
+        <p class="muted">왼쪽에서 몬스터를 구입하세요</p>
+      </div>
+    `;
+  }
+
+  html += `
+        </div>
+        <div class="shop-section shop-sell-section">
+  `;
+
+  if (trainingMonster) {
+    const sellValue = getMonsterSellValue(trainingMonster);
+    html += `
+      <div class="sell-monster-display">
+        <div class="sell-sprite">
+          ${monsterSpriteMarkup(trainingMonster.species, trainingMonster.level)}
+        </div>
+        <div class="sell-value">
+          <span class="gold-icon">💰</span>
+          <strong>${sellValue}</strong>
+        </div>
+      </div>
+      <button class="gothic-button sell-button" data-shop-sell="true">
+        판매
+      </button>
+    `;
+  } else {
+    html += `
+      <div class="empty-sell">
+        <div class="empty-icon">📦</div>
+        <p>판매할 몬스터가 없습니다</p>
+      </div>
+    `;
+  }
+
+  html += `
+        </div>
+      </div>
+    </div>
+    
+    <div class="shop-guide">
+      <p><strong>💡 경제 루프:</strong> 저렴한 몬스터 구입 → 먹이로 레벨업 → 높은 가격에 판매 → 반복</p>
+    </div>
+  `;
+
   grid.innerHTML = html;
+}
+
+function shopBuyMonster(species) {
+  if (gameState.shopTraining) {
+    showToast("이미 육성 중인 몬스터가 있습니다!", "error");
+    return;
+  }
+
+  const prices = {
+    "0_1_cyclopse": 320,
+    "2_1_unnyangi": 280,
+    "1_1_lovelydoll": 300
+  };
+  
+  const price = prices[species];
+  if (!price) return;
+
+  if (gameState.gold < price) {
+    showToast(`Gold가 부족합니다. ${price} Gold가 필요합니다.`, "error");
+    return;
+  }
+
+  gameState.gold -= price;
+  gameState.shopTraining = {
+    species: species,
+    level: 1,
+    exp: 0
+  };
+
+  soundManager.play("buy");
+  playShopFx("buy");
+  showToast(`몬스터를 구입했습니다! 먹이를 주어 레벨업하세요.`, "success");
+  saveGame();
+  renderShop();
+}
+
+function shopFeedMonster() {
+  if (!gameState.shopTraining) return;
+
+  const feedCost = 50;
+  if (gameState.gold < feedCost) {
+    showToast(`Gold가 부족합니다. ${feedCost} Gold가 필요합니다.`, "error");
+    return;
+  }
+
+  gameState.gold -= feedCost;
+  gameState.shopTraining.exp += 30;
+
+  const maxExp = 100;
+  while (gameState.shopTraining.exp >= maxExp) {
+    gameState.shopTraining.exp -= maxExp;
+    gameState.shopTraining.level++;
+    soundManager.play("skill");
+    showToast(`레벨 업! (LV ${gameState.shopTraining.level})`, "success");
+  }
+
+  soundManager.play("click");
+  playShopFx("feed");
+  saveGame();
+  renderShop();
+}
+
+function shopSellMonster() {
+  if (!gameState.shopTraining) return;
+
+  const sellValue = getMonsterSellValue(gameState.shopTraining);
+  gameState.gold += sellValue;
+
+  soundManager.play("loot");
+  playShopFx("sell");
+  showToast(`몬스터를 ${sellValue} Gold에 판매했습니다!`, "success");
+  
+  gameState.shopTraining = null;
+  saveGame();
+  renderShop();
+}
+
+function getMonsterSellValue(monster) {
+  const basePrices = {
+    "0_1_cyclopse": 320,
+    "2_1_unnyangi": 280,
+    "1_1_lovelydoll": 300
+  };
+  
+  const basePrice = basePrices[monster.species] || 300;
+  const levelBonus = (monster.level - 1) * 80;
+  return Math.round(basePrice * 1.5 + levelBonus);
 }
 
 function addMiningPositionForMonster(monster, index = gameState.monsters.length - 1) {
@@ -2420,6 +2847,9 @@ function triggerLevelUpZoneVisualEffect(monsterIndex, succeeded) {
   spotEl.classList.remove("level-up-success", "level-up-fail");
   void spotEl.offsetWidth; // Trigger reflow
   spotEl.classList.add(className);
+  if (succeeded) {
+    playWorldFx("levelup", $("#mine-stage"));
+  }
   
   setTimeout(() => {
     spotEl.classList.remove(className);
@@ -2830,8 +3260,12 @@ function startPvp() {
   pvpState.over = false;
   pvpState.lastTime = performance.now();
   pvpState.elapsed = 0;
+  pvpState.turn = 1;
+  pvpState.shakeTime = 0;
+  pvpState.hitstop = 0;
   pvpState.projectiles = [];
   pvpState.particles = [];
+  preloadProjectileFx();
   pvpState.floaters = [];
   pvpState.keys.clear();
   pvpState.lastBasic = -Infinity;
@@ -2936,9 +3370,11 @@ function startPvp() {
   $("#pvp-setup").classList.add("is-hidden");
   $("#pvp-battle").classList.remove("is-hidden");
   $("#battle-result-overlay").classList.add("is-hidden");
-  $("#battle-player-name").textContent = "Player Team";
-  $("#battle-ai-name").textContent = "AI Team";
-  $("#battle-skill-name").textContent = "AUTO COMBAT";
+  $("#battle-player-name").textContent = "몬스터리아";
+  $("#battle-ai-name").textContent = "암흑의 소환사";
+  $("#battle-skill-name").textContent = "자동 전투";
+  const turnEl = $("#battle-turn-count");
+  if (turnEl) turnEl.textContent = `1 / ${PVP_MAX_TURNS} 턴`;
   updateBattleHud();
   pvpState.rafId = requestAnimationFrame(pvpFrame);
 }
@@ -2964,9 +3400,28 @@ function pvpFrame(timestamp) {
     return;
   }
 
-  const dt = Math.min(0.035, (timestamp - pvpState.lastTime) / 1000 || 0);
+  let dt = Math.min(0.035, (timestamp - pvpState.lastTime) / 1000 || 0);
   pvpState.lastTime = timestamp;
+  if (pvpState.hitstop > 0) {
+    pvpState.hitstop = Math.max(0, pvpState.hitstop - dt);
+    dt *= 0.15;
+  }
   pvpState.elapsed += dt * 1000;
+  const nextTurn = Math.min(PVP_MAX_TURNS, Math.floor(pvpState.elapsed / PVP_TURN_MS) + 1);
+  if (nextTurn !== pvpState.turn) {
+    pvpState.turn = nextTurn;
+    const turnEl = $("#battle-turn-count");
+    if (turnEl) turnEl.textContent = `${pvpState.turn} / ${PVP_MAX_TURNS} 턴`;
+  }
+  if (!pvpState.over && pvpState.turn >= PVP_MAX_TURNS) {
+    const playerAlive = pvpState.playerTeam.some((a) => !a.fainted);
+    const enemyAlive = pvpState.enemyTeam.some((a) => !a.fainted);
+    if (playerAlive && enemyAlive) {
+      endBattle(false);
+      const copy = $("#battle-result-copy");
+      if (copy) copy.textContent = "턴 제한에 도달했습니다. 후퇴합니다.";
+    }
+  }
   updatePvp(dt);
   drawPvp();
   updateBattleHud();
@@ -3309,6 +3764,10 @@ function fireProjectile(actor, targetX, targetY, isSkill, owner) {
   const length = Math.max(1, Math.hypot(dx, dy));
   const speed = isSkill ? actor.projectileSpeed * 0.9 : actor.projectileSpeed;
   const definition = monsterDefinitions[actor.species];
+  
+  const family = getMonsterFamilyPrefix(actor.species);
+  const vfxType = isSkill ? "skill" : "basic";
+  const vfxDef = projectileVfxDefinitions[family]?.[vfxType] || projectileVfxDefinitions["0"].basic;
 
   actor.facing = dx >= 0 ? 1 : -1;
   triggerActorAnimation(actor, isSkill ? "skill" : "attack", isSkill ? 560 : 420);
@@ -3316,6 +3775,9 @@ function fireProjectile(actor, targetX, targetY, isSkill, owner) {
     owner,
     isSkill,
     species: actor.species,
+    family,
+    vfxType,
+    vfxDef,
     x: actor.x + (dx / length) * 18,
     y: actor.y + (dy / length) * 18,
     vx: (dx / length) * speed,
@@ -3335,7 +3797,8 @@ function damageActor(actor, rawDamage, source) {
 
   if (isCrit) {
     soundManager.play("break"); // Heavier strike sound for critical hits
-    pvpState.shakeTime = 0.20;  // 200ms screen shake duration in PVP
+    pvpState.shakeTime = 0.28;
+    pvpState.hitstop = 0.08;
     pvpState.floaters.push({
       x: actor.x,
       y: actor.y - 35,
@@ -3346,6 +3809,7 @@ function damageActor(actor, rawDamage, source) {
     });
   } else {
     soundManager.play("hurt");
+    pvpState.shakeTime = Math.max(pvpState.shakeTime || 0, 0.08);
     pvpState.floaters.push({
       x: actor.x,
       y: actor.y - 30,
@@ -3358,6 +3822,8 @@ function damageActor(actor, rawDamage, source) {
 
   if (actor.hp <= 0) {
     actor.fainted = true;
+    pvpState.shakeTime = Math.max(pvpState.shakeTime || 0, 0.22);
+    pvpState.hitstop = Math.max(pvpState.hitstop || 0, 0.1);
     triggerActorAnimation(actor, "faint", 950);
     checkBattleEnd();
   } else {
@@ -3399,6 +3865,22 @@ function spawnHitEffect(x, y, color, isCrit) {
       life: isCrit ? 0.45 : 0.35
     });
   }
+
+  const hitLife = isCrit ? 0.45 : 0.28;
+  const hitSheet = isCrit ? "assets/fx/crit.png" : "assets/fx/combat-hit.png";
+  pvpState.particles.push({
+    kind: "hitSprite",
+    x,
+    y,
+    vx: 0,
+    vy: 0,
+    color,
+    life: hitLife,
+    maxLife: hitLife,
+    scale: isCrit ? 1.45 : 1.0,
+    sheet: hitSheet
+  });
+  getChromaFxImage(hitSheet);
 }
 
 function endBattle(victory) {
@@ -3413,10 +3895,10 @@ function endBattle(victory) {
     soundManager.play("defeat");
   }
 
-  $("#battle-result-title").textContent = victory ? "VICTORY" : "DEFEAT";
+  $("#battle-result-title").textContent = victory ? "승리" : "패배";
   $("#battle-result-copy").textContent = victory
-    ? "적군 AI 팀을 모두 쓰러뜨렸습니다!"
-    : "아군 팀이 모두 쓰러졌습니다. 다시 도전해 보세요.";
+    ? "암흑의 소환사 팀을 쓰러뜨렸습니다!"
+    : "아군이 전멸했습니다. 다시 결투하세요.";
   $("#battle-result-overlay").classList.remove("is-hidden");
 }
 
@@ -3439,8 +3921,12 @@ function updateBattleHud() {
   const enemyHpSum = pvpState.enemyTeam.reduce((sum, a) => sum + (a.fainted ? 0 : a.hp), 0);
   const enemyMaxHpSum = pvpState.enemyTeam.reduce((sum, a) => sum + a.maxHp, 0);
 
-  $("#battle-player-hp").textContent = `Alive: ${playerAliveCount}/${playerTotal} | HP ${Math.ceil(playerHpSum)} / ${playerMaxHpSum}`;
-  $("#battle-ai-hp").textContent = `Alive: ${enemyAliveCount}/${enemyTotal} | HP ${Math.ceil(enemyHpSum)} / ${enemyMaxHpSum}`;
+  $("#battle-player-hp").textContent = `생존 ${playerAliveCount}/${playerTotal} · HP ${Math.ceil(playerHpSum)} / ${playerMaxHpSum}`;
+  $("#battle-ai-hp").textContent = `생존 ${enemyAliveCount}/${enemyTotal} · HP ${Math.ceil(enemyHpSum)} / ${enemyMaxHpSum}`;
+  const turnEl = $("#battle-turn-count");
+  if (turnEl) turnEl.textContent = `${pvpState.turn || 1} / ${PVP_MAX_TURNS} 턴`;
+  const statusEl = $("#battle-skill-cooldown");
+  if (statusEl) statusEl.textContent = pvpState.over ? "종료" : "전투중";
 }
 
 function drawPvp() {
@@ -3491,6 +3977,17 @@ function drawPvp() {
 
   pvpState.projectiles.forEach((projectile) => drawPvpProjectile(context, projectile));
   pvpState.particles.forEach((particle) => {
+    if (particle.kind === "hitSprite") {
+      const img = fxImgElCache[particle.sheet || "assets/fx/combat-hit.png"];
+      if (!img) return;
+      const t = Math.max(0, Math.min(1, particle.life / Math.max(0.001, particle.maxLife || 0.28)));
+      const size = 110 * (particle.scale || 1) * (0.75 + 0.35 * t);
+      context.save();
+      context.globalAlpha = t;
+      context.drawImage(img, Math.round(particle.x - size / 2), Math.round(particle.y - size / 2), size, size);
+      context.restore();
+      return;
+    }
     context.fillStyle = particle.color;
     context.fillRect(Math.round(particle.x) - 3, Math.round(particle.y) - 3, 6, 6);
   });
@@ -3831,17 +4328,65 @@ function drawFallbackActor(context, actor, definition, renderSize) {
   );
 }
 
+
+function preloadProjectileFx() {
+  const sheets = new Set();
+  Object.values(projectileVfxDefinitions).forEach((family) => {
+    Object.values(family).forEach((def) => {
+      if (def && def.spriteSheet) sheets.add(def.spriteSheet);
+    });
+  });
+  if (cutieStarVfx && cutieStarVfx.spriteSheet) sheets.add(cutieStarVfx.spriteSheet);
+  sheets.forEach((src) => getChromaFxImage(src));
+}
+
 function drawPvpProjectile(context, projectile) {
   const x = Math.round(projectile.x);
   const y = Math.round(projectile.y);
   const species = projectile.species || "";
   const isSkill = projectile.isSkill;
   
-  // Base radius size calculation
+  const vfxDef = projectile.vfxDef;
+  if (vfxDef && vfxDef.spriteSheet) {
+    const img = fxImgElCache[vfxDef.spriteSheet];
+    if (!img) {
+      getChromaFxImage(vfxDef.spriteSheet);
+      // Fallback until chroma cache is ready
+      context.save();
+      context.fillStyle = projectile.color || "#ffd54f";
+      context.beginPath();
+      context.arc(x, y, isSkill ? 10 : 6, 0, Math.PI * 2);
+      context.fill();
+      context.restore();
+      return;
+    }
+
+    context.save();
+
+    const angle = Math.atan2(projectile.vy, projectile.vx);
+    context.translate(x, y);
+    context.rotate(angle);
+
+    const width = vfxDef.width || 100;
+    const height = vfxDef.height || 50;
+    const scale = 0.3;
+    const scaledWidth = width * scale;
+    const scaledHeight = height * scale;
+
+    try {
+      context.drawImage(img, -scaledWidth / 2, -scaledHeight / 2, scaledWidth, scaledHeight);
+    } catch (e) {
+      context.fillStyle = projectile.color || "#ffd54f";
+      context.fillRect(-10, -10, 20, 20);
+    }
+
+    context.restore();
+    return;
+  }
+  
   const radius = isSkill ? 12 : 6;
   const angle = Math.atan2(projectile.vy, projectile.vx);
 
-  // Helper function: shadow glow config
   const setGlow = (color, blur) => {
     context.shadowColor = color;
     context.shadowBlur = blur;
@@ -3851,7 +4396,6 @@ function drawPvpProjectile(context, projectile) {
     context.shadowBlur = 0;
   };
 
-  // Save context state
   context.save();
 
   // 1. Cyclops (0_*) - Lasers
@@ -4446,6 +4990,9 @@ function bindEvents() {
     if (button.dataset.selectPvp) selectPvpMonster(button.dataset.selectPvp);
     if (button.dataset.selectEvolution) selectEvolutionMonster(button.dataset.selectEvolution);
     if (button.dataset.buyMonster) buyMonster(button.dataset.buyMonster);
+    if (button.dataset.shopBuy) shopBuyMonster(button.dataset.shopBuy);
+    if (button.dataset.shopFeed) shopFeedMonster();
+    if (button.dataset.shopSell) shopSellMonster();
     if (button.dataset.toggleId) togglePvpTeamMember(button.dataset.toggleId);
     if (button.dataset.removeId) togglePvpTeamMember(button.dataset.removeId);
   });
