@@ -2268,6 +2268,8 @@ function applyGothicIconSheet() {
   });
 }
 
+applyGothicIconSheet();
+
 function playWorldFx(kind, host) {
   const paths = {
     crit: "assets/fx/crit.png",
